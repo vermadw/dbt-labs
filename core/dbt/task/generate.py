@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional, Tuple, Set
 import agate
 
-from dbt.dataclass_schema import ValidationError
+from dbt.common.dataclass_schema import ValidationError
 from dbt.clients.system import load_file_contents
 
 from .compile import CompileTask

@@ -6,7 +6,7 @@ from typing import (
 )
 from typing_extensions import Protocol
 
-from dbt.dataclass_schema import dbtClassMixin, StrEnum
+from dbt.common.dataclass_schema import dbtClassMixin, StrEnum
 
 from dbt.contracts.util import Replaceable
 from dbt.exceptions import CompilationError, DataclassNotDictError

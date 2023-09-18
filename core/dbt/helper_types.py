@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Tuple, AbstractSet, Union
 from typing import Callable, cast, Generic, Optional, TypeVar, List, NewType
 
-from dbt.dataclass_schema import (
+from dbt.common.dataclass_schema import (
     dbtClassMixin,
     ValidationError,
     StrEnum,

@@ -2,7 +2,7 @@ from pathlib import Path
 from copy import deepcopy
 from typing import Dict, Any, Union
 from dbt.clients.yaml_helper import yaml, Loader, Dumper, load_yaml_text  # noqa: F401
-from dbt.dataclass_schema import ValidationError
+from dbt.common.dataclass_schema import ValidationError
 
 from .renderer import BaseRenderer
 

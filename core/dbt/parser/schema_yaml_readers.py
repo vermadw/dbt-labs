@@ -46,7 +46,7 @@ from dbt.context.context_config import (
     UnrenderedConfigGenerator,
 )
 from dbt.clients.jinja import get_rendered
-from dbt.dataclass_schema import ValidationError
+from dbt.common.dataclass_schema import ValidationError
 from dbt_semantic_interfaces.type_enums import (
     AggregationType,
     DimensionType,

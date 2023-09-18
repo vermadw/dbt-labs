@@ -124,7 +124,7 @@ from dbt.parser.snapshots import SnapshotParser
 from dbt.parser.sources import SourcePatcher
 from dbt.version import __version__
 
-from dbt.dataclass_schema import StrEnum, dbtClassMixin
+from dbt.common.dataclass_schema import StrEnum, dbtClassMixin
 from dbt import plugins
 
 from dbt_semantic_interfaces.enum_extension import assert_values_exhausted

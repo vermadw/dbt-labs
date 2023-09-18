@@ -27,7 +27,7 @@ from dbt.context.exceptions_jinja import wrapped_exports
 from dbt.context.macro_resolver import MacroResolver, TestMacroNamespace
 from dbt.context.macros import MacroNamespaceBuilder, MacroNamespace
 from dbt.context.manifest import ManifestContext
-from dbt.contracts.connection import AdapterResponse
+from dbt.adapters.contracts.connection import AdapterResponse
 from dbt.contracts.graph.manifest import Manifest, Disabled
 from dbt.contracts.graph.nodes import (
     Macro,

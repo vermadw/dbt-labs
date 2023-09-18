@@ -1,30 +1,16 @@
 import builtins
 import json
-import os
 import re
 import io
 import agate
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from dbt.constants import SECRET_ENV_PREFIX
-from dbt.dataclass_schema import ValidationError
 from dbt.node_types import NodeType, AccessType
 from dbt.ui import line_wrap_message
 
-import dbt.dataclass_schema
-
-
-def env_secrets() -> List[str]:
-    return [v for k, v in os.environ.items() if k.startswith(SECRET_ENV_PREFIX) and v.strip()]
-
-
-def scrub_secrets(msg: str, secrets: List[str]) -> str:
-    scrubbed = str(msg)
-
-    for secret in secrets:
-        scrubbed = scrubbed.replace(secret, "*****")
-
-    return scrubbed
+import dbt.common.dataclass_schema
+from dbt.common.dataclass_schema import ValidationError
+from dbt.common.exceptions import env_secrets, scrub_secrets
 
 
 class MacroReturn(builtins.BaseException):
@@ -147,7 +133,7 @@ class DbtRuntimeError(RuntimeError, Exception):
         """Given a dbt.dataclass_schema.ValidationError (which is basically a
         jsonschema.ValidationError), return the relevant parts as a string
         """
-        if not isinstance(exc, dbt.dataclass_schema.ValidationError):
+        if not isinstance(exc, dbt.common.dataclass_schema.ValidationError):
             return str(exc)
         path = "[%s]" % "][".join(map(repr, exc.relative_path))
         return f"at path {path}: {exc.message}"

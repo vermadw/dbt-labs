@@ -2,12 +2,12 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 import os
 
-from dbt.dataclass_schema import ValidationError
+from dbt.common.dataclass_schema import ValidationError
 
 from dbt.flags import get_flags
 from dbt.clients.system import load_file_contents
 from dbt.clients.yaml_helper import load_yaml_text
-from dbt.contracts.connection import Credentials, HasCredentials
+from dbt.adapters.contracts.connection import Credentials, HasCredentials
 from dbt.contracts.project import ProfileConfig, UserConfig
 from dbt.exceptions import (
     CompilationError,

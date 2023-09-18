@@ -18,7 +18,7 @@ import dbt.tracking
 from dbt import flags
 from dbt.adapters.factory import load_plugin
 from dbt.adapters.postgres import PostgresCredentials
-from dbt.contracts.connection import QueryComment, DEFAULT_QUERY_COMMENT
+from dbt.adapters.contracts.connection import QueryComment, DEFAULT_QUERY_COMMENT
 from dbt.contracts.project import PackageConfig, LocalPackage, GitPackage
 from dbt.node_types import NodeType
 from dbt.semver import VersionSpecifier

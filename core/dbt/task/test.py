@@ -3,7 +3,7 @@ from distutils.util import strtobool
 from dataclasses import dataclass
 from dbt.utils import _coerce_decimal
 from dbt.events.format import pluralize
-from dbt.dataclass_schema import dbtClassMixin
+from dbt.common.dataclass_schema import dbtClassMixin
 import threading
 from typing import Dict, Any
 

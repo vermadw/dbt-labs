@@ -46,7 +46,7 @@ from dbt.contracts.graph.unparsed import SourcePatch, NodeVersion, UnparsedVersi
 from dbt.contracts.graph.manifest_upgrade import upgrade_manifest_json
 from dbt.contracts.files import SourceFile, SchemaSourceFile, FileHash, AnySourceFile
 from dbt.contracts.util import BaseArtifactMetadata, SourceKey, ArtifactMixin, schema_version
-from dbt.dataclass_schema import dbtClassMixin
+from dbt.common.dataclass_schema import dbtClassMixin
 from dbt.exceptions import (
     CompilationError,
     DuplicateResourceNameError,

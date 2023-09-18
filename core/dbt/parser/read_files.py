@@ -12,7 +12,7 @@ from dbt.contracts.files import (
     SchemaSourceFile,
 )
 from dbt.config import Project
-from dbt.dataclass_schema import dbtClassMixin
+from dbt.common.dataclass_schema import dbtClassMixin
 from dbt.parser.schemas import yaml_from_file, schema_file_keys
 from dbt.exceptions import ParsingError
 from dbt.parser.search import filesystem_search

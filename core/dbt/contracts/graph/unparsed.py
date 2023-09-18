@@ -18,7 +18,12 @@ from dbt.contracts.util import (
 import dbt.helper_types  # noqa:F401
 from dbt.exceptions import CompilationError, ParsingError, DbtInternalError
 
-from dbt.dataclass_schema import dbtClassMixin, StrEnum, ExtensibleDbtClassMixin, ValidationError
+from dbt.common.dataclass_schema import (
+    dbtClassMixin,
+    StrEnum,
+    ExtensibleDbtClassMixin,
+    ValidationError,
+)
 
 from dataclasses import dataclass, field
 from datetime import timedelta

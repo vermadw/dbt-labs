@@ -6,7 +6,7 @@ import dbt.exceptions
 
 import psycopg2
 
-from dbt.contracts.connection import Connection
+from dbt.adapters.contracts.connection import Connection
 from dbt.adapters.base import BaseConnectionManager
 from dbt.adapters.postgres import PostgresCredentials, PostgresConnectionManager
 from dbt.events import AdapterLogger

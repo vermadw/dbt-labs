@@ -16,7 +16,7 @@ from dbt.events.contextvars import get_node_info
 from dbt.events.helpers import datetime_to_json_string
 from dbt.logger import TimingProcessor
 from dbt.utils import lowercase, cast_to_str, cast_to_int
-from dbt.dataclass_schema import dbtClassMixin, StrEnum
+from dbt.common.dataclass_schema import dbtClassMixin, StrEnum
 
 import agate
 

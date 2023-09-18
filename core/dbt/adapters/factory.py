@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Set, Type
 
 from dbt.adapters.base.plugin import AdapterPlugin
 from dbt.adapters.protocol import AdapterConfig, AdapterProtocol, RelationProtocol
-from dbt.contracts.connection import AdapterRequiredConfig, Credentials
+from dbt.adapters.contracts.connection import AdapterRequiredConfig, Credentials
 from dbt.events.functions import fire_event
 from dbt.events.types import AdapterImportError, PluginLoadError, AdapterRegistered
 from dbt.exceptions import DbtInternalError, DbtRuntimeError

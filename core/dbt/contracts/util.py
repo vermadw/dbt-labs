@@ -11,9 +11,9 @@ from dbt.exceptions import (
 from dbt.version import __version__
 
 from dbt.events.functions import get_invocation_id, get_metadata_vars
-from dbt.dataclass_schema import dbtClassMixin
+from dbt.common.dataclass_schema import dbtClassMixin
 
-from dbt.dataclass_schema import (
+from dbt.common.dataclass_schema import (
     ValidatedStringMixin,
     ValidationError,
 )

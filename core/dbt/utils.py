@@ -4,25 +4,23 @@ import copy
 import datetime
 import decimal
 import functools
-import hashlib
 import itertools
 import jinja2
 import json
 import os
 import requests
-import sys
 from tarfile import ReadError
 import time
 from pathlib import PosixPath, WindowsPath
 
 from contextlib import contextmanager
 
+from dbt.common.util import md5
 from dbt.events.types import RetryExternalCall, RecordRetryException
 from dbt.exceptions import (
     ConnectionError,
     DbtInternalError,
     DbtConfigError,
-    DuplicateAliasError,
     RecursionError,
 )
 from dbt.helper_types import WarnErrorOptions
@@ -44,7 +42,6 @@ from typing import (
     Iterable,
     AbstractSet,
     Set,
-    Sequence,
 )
 
 DECIMALS: Tuple[Type[Any], ...]
@@ -258,13 +255,6 @@ def get_pseudo_hook_path(hook_name):
     return os.path.join(*path_parts)
 
 
-def md5(string, charset="utf-8"):
-    if sys.version_info >= (3, 9):
-        return hashlib.md5(string.encode(charset), usedforsecurity=False).hexdigest()
-    else:
-        return hashlib.md5(string.encode(charset)).hexdigest()
-
-
 def get_hash(model):
     return md5(model.unique_id)
 
@@ -364,59 +354,6 @@ class ForgivingJSONEncoder(JSONEncoder):
             return super().default(obj)
         except TypeError:
             return str(obj)
-
-
-class Translator:
-    def __init__(self, aliases: Mapping[str, str], recursive: bool = False) -> None:
-        self.aliases = aliases
-        self.recursive = recursive
-
-    def translate_mapping(self, kwargs: Mapping[str, Any]) -> Dict[str, Any]:
-        result: Dict[str, Any] = {}
-
-        for key, value in kwargs.items():
-            canonical_key = self.aliases.get(key, key)
-            if canonical_key in result:
-                raise DuplicateAliasError(kwargs, self.aliases, canonical_key)
-            result[canonical_key] = self.translate_value(value)
-        return result
-
-    def translate_sequence(self, value: Sequence[Any]) -> List[Any]:
-        return [self.translate_value(v) for v in value]
-
-    def translate_value(self, value: Any) -> Any:
-        if self.recursive:
-            if isinstance(value, Mapping):
-                return self.translate_mapping(value)
-            elif isinstance(value, (list, tuple)):
-                return self.translate_sequence(value)
-        return value
-
-    def translate(self, value: Mapping[str, Any]) -> Dict[str, Any]:
-        try:
-            return self.translate_mapping(value)
-        except RuntimeError as exc:
-            if "maximum recursion depth exceeded" in str(exc):
-                raise RecursionError("Cycle detected in a value passed to translate!")
-            raise
-
-
-def translate_aliases(
-    kwargs: Dict[str, Any],
-    aliases: Dict[str, str],
-    recurse: bool = False,
-) -> Dict[str, Any]:
-    """Given a dict of keyword arguments and a dict mapping aliases to their
-    canonical values, canonicalize the keys in the kwargs dict.
-
-    If recurse is True, perform this operation recursively.
-
-    :returns: A dict containing all the values in kwargs referenced by their
-        canonical key.
-    :raises: `AliasError`, if a canonical key is defined more than once.
-    """
-    translator = Translator(aliases, recurse)
-    return translator.translate(kwargs)
 
 
 # Note that this only affects hologram json validation.

@@ -1,7 +1,7 @@
 from dbt.contracts.util import Replaceable, Mergeable, list_str, Identifier
-from dbt.contracts.connection import QueryComment, UserConfigContract
+from dbt.adapters.contracts.connection import QueryComment, UserConfigContract
 from dbt.helper_types import NoValue
-from dbt.dataclass_schema import (
+from dbt.common.dataclass_schema import (
     dbtClassMixin,
     ValidationError,
     ExtensibleDbtClassMixin,

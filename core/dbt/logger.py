@@ -14,7 +14,7 @@ from typing import Optional, List, ContextManager, Callable, Dict, Any, Set
 import colorama
 import logbook
 from dbt.constants import SECRET_ENV_PREFIX
-from dbt.dataclass_schema import dbtClassMixin
+from dbt.common.dataclass_schema import dbtClassMixin
 
 # Colorama is needed for colored logs on Windows because we're using logger.info
 # intead of print(). If the Windows env doesn't have a TERM var set or it is set to None

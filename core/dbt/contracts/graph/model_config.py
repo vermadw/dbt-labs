@@ -4,7 +4,7 @@ from itertools import chain
 from typing import Any, List, Optional, Dict, Union, Type, TypeVar, Callable
 from typing_extensions import Annotated
 
-from dbt.dataclass_schema import (
+from dbt.common.dataclass_schema import (
     dbtClassMixin,
     ValidationError,
     StrEnum,

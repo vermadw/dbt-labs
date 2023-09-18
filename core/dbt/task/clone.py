@@ -5,7 +5,7 @@ from dbt.adapters.base import BaseRelation
 from dbt.clients.jinja import MacroGenerator
 from dbt.context.providers import generate_runtime_model_context
 from dbt.contracts.results import RunStatus, RunResult
-from dbt.dataclass_schema import dbtClassMixin
+from dbt.common.dataclass_schema import dbtClassMixin
 from dbt.exceptions import DbtInternalError, CompilationError
 from dbt.graph import ResourceTypeSelector
 from dbt.node_types import NodeType

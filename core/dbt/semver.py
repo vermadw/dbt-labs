@@ -5,7 +5,7 @@ from typing import List
 from dbt.exceptions import VersionsNotCompatibleError
 import dbt.utils
 
-from dbt.dataclass_schema import dbtClassMixin, StrEnum
+from dbt.common.dataclass_schema import dbtClassMixin, StrEnum
 from typing import Optional
 
 

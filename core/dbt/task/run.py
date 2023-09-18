@@ -3,7 +3,7 @@ import threading
 import time
 from typing import List, Dict, Any, Iterable, Set, Tuple, Optional, AbstractSet
 
-from dbt.dataclass_schema import dbtClassMixin
+from dbt.common.dataclass_schema import dbtClassMixin
 
 from .compile import CompileRunner, CompileTask
 

@@ -8,7 +8,7 @@ import hashlib
 from mashumaro.types import SerializableType
 from typing import Optional, Union, List, Dict, Any, Sequence, Tuple, Iterator, Literal
 
-from dbt.dataclass_schema import dbtClassMixin, ExtensibleDbtClassMixin
+from dbt.common.dataclass_schema import dbtClassMixin, ExtensibleDbtClassMixin
 
 from dbt.clients.system import write_file
 from dbt.contracts.files import FileHash

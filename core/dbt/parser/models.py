@@ -19,7 +19,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 # New for Python models :p
 import ast
-from dbt.dataclass_schema import ValidationError
+from dbt.common.dataclass_schema import ValidationError
 from dbt.exceptions import (
     ModelConfigError,
     ParsingError,

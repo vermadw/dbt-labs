@@ -15,7 +15,7 @@ from typing_extensions import Protocol
 
 import agate
 
-from dbt.contracts.connection import Connection, AdapterRequiredConfig, AdapterResponse
+from dbt.adapters.contracts.connection import Connection, AdapterRequiredConfig, AdapterResponse
 from dbt.contracts.graph.nodes import ResultNode, ManifestNode
 from dbt.contracts.graph.model_config import BaseConfig
 from dbt.contracts.graph.manifest import Manifest

@@ -8,7 +8,7 @@ from dbt.constants import SECRET_ENV_PREFIX, DEPENDENCIES_FILE_NAME
 from dbt.context.target import TargetContext
 from dbt.context.secret import SecretContext, SECRET_PLACEHOLDER
 from dbt.context.base import BaseContext
-from dbt.contracts.connection import HasCredentials
+from dbt.adapters.contracts.connection import HasCredentials
 from dbt.exceptions import DbtProjectError, CompilationError, RecursionError
 from dbt.utils import deep_map_render
 

@@ -4,7 +4,7 @@ from itertools import chain
 from pathlib import Path
 from typing import Set, List, Dict, Iterator, Tuple, Any, Union, Type, Optional, Callable
 
-from dbt.dataclass_schema import StrEnum
+from dbt.common.dataclass_schema import StrEnum
 
 from .graph import UniqueId
 

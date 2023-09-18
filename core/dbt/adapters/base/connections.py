@@ -24,7 +24,7 @@ from typing import (
 import agate
 
 import dbt.exceptions
-from dbt.contracts.connection import (
+from dbt.adapters.contracts.connection import (
     Connection,
     Identifier,
     ConnectionState,
