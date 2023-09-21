@@ -1,10 +1,10 @@
 import logging
 from typing import Union
 
-from dbt.events.base_types import EventLevel
-from dbt.events.types import Note
+from dbt.common.events.base_types import EventLevel
+from dbt.common.events.types import Note
+from dbt.common.events.eventmgr import IEventManager
 
-from dbt.events.eventmgr import IEventManager
 
 _log_level_to_event_level_map = {
     logging.DEBUG: EventLevel.DEBUG,

@@ -15,8 +15,9 @@ from dbt.deps.resolver import resolve_lock_packages, resolve_packages
 from dbt.deps.registry import RegistryPinnedPackage
 from dbt.contracts.project import Package
 
-from dbt.events.functions import fire_event
-from dbt.events.types import (
+
+from dbt.common.events.functions import fire_event
+from dbt.common.events.types import (
     DepsAddPackage,
     DepsFoundDuplicatePackage,
     DepsInstallInfo,
