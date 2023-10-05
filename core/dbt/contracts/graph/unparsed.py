@@ -787,6 +787,10 @@ class UnitTestFixture:
     def rows(self) -> Union[str, List[Dict[str, Any]]]:
         return []
 
+    @property
+    def fixture(self) -> Optional[str]:  # TODO: typing
+        return None
+
     def get_rows(self) -> List[Dict[str, Any]]:
         if self.format == UnitTestFormat.Dict:
             assert isinstance(self.rows, List)
@@ -802,7 +806,8 @@ class UnitTestFixture:
 
     def validate_fixture(self, fixture_type, test_name) -> None:
         if (self.format == UnitTestFormat.Dict and not isinstance(self.rows, list)) or (
-            self.format == UnitTestFormat.CSV and not isinstance(self.rows, str)
+            self.format == UnitTestFormat.CSV
+            and not (isinstance(self.rows, str) or (self.fixture is not None))
         ):
             raise ParsingError(
                 f"Unit test {test_name} has {fixture_type} rows which do not match format {self.format}"
@@ -814,12 +819,14 @@ class UnitTestInputFixture(dbtClassMixin, UnitTestFixture):
     input: str
     rows: Union[str, List[Dict[str, Any]]] = ""
     format: UnitTestFormat = UnitTestFormat.Dict
+    fixture: Optional[str] = None
 
 
 @dataclass
 class UnitTestOutputFixture(dbtClassMixin, UnitTestFixture):
     rows: Union[str, List[Dict[str, Any]]] = ""
     format: UnitTestFormat = UnitTestFormat.Dict
+    fixture: Optional[str] = None
 
 
 @dataclass
