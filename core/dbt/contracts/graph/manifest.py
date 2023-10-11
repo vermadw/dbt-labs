@@ -328,7 +328,7 @@ class SavedQueryLookup(dbtClassMixin):
                 self.add_saved_query(saved_query)
 
     def perform_lookup(self, unique_id: UniqueID, manifest: "Manifest") -> SavedQuery:
-        if unique_id not in manifest.metrics:
+        if unique_id not in manifest.saved_queries:
             raise dbt.exceptions.DbtInternalError(
                 f"SavedQUery {unique_id} found in cache but not found in manifest"
             )
