@@ -6,12 +6,12 @@ from dbt.adapters.base.relation import BaseRelation
 from dbt.contracts.graph.model_config import OnConfigurationChangeOption
 from dbt.contracts.relation import RelationType
 from dbt.tests.util import (
+    UtilityMethodNotImplementedError,
     assert_message_in_logs,
     get_model_file,
     run_dbt,
     run_dbt_and_capture,
     set_model_file,
-    utility_method_not_implemented_exception,
 )
 
 from dbt.tests.adapter.materialized_view.files import (
@@ -46,9 +46,7 @@ class MaterializedViewChanges:
         """
         Check the starting state; this should align with `files.MY_MATERIALIZED_VIEW`.
         """
-        raise utility_method_not_implemented_exception(
-            "MaterializedViewsChanges", "check_start_state"
-        )
+        raise UtilityMethodNotImplementedError("MaterializedViewsChanges", "check_start_state")
 
     @staticmethod
     def change_config_via_alter(project, materialized_view):
@@ -65,7 +63,7 @@ class MaterializedViewChanges:
         """
         Verify that the changes in `change_config_via_alter` were applied.
         """
-        raise utility_method_not_implemented_exception(
+        raise UtilityMethodNotImplementedError(
             "MaterializedViewsChanges", "change_config_via_alter"
         )
 
@@ -85,15 +83,13 @@ class MaterializedViewChanges:
         Verify that the changes in `change_config_via_replace` were applied.
         This is independent of `check_state_alter_change_is_applied`.
         """
-        raise utility_method_not_implemented_exception(
+        raise UtilityMethodNotImplementedError(
             "MaterializedViewsChanges", "change_config_via_replace"
         )
 
     @staticmethod
     def query_relation_type(project, relation: BaseRelation) -> Optional[str]:
-        raise utility_method_not_implemented_exception(
-            "MaterializedViewsChanges", "query_relation_type"
-        )
+        raise UtilityMethodNotImplementedError("MaterializedViewsChanges", "query_relation_type")
 
     """
     Configure these if needed
