@@ -152,6 +152,16 @@ class MaterializedViewChanges:
         assert_message_in_logs(f"Applying ALTER to: {my_materialized_view}", logs, False)
         assert_message_in_logs(f"Applying REPLACE to: {my_materialized_view}", logs)
 
+    def test_no_alter_and_no_replace_occurs_with_no_changes(self, project, my_materialized_view):
+        # no changes were made to the model
+        _, logs = run_dbt_and_capture(
+            ["--debug", "run", "--models", my_materialized_view.identifier]
+        )
+        # no changes were submitted to the database
+        assert self.query_relation_type(project, my_materialized_view) == "materialized_view"
+        assert_message_in_logs(f"Applying ALTER to: {my_materialized_view}", logs, False)
+        assert_message_in_logs(f"Applying REPLACE to: {my_materialized_view}", logs, False)
+
 
 class MaterializedViewChangesApplyMixin:
     @pytest.fixture(scope="class")
