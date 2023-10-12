@@ -11,6 +11,7 @@ from dbt.tests.util import (
     run_dbt,
     run_dbt_and_capture,
     set_model_file,
+    utility_method_not_implemented_exception,
 )
 
 from dbt.tests.adapter.materialized_view.files import (
@@ -45,9 +46,8 @@ class MaterializedViewChanges:
         """
         Check the starting state; this should align with `files.MY_MATERIALIZED_VIEW`.
         """
-        raise NotImplementedError(
-            "To use this test, please implement `check_start_state`,"
-            " inherited from `MaterializedViewsChanges`."
+        raise utility_method_not_implemented_exception(
+            "MaterializedViewsChanges", "check_start_state"
         )
 
     @staticmethod
@@ -65,10 +65,8 @@ class MaterializedViewChanges:
         """
         Verify that the changes in `change_config_via_alter` were applied.
         """
-        raise NotImplementedError(
-            "To use this test, please implement `change_config_via_alter` and"
-            " `check_state_alter_change_is_applied`,"
-            " inherited from `MaterializedViewsChanges`."
+        raise utility_method_not_implemented_exception(
+            "MaterializedViewsChanges", "change_config_via_alter"
         )
 
     @staticmethod
@@ -87,16 +85,14 @@ class MaterializedViewChanges:
         Verify that the changes in `change_config_via_replace` were applied.
         This is independent of `check_state_alter_change_is_applied`.
         """
-        raise NotImplementedError(
-            "To use this test, please implement `change_config_via_replace` and"
-            " `check_state_replace_change_is_applied`,"
-            " inherited from `MaterializedViewsChanges`."
+        raise utility_method_not_implemented_exception(
+            "MaterializedViewsChanges", "change_config_via_replace"
         )
 
     @staticmethod
     def query_relation_type(project, relation: BaseRelation) -> Optional[str]:
-        raise NotImplementedError(
-            "To use this test, please implement `query_relation_type`, inherited from `MaterializedViewsChanges`."
+        raise utility_method_not_implemented_exception(
+            "MaterializedViewsChanges", "query_relation_type"
         )
 
     """

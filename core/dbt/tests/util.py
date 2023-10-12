@@ -297,6 +297,7 @@ class TestProcessingException(Exception):
 
 # Testing utilities that use adapter code
 
+
 # Uses:
 #    adapter.config.credentials
 #    adapter.quote
@@ -631,3 +632,9 @@ def get_model_file(project, relation: BaseRelation) -> str:
 
 def set_model_file(project, relation: BaseRelation, model_sql: str):
     write_file(model_sql, project.project_root, "models", f"{relation.name}.sql")
+
+
+def utility_method_not_implemented_exception(class_name: str, method_name: str):
+    return NotImplementedError(
+        f"To use this test, please implement `{class_name}`.`{method_name}`."
+    )
