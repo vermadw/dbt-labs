@@ -27,6 +27,7 @@ from dbt.contracts.graph.nodes import (
     MetricInputMeasure,
     MetricTypeParams,
     WhereFilter,
+    WhereFilterIntersection,
     Group,
     RefArgs,
 )
@@ -156,7 +157,10 @@ class ManifestTest(unittest.TestCase):
                 type=MetricType.SIMPLE,
                 type_params=MetricTypeParams(
                     measure=MetricInputMeasure(
-                        name="customers", filter=WhereFilter(where_sql_template="is_new = True")
+                        name="customers",
+                        filter=WhereFilterIntersection(
+                            [WhereFilter(where_sql_template="is_new = True")]
+                        ),
                     )
                 ),
                 resource_type=NodeType.Metric,
@@ -337,6 +341,7 @@ class ManifestTest(unittest.TestCase):
         }
 
         self.semantic_models = {}
+        self.saved_queries = {}
 
         for exposure in self.exposures.values():
             exposure.validate(exposure.to_dict(omit_none=True))
@@ -367,6 +372,7 @@ class ManifestTest(unittest.TestCase):
             selectors={},
             metadata=ManifestMetadata(generated_at=datetime.utcnow()),
             semantic_models={},
+            saved_queries={},
         )
 
         invocation_id = dbt.events.functions.EVENT_MANAGER.invocation_id
@@ -394,6 +400,7 @@ class ManifestTest(unittest.TestCase):
                 "disabled": {},
                 "semantic_models": {},
                 "unit_tests": {},
+                "saved_queries": {},
             },
         )
 
@@ -478,6 +485,7 @@ class ManifestTest(unittest.TestCase):
         flat_nodes = flat_graph["nodes"]
         flat_sources = flat_graph["sources"]
         flat_semantic_models = flat_graph["semantic_models"]
+        flat_saved_queries = flat_graph["saved_queries"]
         self.assertEqual(
             set(flat_graph),
             set(
@@ -488,6 +496,7 @@ class ManifestTest(unittest.TestCase):
                     "sources",
                     "metrics",
                     "semantic_models",
+                    "saved_queries",
                 ]
             ),
         )
@@ -497,6 +506,7 @@ class ManifestTest(unittest.TestCase):
         self.assertEqual(set(flat_nodes), set(self.nested_nodes))
         self.assertEqual(set(flat_sources), set(self.sources))
         self.assertEqual(set(flat_semantic_models), set(self.semantic_models))
+        self.assertEqual(set(flat_saved_queries), set(self.saved_queries))
         for node in flat_nodes.values():
             self.assertEqual(frozenset(node), REQUIRED_PARSED_NODE_KEYS)
 
@@ -544,6 +554,7 @@ class ManifestTest(unittest.TestCase):
             files={},
             exposures={},
             semantic_models={},
+            saved_queries={},
         )
 
         self.assertEqual(
@@ -574,6 +585,7 @@ class ManifestTest(unittest.TestCase):
                 "disabled": {},
                 "semantic_models": {},
                 "unit_tests": {},
+                "saved_queries": {},
             },
         )
 
@@ -887,6 +899,7 @@ class MixedManifestTest(unittest.TestCase):
             files={},
             exposures={},
             semantic_models={},
+            saved_queries={},
         )
         self.assertEqual(
             manifest.writable_manifest().to_dict(omit_none=True),
@@ -912,6 +925,7 @@ class MixedManifestTest(unittest.TestCase):
                 "disabled": {},
                 "semantic_models": {},
                 "unit_tests": {},
+                "saved_queries": {},
             },
         )
 
@@ -980,6 +994,7 @@ class MixedManifestTest(unittest.TestCase):
             files={},
             exposures={},
             semantic_models={},
+            saved_queries={},
         )
         manifest.build_flat_graph()
         flat_graph = manifest.flat_graph
@@ -994,6 +1009,7 @@ class MixedManifestTest(unittest.TestCase):
                     "nodes",
                     "sources",
                     "semantic_models",
+                    "saved_queries",
                 ]
             ),
         )

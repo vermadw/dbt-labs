@@ -175,6 +175,10 @@ class NodeSelector(MethodManager):
             return semantic_model.config.enabled
         elif unique_id in self.manifest.unit_tests:
             return True
+        elif unique_id in self.manifest.saved_queries:
+            saved_query = self.manifest.saved_queries[unique_id]
+            return saved_query.config.enabled
+
         node = self.manifest.nodes[unique_id]
 
         if self.include_empty_nodes:

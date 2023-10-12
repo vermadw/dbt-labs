@@ -169,6 +169,7 @@ class RuntimeConfig(Project, Profile, AdapterRequiredConfig):
             unit_tests=project.unit_tests,
             metrics=project.metrics,
             semantic_models=project.semantic_models,
+            saved_queries=project.saved_queries,
             exposures=project.exposures,
             vars=project.vars,
             config_version=project.config_version,
@@ -327,6 +328,7 @@ class RuntimeConfig(Project, Profile, AdapterRequiredConfig):
             "unit_tests": self._get_config_paths(self.unit_tests),
             "metrics": self._get_config_paths(self.metrics),
             "semantic_models": self._get_config_paths(self.semantic_models),
+            "saved_queries": self._get_config_paths(self.saved_queries),
             "exposures": self._get_config_paths(self.exposures),
         }
 

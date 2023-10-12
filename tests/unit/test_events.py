@@ -272,6 +272,7 @@ sample_values = [
         materialization_changed=[],
     ),
     types.WarnStateTargetEqual(state_path=""),
+    types.FreshnessConfigProblem(msg=""),
     # M - Deps generation ======================
     types.GitSparseCheckoutSubdirectory(subdir=""),
     types.GitProgressCheckoutRevision(revision=""),
@@ -299,6 +300,10 @@ sample_values = [
     types.RegistryResponseMissingNestedKeys(response=""),
     types.RegistryResponseExtraNestedKeys(response=""),
     types.DepsSetDownloadDirectory(path=""),
+    types.DepsLockUpdating(lock_filepath=""),
+    types.DepsAddPackage(package_name="", version="", packages_filepath=""),
+    types.DepsFoundDuplicatePackage(removed_package={}),
+    types.SemanticValidationFailure(msg=""),
     # Q - Node execution ======================
     types.RunningOperationCaughtError(exc=""),
     types.CompileComplete(),
