@@ -22,6 +22,7 @@ from typing import (
 )
 
 from dbt.adapters.capability import Capability, CapabilityDict
+from dbt.adapters.relation_configs import RelationConfigBase
 from dbt.contracts.graph.nodes import ColumnLevelConstraint, ConstraintType, ModelLevelConstraint
 
 import agate
@@ -54,7 +55,7 @@ from dbt.clients.agate_helper import (
 )
 from dbt.clients.jinja import MacroGenerator
 from dbt.contracts.graph.manifest import Manifest, MacroManifest
-from dbt.contracts.graph.nodes import ResultNode
+from dbt.contracts.graph.nodes import ModelNode, ResultNode
 from dbt.events.functions import fire_event, warn_or_error
 from dbt.events.types import (
     CacheMiss,
@@ -1574,6 +1575,12 @@ class BaseAdapter(metaclass=AdapterMeta):
     @classmethod
     def supports(cls, capability: Capability) -> bool:
         return bool(cls.capabilities()[capability])
+
+    @available
+    def relation_config_from_node(
+        self, relation: BaseRelation, model: ModelNode
+    ) -> RelationConfigBase:
+        return RelationConfigBase()
 
 
 COLUMNS_EQUAL_SQL = """
