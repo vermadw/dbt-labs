@@ -1,3 +1,4 @@
+from dbt.adapters.relation_configs._factory import RelationConfigFactory
 from dbt.adapters.relation_configs._materialized_view import (
     MaterializedViewRelationConfig,
 )
@@ -13,4 +14,3 @@ from dbt.adapters.relation_configs.config_validation import (
     RelationConfigValidationMixin,
     RelationConfigValidationRule,
 )
-from dbt.adapters.relation_configs.factory import RelationConfigFactory
