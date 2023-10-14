@@ -65,11 +65,11 @@
         {% set configuration_changes = get_materialized_view_configuration_changes(existing_relation, config) %}
 
         {% if configuration_changes is none %}
-            {% set relation_config = adapter.relation_config_from_node(target_relation, config.model) %}
+            {% set relation_config = adapter.relation_config_factory.make_from_node(config.model) %}
             {% if relation_config.auto_refresh %}
                 {% set build_sql = '' %}
                 {{ exceptions.warn(
-                    "No configuration changes were identified and `" ~ target_relation ~ "` is set to autorefresh. No action taken."
+                    "No configuration changes were identified and `" ~ target_relation ~ "` is set to auto refresh. No action taken."
                 ) }}
             {% else %}
                 {% set build_sql = refresh_materialized_view(target_relation) %}

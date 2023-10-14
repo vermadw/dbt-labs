@@ -3,7 +3,7 @@ from typing import Set, FrozenSet, List
 
 import agate
 from dbt.adapters.relation_configs import (
-    RelationConfigBase,
+    MaterializedViewRelationConfig,
     RelationResults,
     RelationConfigValidationMixin,
     RelationConfigValidationRule,
@@ -19,7 +19,9 @@ from dbt.adapters.postgres.relation_configs.index import (
 
 
 @dataclass(frozen=True, eq=True, unsafe_hash=True)
-class PostgresMaterializedViewConfig(RelationConfigBase, RelationConfigValidationMixin):
+class PostgresMaterializedViewConfig(
+    MaterializedViewRelationConfig, RelationConfigValidationMixin
+):
     """
     This config follows the specs found here:
     https://www.postgresql.org/docs/current/sql-creatematerializedview.html

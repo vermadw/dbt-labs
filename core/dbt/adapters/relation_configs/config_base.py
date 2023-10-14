@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import Union, Dict
+from typing import Any, Dict, Union
 
 import agate
+from dbt.contracts.graph.nodes import ParsedNode
 from dbt.utils import filter_null_values
 
 
@@ -36,6 +37,15 @@ class RelationConfigBase:
         Returns: the `RelationConfigBase` representation associated with the provided dict
         """
         return cls(**filter_null_values(kwargs_dict))  # type: ignore
+
+    @classmethod
+    def from_model_node(cls, model_node: ParsedNode) -> "RelationConfigBase":
+        config_dict = cls.parse_model_node(model_node)
+        return cls.from_dict(config_dict)
+
+    @classmethod
+    def parse_model_node(cls, model_node: ParsedNode) -> Dict[str, Any]:
+        return {}
 
     @classmethod
     def _not_implemented_error(cls) -> NotImplementedError:
