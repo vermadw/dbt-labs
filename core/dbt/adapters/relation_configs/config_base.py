@@ -3,7 +3,7 @@ from typing import Any, Dict, Union
 from typing_extensions import Self
 
 import agate
-from dbt.contracts.graph.nodes import ParsedNode
+from dbt.contracts.graph.nodes import ModelNode, ParsedNode
 from dbt.utils import filter_null_values
 
 
@@ -47,6 +47,11 @@ class RelationConfigBase:
     def from_node(cls, node: ParsedNode) -> Self:
         config_dict = cls.parse_node(node)
         return cls.from_dict(config_dict)
+
+    @classmethod
+    def from_model_node(cls, model_node: ModelNode) -> Self:
+        # this method is being deprecated in favor of the more generic `from_node`
+        return cls.from_node(model_node)
 
     @classmethod
     def parse_node(cls, node: ParsedNode) -> Dict[str, Any]:
