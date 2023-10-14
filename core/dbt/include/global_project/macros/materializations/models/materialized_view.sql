@@ -69,7 +69,7 @@
             {% if relation_config.auto_refresh %}
                 {% set build_sql = '' %}
                 {{ exceptions.warn(
-                    "No configuration changes were identified and `" ~ target_relation ~ "` is set to auto refresh. No action taken."
+                    "No configuration changes were identified on: `" ~ target_relation ~ "`. Continuing."
                 ) }}
             {% else %}
                 {% set build_sql = refresh_materialized_view(target_relation) %}
