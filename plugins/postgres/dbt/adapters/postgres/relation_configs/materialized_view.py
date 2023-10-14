@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Set, FrozenSet, List
+from typing import Any, Dict, FrozenSet, List, Set
 
 import agate
 from dbt.adapters.relation_configs import (
@@ -8,7 +8,7 @@ from dbt.adapters.relation_configs import (
     RelationConfigValidationMixin,
     RelationConfigValidationRule,
 )
-from dbt.contracts.graph.nodes import ModelNode
+from dbt.contracts.graph.nodes import ParsedNode
 from dbt.exceptions import DbtRuntimeError
 
 from dbt.adapters.postgres.relation_configs.constants import MAX_CHARACTERS_IN_IDENTIFIER
@@ -28,7 +28,6 @@ class PostgresMaterializedViewConfig(
 
     The following parameters are configurable by dbt:
     - table_name: name of the materialized view
-    - query: the query that defines the view
     - indexes: the collection (set) of indexes on the materialized view
 
     Applicable defaults for non-configurable parameters:
@@ -38,7 +37,6 @@ class PostgresMaterializedViewConfig(
     """
 
     table_name: str = ""
-    query: str = ""
     indexes: FrozenSet[PostgresIndexConfig] = field(default_factory=frozenset)
 
     @property
@@ -56,10 +54,9 @@ class PostgresMaterializedViewConfig(
         }
 
     @classmethod
-    def from_dict(cls, config_dict: dict) -> "PostgresMaterializedViewConfig":
+    def from_dict(cls, config_dict: Dict[str, Any]) -> "PostgresMaterializedViewConfig":
         kwargs_dict = {
             "table_name": config_dict.get("table_name"),
-            "query": config_dict.get("query"),
             "indexes": frozenset(
                 PostgresIndexConfig.from_dict(index) for index in config_dict.get("indexes", {})
             ),
@@ -68,31 +65,16 @@ class PostgresMaterializedViewConfig(
         return materialized_view
 
     @classmethod
-    def from_model_node(cls, model_node: ModelNode) -> "PostgresMaterializedViewConfig":
-        materialized_view_config = cls.parse_model_node(model_node)
-        materialized_view = cls.from_dict(materialized_view_config)
-        return materialized_view
-
-    @classmethod
-    def parse_model_node(cls, model_node: ModelNode) -> dict:
-        indexes: List[dict] = model_node.config.extra.get("indexes", [])
+    def parse_node(cls, node: ParsedNode) -> Dict[str, Any]:
+        indexes: List[dict] = node.config.extra.get("indexes", [])
         config_dict = {
-            "table_name": model_node.identifier,
-            "query": model_node.compiled_code,
-            "indexes": [PostgresIndexConfig.parse_model_node(index) for index in indexes],
+            "table_name": node.identifier,
+            "indexes": [PostgresIndexConfig.parse_node(index) for index in indexes],
         }
         return config_dict
 
     @classmethod
-    def from_relation_results(
-        cls, relation_results: RelationResults
-    ) -> "PostgresMaterializedViewConfig":
-        materialized_view_config = cls.parse_relation_results(relation_results)
-        materialized_view = cls.from_dict(materialized_view_config)
-        return materialized_view
-
-    @classmethod
-    def parse_relation_results(cls, relation_results: RelationResults) -> dict:
+    def parse_relation_results(cls, relation_results: RelationResults) -> Dict[str, Any]:
         indexes: agate.Table = relation_results.get("indexes", agate.Table(rows={}))
         config_dict = {
             "indexes": [

@@ -45,8 +45,8 @@ class RelationConfigFactory:
 
     def make_from_node(self, node: ParsedNode) -> RelationConfigBase:
         relation_type = self.relation_types(node.config.materialized)
-        parser = self._relation_config(relation_type)
-        return parser.from_model_node(node)
+        relation_config = self._relation_config(relation_type)
+        return relation_config.from_node(node)
 
     def _relation_config(self, relation_type: StrEnum) -> Type[RelationConfigBase]:
         if relation := self.relation_configs.get(relation_type):
