@@ -56,7 +56,12 @@ class VirtualMacroNamespace(Mapping[str, Any]):
 
     def __getitem__(self, key: str):
         if key == GLOBAL_PROJECT_NAME:
-            return {m.name: MacroGenerator(m, self.ctx, self.node, self.thread_ctx) for ml in self.macros_by_name.values() for m in ml if m.package_name in self.internal_package_names}
+            return {
+                m.name: MacroGenerator(m, self.ctx, self.node, self.thread_ctx)
+                for ml in self.macros_by_name.values()
+                for m in ml
+                if m.package_name in self.internal_package_names
+            }
 
         candidates = self.macros_by_name.get(key, [])
         if len(candidates) == 0:
@@ -104,9 +109,9 @@ class VirtualMacroNamespaceBuilder:
         self.internal_packages = internal_packages
         self.node = node
 
-    def build_namespace(self,
-                        macros_by_name: Mapping[str, List[Macro]],
-                        ctx: Dict[str, Any]) -> VirtualMacroNamespace:
+    def build_namespace(
+        self, macros_by_name: Mapping[str, List[Macro]], ctx: Dict[str, Any]
+    ) -> VirtualMacroNamespace:
         return VirtualMacroNamespace(
             macros_by_name,
             ctx,

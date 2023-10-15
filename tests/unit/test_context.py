@@ -461,7 +461,7 @@ def test_macro_namespace_duplicates(config_postgres, manifest_fx):
         mn.add_macro(mock_macro("macro_a", "root"), {})
 
     # different pkg, same name: no error
-    mn.add_macros(mock_macro("macro_a", "dbt"), {}) # THREE
+    mn.add_macros(mock_macro("macro_a", "dbt"), {})  # THREE
 
 
 def test_macro_namespace(config_postgres, manifest_fx):

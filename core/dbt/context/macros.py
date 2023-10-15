@@ -81,6 +81,7 @@ class MacroNamespace(Mapping):
 # or packages, and locals/globals. Call 'build_namespace' to return a
 # MacroNamespace. This is used by ManifestContext (and subclasses)
 
+
 class MacroNamespaceBuilder:
     def __init__(
         self,

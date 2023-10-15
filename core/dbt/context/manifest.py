@@ -73,6 +73,7 @@ class ManifestContext(ConfiguredContext):
     def context_macro_stack(self):
         return self.macro_stack
 
+
 class QueryHeaderContext(ManifestContext):
     def __init__(self, config: AdapterRequiredConfig, manifest: Manifest) -> None:
         super().__init__(config, manifest, config.project_name)
