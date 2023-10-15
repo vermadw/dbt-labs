@@ -1,4 +1,5 @@
-from typing import List
+from collections import ChainMap
+from typing import List, Mapping
 
 from dbt.clients.jinja import MacroStack
 from dbt.contracts.connection import AdapterRequiredConfig
@@ -8,7 +9,7 @@ from .base import contextproperty
 
 
 from .configured import ConfiguredContext
-from .macros import MacroNamespaceBuilder
+from .virtual_macros import VirtualMacroNamespaceBuilder, VirtualMacroNamespace
 
 
 class ManifestContext(ConfiguredContext):
@@ -34,20 +35,20 @@ class ManifestContext(ConfiguredContext):
         # This namespace is used by the BaseDatabaseWrapper in jinja rendering.
         # The namespace is passed to it when it's constructed. It expects
         # to be able to do: namespace.get_from_package(..)
-        self.namespace = self._build_namespace()
+        self.namespace = self._build_namespace()  # HEAVY
 
-    def _build_namespace(self):
+    def _build_namespace(self) -> VirtualMacroNamespace:
         # this takes all the macros in the manifest and adds them
         # to the MacroNamespaceBuilder stored in self.namespace
         builder = self._get_namespace_builder()
-        return builder.build_namespace(self.manifest.macros.values(), self._ctx)
+        return builder.build_namespace(self.manifest.get_macros_by_name(), self._ctx)
 
-    def _get_namespace_builder(self) -> MacroNamespaceBuilder:
+    def _get_namespace_builder(self) -> VirtualMacroNamespaceBuilder:
         # avoid an import loop
         from dbt.adapters.factory import get_adapter_package_names
 
         internal_packages: List[str] = get_adapter_package_names(self.config.credentials.type)
-        return MacroNamespaceBuilder(
+        return VirtualMacroNamespaceBuilder(
             self.config.project_name,
             self.search_package,
             self.macro_stack,
@@ -57,20 +58,20 @@ class ManifestContext(ConfiguredContext):
 
     # This does not use the Mashumaro code
     def to_dict(self):
-        dct = super().to_dict()
+        dct = ChainMap()
+        dct.maps.insert(0, super().to_dict())
         # This moves all of the macros in the 'namespace' into top level
         # keys in the manifest dictionary
         if isinstance(self.namespace, TestMacroNamespace):
-            dct.update(self.namespace.local_namespace)
-            dct.update(self.namespace.project_namespace)
+            dct.maps.insert(0, self.namespace.local_namespace)
+            dct.maps.insert(0, self.namespace.project_namespace)
         else:
-            dct.update(self.namespace)
+            dct.maps.insert(0, self.namespace)
         return dct
 
     @contextproperty()
     def context_macro_stack(self):
         return self.macro_stack
-
 
 class QueryHeaderContext(ManifestContext):
     def __init__(self, config: AdapterRequiredConfig, manifest: Manifest) -> None:

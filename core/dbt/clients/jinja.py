@@ -15,6 +15,7 @@ import jinja2.nativetypes  # type: ignore
 import jinja2.nodes
 import jinja2.parser
 import jinja2.sandbox
+from jinja2.environment import TemplateModule
 
 from dbt.utils import (
     get_dbt_macro_name,
@@ -232,7 +233,7 @@ class BaseMacroGenerator:
         # make the module. previously we set both vars and local, but that's
         # redundant: They both end up in the same place
         # make_module is in jinja2.environment. It returns a TemplateModule
-        module = template.make_module(vars=self.context, shared=False)
+        module: TemplateModule = template.make_module(vars=self.context, shared=False)
         macro = module.__dict__[get_dbt_macro_name(name)]
         module.__dict__.update(self.context)
         return macro
