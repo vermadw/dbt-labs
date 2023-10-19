@@ -36,7 +36,7 @@ class RelationConfigFactory:
         try:
             for relation_type in self.relation_configs.keys():
                 self.relation_types(relation_type)
-        except AssertionError:
+        except ValueError:
             raise DbtRuntimeError(
                 f"Received relation configs for {relation_type} "  # noqa
                 f"but these relation types are not registered on this factory.\n"
