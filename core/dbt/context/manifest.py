@@ -1,3 +1,4 @@
+from collections import ChainMap
 from typing import List
 
 from dbt.clients.jinja import MacroStack
@@ -64,7 +65,11 @@ class ManifestContext(ConfiguredContext):
             dct.update(self.namespace.local_namespace)
             dct.update(self.namespace.project_namespace)
         else:
-            dct.update(self.namespace)
+            # dct.update(self.namespace)
+            cm = ChainMap(self.namespace, dct)
+            cm.maps.insert(0, {"context": cm})
+            self._ctx = cm
+            return cm
         return dct
 
     @contextproperty()
