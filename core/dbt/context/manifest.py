@@ -64,13 +64,13 @@ class ManifestContext(ConfiguredContext):
         if isinstance(self.namespace, TestMacroNamespace):
             dct.update(self.namespace.local_namespace)
             dct.update(self.namespace.project_namespace)
+            return dct
         else:
             cm = ChainMap(self.namespace, dct)
             cm.maps.insert(0, {"context": cm})
             self.namespace.ctx = cm
             self._ctx = cm
             return cm
-        return dct
 
     @contextproperty()
     def context_macro_stack(self):
