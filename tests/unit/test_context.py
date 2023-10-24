@@ -331,6 +331,7 @@ def mock_manifest(config):
     m.get_macros_by_package = gmbp
     return m
 
+
 def mock_model():
     return mock.MagicMock(
         __class__=ModelNode,

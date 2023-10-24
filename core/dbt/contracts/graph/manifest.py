@@ -1605,6 +1605,7 @@ class MacroManifest(MacroMethods):
         self._macros_by_name: Dict[str, List[Macro]] = None
         self._macros_by_package: Mapping[str, Mapping[str, Macro]] = None
 
+
 AnyManifest = Union[Manifest, MacroManifest]
 
 

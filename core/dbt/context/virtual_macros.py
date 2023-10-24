@@ -43,6 +43,7 @@ class VirtualMacroNamespace(ChainMap):
 
         raise PackageNotFoundForMacroError(package_name)
 
+
 class VirtualMacroNamespaceBuilder:
     def __init__(
         self,
@@ -62,22 +63,27 @@ class VirtualMacroNamespaceBuilder:
         self, macros_by_package: Mapping[str, Mapping[str, Macro]], ctx: Dict[str, Any]
     ) -> VirtualMacroNamespace:
 
-        internals = ChainMap(*[macros_by_package[package_name] for package_name in self.internal_packages if package_name in macros_by_package])
+        internals = ChainMap(
+            *[
+                macros_by_package[package_name]
+                for package_name in self.internal_packages
+                if package_name in macros_by_package
+            ]
+        )
 
         # The virtual namespace will attempt to resolve names into either macros
         # or sub-namespaces by checking the dictionaries in the following list
         # in order.
         search_dicts = [
-            macros_by_package[self.search_package] if self.search_package in macros_by_package else {},
+            macros_by_package[self.search_package]
+            if self.search_package in macros_by_package
+            else {},
             macros_by_package[self.root_package] if self.root_package in macros_by_package else {},
             {k: v for k, v in macros_by_package.items() if k not in self.internal_packages},
-            {GLOBAL_PROJECT_NAME: internals},  # Macros from internal packages are available within the 'dbt' namespace.
-            internals
+            {
+                GLOBAL_PROJECT_NAME: internals
+            },  # Macros from internal packages are available within the 'dbt' namespace.
+            internals,
         ]
 
-        return VirtualMacroNamespace(
-            ctx,
-            self.node,
-            self.thread_ctx,
-            search_dicts
-        )
+        return VirtualMacroNamespace(ctx, self.node, self.thread_ctx, search_dicts)
