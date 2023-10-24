@@ -180,7 +180,7 @@ class NativeSandboxTemplate(jinja2.nativetypes.NativeTemplate):  # mypy: ignore
         with :func:`ast.literal_eval`, the parsed value is returned.
         Otherwise, the string is returned.
         """
-        vars = dict(*args, **kwargs)
+        vars = args[0]
 
         try:
             return quoted_native_concat(self.root_render_func(self.new_context(vars)))
