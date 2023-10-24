@@ -1462,6 +1462,14 @@ class Manifest(MacroMethods, DataClassMessagePackMixin, dbtClassMixin):
 
         self._macros_by_name[macro.name].append(macro)
 
+        if self._macros_by_package is None:
+            self._macros_by_package = self._build_macros_by_package(self.macros)
+
+        if macro.package_name not in self._macros_by_package:
+            self._macros_by_package[macro.package_name] = {}
+
+        self._macros_by_package[macro.package_name][macro.name] = macro
+
         source_file.macros.append(macro.unique_id)
 
     def has_file(self, source_file: SourceFile) -> bool:
