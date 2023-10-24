@@ -5,9 +5,23 @@ import re
 import tempfile
 import threading
 from ast import literal_eval
+from collections import ChainMap
 from contextlib import contextmanager
 from itertools import chain, islice
-from typing import List, Union, Set, Optional, Dict, Any, Iterator, Type, NoReturn, Tuple, Callable
+from typing import (
+    List,
+    Union,
+    Set,
+    Optional,
+    Dict,
+    Any,
+    Iterator,
+    Type,
+    NoReturn,
+    Tuple,
+    Callable,
+    Mapping,
+)
 
 import jinja2
 import jinja2.ext
@@ -108,6 +122,41 @@ class MacroFuzzEnvironment(jinja2.sandbox.SandboxedEnvironment):
         return super()._compile(source, filename)  # type: ignore
 
 
+class MacroFuzzTemplate(jinja2.nativetypes.NativeTemplate):
+    environment_class = MacroFuzzEnvironment
+
+    def new_context(
+        self,
+        vars: Optional[Dict[str, Any]] = None,
+        shared: bool = False,
+        locals: Optional[Mapping[str, Any]] = None,
+    ) -> jinja2.runtime.Context:
+        assert not locals
+        assert not shared
+
+        # TODO: Protect vars?
+        # TODO: What about globals_keys?
+        parent = ChainMap(vars, self.globals) if self.globals else vars
+
+        return self.environment.context_class(self.environment, parent, self.name, self.blocks)
+
+    def render(self, *args: Any, **kwargs: Any) -> Any:
+        assert not kwargs
+        assert len(args) == 1
+
+        ctx = self.new_context(args[0])
+
+        try:
+            return self.environment_class.concat(  # type: ignore
+                self.root_render_func(ctx)  # type: ignore
+            )
+        except Exception:
+            return self.environment.handle_exception()
+
+
+MacroFuzzEnvironment.template_class = MacroFuzzTemplate
+
+
 class NativeSandboxEnvironment(MacroFuzzEnvironment):
     code_generator_class = jinja2.nativetypes.NativeCodeGenerator
 
@@ -183,7 +232,12 @@ class NativeSandboxTemplate(jinja2.nativetypes.NativeTemplate):  # mypy: ignore
         vars = args[0]
 
         try:
-            return quoted_native_concat(self.root_render_func(self.new_context(vars)))
+            # TODO: protect context?
+            # What about globals
+            context = self.environment.context_class(
+                self.environment, vars, self.name, self.blocks
+            )
+            return quoted_native_concat(self.root_render_func(context))
         except Exception:
             return self.environment.handle_exception()
 
