@@ -315,11 +315,21 @@ def mock_macro(name, package_name):
 
 def mock_manifest(config):
     manifest_macros = {}
+    macros_by_package = {}
     for name in ["macro_a", "macro_b"]:
         macro = mock_macro(name, config.project_name)
         manifest_macros[macro.unique_id] = macro
-    return mock.MagicMock(macros=manifest_macros)
+        if macro.package_name not in macros_by_package:
+            macros_by_package[macro.package_name] = {}
+        macro_package = macros_by_package[macro.package_name]
+        macro_package[macro.name] = macro
 
+    def gmbp():
+        return macros_by_package
+
+    m = mock.MagicMock(macros=manifest_macros)
+    m.get_macros_by_package = gmbp
+    return m
 
 def mock_model():
     return mock.MagicMock(

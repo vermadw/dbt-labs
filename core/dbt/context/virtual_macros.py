@@ -1,3 +1,4 @@
+from collections import ChainMap
 from typing import Any, Dict, Optional, List, Iterator, Mapping
 
 from dbt.clients.jinja import MacroGenerator, MacroStack
@@ -6,93 +7,41 @@ from dbt.include.global_project import PROJECT_NAME as GLOBAL_PROJECT_NAME
 from dbt.exceptions import DuplicateMacroNameError, PackageNotFoundForMacroError
 
 
-class VirtualMacroNamespace(Mapping[str, Any]):
+class VirtualMacroNamespace(ChainMap):
     def __init__(
         self,
-        macros_by_name: Mapping[str, List[Macro]],
         ctx: Dict[str, Any],
-        root_package: str,
-        search_package: str,
-        thread_ctx: MacroStack,
-        internal_packages: List[str],
-        node: Optional[Any] = None,
+        node,
+        thread_ctx,
+        search_dicts: List[Mapping[str, Any]],
     ):
-        self.macros_by_name = macros_by_name
         self.ctx = ctx
-        self.root_package = root_package
-        self.search_package = search_package
-        self.thread_ctx = thread_ctx
-        self.internal_packages = internal_packages
-        self.internal_package_names = set(internal_packages)
         self.node = node
-
-    # self.local_namespace
-    # self.global_namespace "root package"
-    # self.packages
-    # { GLOBAL_PROJECT_NAME: self.global_project_namespace }
-    # self.global_project_namespace ignoring seemingly broken  wtf?
-
-    def priority(self, macro: Macro):
-        if macro.package_name in self.internal_package_names:
-            return self.internal_packages.index(macro.package_name)
-
-        if macro.package_name == self.search_package:
-            return -3  # highest priority for local package
-        elif macro.package_name == self.root_package:
-            return -2  # next highest priority for root package
-        else:
-            return -1  # next priority to non-local, non-root packages.
-
-    def __bool__(self):
-        return bool(self.macros_by_name)
+        self.thread_ctx = thread_ctx
+        super().__init__(*search_dicts)
 
     def __iter__(self):
-        for k in self.macros_by_name.keys():
-            yield k
-        yield GLOBAL_PROJECT_NAME
+        i = super().__iter__()
+        return i
 
     def __len__(self):
-        len(self.macros_by_name) + 1
+        l = super().__len__()
+        return l
 
     def __getitem__(self, key: str):
-        if key == GLOBAL_PROJECT_NAME:
-            return {
-                m.name: MacroGenerator(m, self.ctx, self.node, self.thread_ctx)
-                for ml in self.macros_by_name.values()
-                for m in ml
-                if m.package_name in self.internal_package_names
-            }
-
-        candidates = self.macros_by_name.get(key, [])
-        if len(candidates) == 0:
-            raise KeyError(key)
-
-        candidates.sort(key=self.priority)
-        macro = candidates[0]
-        return MacroGenerator(macro, self.ctx, self.node, self.thread_ctx)
+        value = super().__getitem__(key)
+        if isinstance(value, Macro):
+            return MacroGenerator(value, self.ctx, self.node, self.thread_ctx)
+        elif isinstance(value, Mapping):
+            return VirtualMacroNamespace(self.ctx, self.node, self.thread_ctx, [value])
 
     def get_from_package(self, package_name: Optional[str], name: str) -> Optional[MacroGenerator]:
         if package_name is None:
             return self.get(name)
-        elif package_name == GLOBAL_PROJECT_NAME:
-            candidates = self.macros_by_name.get(name, [])
-            candidates.sort(key=self.priority)
-            internals = [c for c in candidates if c.package_name in self.internal_package_names]
+        elif package_name in self:
+            return self[package_name].get(name)
 
-            if len(internals) > 0:
-                macro = internals[0]
-                return MacroGenerator(macro, self.ctx, self.node, self.thread_ctx)
-            return None
-        else:
-            candidates = self.macros_by_name.get(name, [])
-            matches = [c for c in candidates if c.package_name == package_name]
-            if len(matches) == 0:
-                return None
-            elif len(matches) > 1:
-                raise DuplicateMacroNameError(matches[0], matches[1], package_name)
-            else:
-                return MacroGenerator(matches[0], self.ctx, self.node, self.thread_ctx)
-
+        raise PackageNotFoundForMacroError(package_name)
 
 class VirtualMacroNamespaceBuilder:
     def __init__(
@@ -106,18 +55,29 @@ class VirtualMacroNamespaceBuilder:
         self.root_package = root_package
         self.search_package = search_package
         self.thread_ctx = thread_ctx
-        self.internal_packages = internal_packages
+        self.internal_packages = internal_packages  # order significant
         self.node = node
 
     def build_namespace(
-        self, macros_by_name: Mapping[str, List[Macro]], ctx: Dict[str, Any]
+        self, macros_by_package: Mapping[str, Mapping[str, Macro]], ctx: Dict[str, Any]
     ) -> VirtualMacroNamespace:
+
+        internals = ChainMap(*[macros_by_package[package_name] for package_name in self.internal_packages if package_name in macros_by_package])
+
+        # The virtual namespace will attempt to resolve names into either macros
+        # or sub-namespaces by checking the dictionaries in the following list
+        # in order.
+        search_dicts = [
+            macros_by_package[self.search_package] if self.search_package in macros_by_package else {},
+            macros_by_package[self.root_package] if self.root_package in macros_by_package else {},
+            {k: v for k, v in macros_by_package.items() if k not in self.internal_packages},
+            {GLOBAL_PROJECT_NAME: internals},  # Macros from internal packages are available within the 'dbt' namespace.
+            internals
+        ]
+
         return VirtualMacroNamespace(
-            macros_by_name,
             ctx,
-            root_package=self.root_package,
-            search_package=self.search_package,
-            thread_ctx=self.thread_ctx,
-            internal_packages=self.internal_packages,
-            node=self.node,
+            self.node,
+            self.thread_ctx,
+            search_dicts
         )

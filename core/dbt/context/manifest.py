@@ -41,7 +41,7 @@ class ManifestContext(ConfiguredContext):
         # this takes all the macros in the manifest and adds them
         # to the MacroNamespaceBuilder stored in self.namespace
         builder = self._get_namespace_builder()
-        return builder.build_namespace(self.manifest.get_macros_by_name(), self._ctx)
+        return builder.build_namespace(self.manifest.get_macros_by_package(), self._ctx)
 
     def _get_namespace_builder(self) -> VirtualMacroNamespaceBuilder:
         # avoid an import loop
@@ -58,15 +58,18 @@ class ManifestContext(ConfiguredContext):
 
     # This does not use the Mashumaro code
     def to_dict(self):
-        dct = ChainMap()
-        dct.maps.insert(0, super().to_dict())
+        dct = super().to_dict()
         # This moves all of the macros in the 'namespace' into top level
         # keys in the manifest dictionary
         if isinstance(self.namespace, TestMacroNamespace):
-            dct.maps.insert(0, self.namespace.local_namespace)
-            dct.maps.insert(0, self.namespace.project_namespace)
+            dct.update(self.namespace.local_namespace)
+            dct.update(self.namespace.project_namespace)
         else:
-            dct.maps.insert(0, self.namespace)
+            cm = ChainMap(self.namespace, dct)
+            cm.maps.insert(0, {"context": cm})
+            self.namespace.ctx = cm
+            self._ctx = cm
+            return cm
         return dct
 
     @contextproperty()

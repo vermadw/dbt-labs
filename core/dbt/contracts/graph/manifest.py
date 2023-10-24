@@ -673,6 +673,7 @@ class MacroMethods:
         self.macros = []
         self.metadata = {}
         self._macros_by_name = {}
+        self._macros_by_package = {}
 
     def find_macro_by_name(
         self, name: str, root_project_name: str, package: Optional[str]
@@ -778,6 +779,28 @@ class MacroMethods:
 
         return macros_by_name
 
+    def get_macros_by_package(self) -> Mapping[str, Mapping[str, List[Macro]]]:
+        if self._macros_by_package is None:
+            # The by-package mapping doesn't exist yet (perhaps because the manifest
+            # was deserialized), so we build it.
+            self._macros_by_package = self._build_macros_by_package(self.macros)
+
+        return self._macros_by_package
+
+    @staticmethod
+    def _build_macros_by_package(macros: Mapping[str, Macro]) -> MutableMapping[str, List[Macro]]:
+        # Convert a macro dictionary keyed on unique id to a flattened version
+        # keyed on package name for faster lookup by name.
+        macros_by_package = {}
+        for macro in macros.values():
+            if macro.package_name not in macros_by_package:
+                macros_by_package[macro.package_name] = {}
+            macros_by_name = macros_by_package[macro.package_name]
+            # TODO: Check for dupes?
+            macros_by_name[macro.name] = macro
+
+        return macros_by_package
+
 
 @dataclass
 class ParsingInfo:
@@ -852,6 +875,10 @@ class Manifest(MacroMethods, DataClassMessagePackMixin, dbtClassMixin):
         metadata={"serialize": lambda x: None, "deserialize": lambda x: None},
     )
     _macros_by_name: Mapping[str, List[Macro]] = field(
+        default=None,
+        metadata={"serialize": lambda x: None, "deserialize": lambda x: None},
+    )
+    _macros_by_package: Mapping[str, Mapping[str, Macro]] = field(
         default=None,
         metadata={"serialize": lambda x: None, "deserialize": lambda x: None},
     )
@@ -1576,7 +1603,7 @@ class MacroManifest(MacroMethods):
         # in the ProviderContext class.
         self.flat_graph: Dict[str, Any] = {}
         self._macros_by_name: Dict[str, List[Macro]] = None
-
+        self._macros_by_package: Mapping[str, Mapping[str, Macro]] = None
 
 AnyManifest = Union[Manifest, MacroManifest]
 
