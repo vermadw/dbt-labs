@@ -1,3 +1,4 @@
+import logging
 import re
 from argparse import Namespace
 from typing import TypeVar
@@ -82,6 +83,12 @@ class TestAdapterLogger:
 
         event = types.JinjaLogDebug(msg=[1, 2, 3])
         assert isinstance(event.msg, str)
+
+    def test_set_adapter_dependency_log_level(self):
+        logger = AdapterLogger("dbt_tests")
+        package_log = logging.getLogger("test_package_log")
+        logger.set_adapter_dependency_log_level("test_package_log", "DEBUG")
+        package_log.debug("debug message")
 
 
 class TestEventCodes:
@@ -265,6 +272,7 @@ sample_values = [
         materialization_changed=[],
     ),
     types.WarnStateTargetEqual(state_path=""),
+    types.FreshnessConfigProblem(msg=""),
     # M - Deps generation ======================
     types.GitSparseCheckoutSubdirectory(subdir=""),
     types.GitProgressCheckoutRevision(revision=""),
@@ -292,6 +300,10 @@ sample_values = [
     types.RegistryResponseMissingNestedKeys(response=""),
     types.RegistryResponseExtraNestedKeys(response=""),
     types.DepsSetDownloadDirectory(path=""),
+    types.DepsLockUpdating(lock_filepath=""),
+    types.DepsAddPackage(package_name="", version="", packages_filepath=""),
+    types.DepsFoundDuplicatePackage(removed_package={}),
+    types.SemanticValidationFailure(msg=""),
     # Q - Node execution ======================
     types.RunningOperationCaughtError(exc=""),
     types.CompileComplete(),
@@ -371,7 +383,10 @@ sample_values = [
     types.DepsUnpinned(revision="", git=""),
     types.NoNodesForSelectionCriteria(spec_raw=""),
     types.CommandCompleted(
-        command="", success=True, elapsed=0.1, completed_at=get_json_string_utcnow()
+        command="",
+        success=True,
+        elapsed=0.1,
+        completed_at=get_json_string_utcnow(),
     ),
     types.ShowNode(node_name="", preview="", is_inline=True, unique_id="model.test.my_model"),
     types.CompiledNode(node_name="", compiled="", is_inline=True, unique_id="model.test.my_model"),
@@ -421,6 +436,7 @@ sample_values = [
     types.DebugCmdResult(),
     types.ListCmdOut(),
     types.Note(msg="This is a note."),
+    types.ResourceReport(),
 ]
 
 
