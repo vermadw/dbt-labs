@@ -1,7 +1,7 @@
 import datetime
 import re
 
-from dbt import deprecations
+from dbt.common import deprecations
 from dbt.node_types import NodeType
 from dbt.contracts.graph.semantic_models import (
     Defaults,

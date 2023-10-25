@@ -1,6 +1,6 @@
 import pytest
 
-from dbt import deprecations
+from dbt.common import deprecations
 import dbt.exceptions
 from dbt.tests.util import run_dbt
 

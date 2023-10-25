@@ -2,7 +2,7 @@ import abc
 from functools import wraps
 from typing import Callable, Optional, Any, FrozenSet, Dict, Set
 
-from dbt.deprecations import warn, renamed_method
+from dbt.common.deprecations import warn, renamed_method
 
 
 Decorator = Callable[[Any], Callable]

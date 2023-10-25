@@ -1,7 +1,7 @@
 from pathlib import Path
 from shutil import rmtree
 
-from dbt import deprecations
+from dbt.common import deprecations
 from dbt.common.events.functions import fire_event
 from dbt.common.events.types import (
     CheckCleanPath,

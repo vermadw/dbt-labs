@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, List
 import yaml
 from pathlib import Path
 import dbt.utils
-import dbt.deprecations
+import dbt.common.deprecations
 import dbt.exceptions
 import json
 

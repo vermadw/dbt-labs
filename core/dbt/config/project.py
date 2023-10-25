@@ -15,7 +15,7 @@ from typing_extensions import Protocol, runtime_checkable
 import os
 
 from dbt.flags import get_flags
-from dbt import deprecations
+from dbt.common import deprecations
 from dbt.constants import (
     DEPENDENCIES_FILE_NAME,
     PACKAGES_FILE_NAME,

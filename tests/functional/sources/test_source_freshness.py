@@ -15,7 +15,7 @@ from tests.functional.sources.fixtures import (
     freshness_via_metadata_schema_yml,
 )
 from dbt.tests.util import AnyStringWith, AnyFloat
-from dbt import deprecations
+from dbt.common import deprecations
 
 
 class SuccessfulSourceFreshnessTest(BaseSourcesTest):

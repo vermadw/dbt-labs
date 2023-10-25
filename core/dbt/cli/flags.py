@@ -14,7 +14,7 @@ from dbt.cli.types import Command as CliCommand
 from dbt.config.profile import read_user_config
 from dbt.contracts.project import UserConfig
 from dbt.exceptions import DbtInternalError
-from dbt.deprecations import renamed_env_var
+from dbt.common.deprecations import renamed_env_var
 from dbt.helper_types import WarnErrorOptions
 
 if os.name != "nt":
