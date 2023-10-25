@@ -10,7 +10,7 @@ from dbt.adapters.postgres import PostgresAdapter
 from dbt.adapters.postgres import Plugin as PostgresPlugin
 from dbt.contracts.files import FileHash
 from dbt.contracts.graph.manifest import ManifestStateCheck
-from dbt.clients import agate_helper
+from dbt.common.clients import agate_helper
 from dbt.exceptions import DbtValidationError, DbtConfigError
 from psycopg2 import extensions as psycopg2_extensions
 from psycopg2 import DatabaseError
