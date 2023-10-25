@@ -3,7 +3,7 @@ from typing import List
 import pytest
 
 from dbt.contracts.graph.manifest import Manifest
-from dbt.events.base_types import BaseEvent
+from dbt.common.events.base_types import BaseEvent
 from dbt.tests.util import write_file
 from tests.functional.assertions.test_runner import dbtTestRunner
 from tests.functional.saved_queries.fixtures import saved_queries_yml, saved_query_description
