@@ -1,7 +1,7 @@
 import json
 
 from dbt.constants import MAXIMUM_SEED_SIZE_NAME, PIN_PACKAGE_URL
-from dbt.events.base_types import (
+from dbt.common.events.base_types import (
     DynamicLevel,
     DebugLevel,
     InfoLevel,
@@ -9,7 +9,11 @@ from dbt.events.base_types import (
     ErrorLevel,
     EventLevel,
 )
-from dbt.events.format import format_fancy_output_line, pluralize, timestamp_to_datetime_string
+from dbt.common.events.format import (
+    format_fancy_output_line,
+    pluralize,
+    timestamp_to_datetime_string,
+)
 from dbt.node_types import NodeType
 from dbt.ui import line_wrap_message, warning_tag, red, green, yellow
 
@@ -1239,17 +1243,15 @@ class UnversionedBreakingChange(WarnLevel):
     def message(self) -> str:
         reasons = "\n  - ".join(self.breaking_changes)
 
-        msg = (
+        return (
             f"Breaking change to contracted, unversioned model {self.model_name} ({self.model_file_path})"
             "\nWhile comparing to previous project state, dbt detected a breaking change to an unversioned model."
             f"\n  - {reasons}\n"
         )
 
-        return warning_tag(msg)
-
 
 class WarnStateTargetEqual(WarnLevel):
-    def code(self) -> str:
+    def code(self):
         return "I072"
 
     def message(self) -> str:
@@ -1257,14 +1259,6 @@ class WarnStateTargetEqual(WarnLevel):
             f"Warning: The state and target directories are the same: '{self.state_path}'. "
             f"This could lead to missing changes due to overwritten state including non-idempotent retries."
         )
-
-
-class FreshnessConfigProblem(WarnLevel):
-    def code(self) -> str:
-        return "I073"
-
-    def message(self) -> str:
-        return self.msg
 
 
 # =======================================================
@@ -1512,30 +1506,6 @@ class NoNodesForSelectionCriteria(WarnLevel):
 
     def message(self) -> str:
         return f"The selection criterion '{self.spec_raw}' does not match any nodes"
-
-
-class DepsLockUpdating(InfoLevel):
-    def code(self):
-        return "M031"
-
-    def message(self) -> str:
-        return f"Updating lock file in file path: {self.lock_filepath}"
-
-
-class DepsAddPackage(InfoLevel):
-    def code(self):
-        return "M032"
-
-    def message(self) -> str:
-        return f"Added new package {self.package_name}@{self.version} to {self.packages_filepath}"
-
-
-class DepsFoundDuplicatePackage(InfoLevel):
-    def code(self):
-        return "M033"
-
-    def message(self) -> str:
-        return f"Found duplicate package in packages.yml, removing: {self.removed_package}"
 
 
 # =======================================================
@@ -2383,21 +2353,13 @@ class ListCmdOut(InfoLevel):
         return self.msg
 
 
-class Note(InfoLevel):
-    """The Note event provides a way to log messages which aren't likely to be
-    useful as more structured events. For console formatting text like empty
-    lines and separator bars, use the Formatting event instead."""
+# The Note event provides a way to log messages which aren't likely to be useful as more structured events.
+# For console formatting text like empty lines and separator bars, use the Formatting event instead.
 
+
+class Note(InfoLevel):
     def code(self) -> str:
         return "Z050"
 
     def message(self) -> str:
         return self.msg
-
-
-class ResourceReport(DebugLevel):
-    def code(self) -> str:
-        return "Z051"
-
-    def message(self) -> str:
-        return f"Resource report: {self.to_json()}"

@@ -16,8 +16,8 @@ from dbt.contracts.results import (
     FreshnessStatus,
 )
 from dbt.exceptions import DbtRuntimeError, DbtInternalError
-from dbt.events.functions import fire_event
-from dbt.events.types import (
+from dbt.common.events.functions import fire_event
+from dbt.common.events.types import (
     FreshnessCheckComplete,
     LogStartLine,
     LogFreshnessResult,
@@ -26,9 +26,9 @@ from dbt.events.types import (
 from dbt.node_types import NodeType
 
 from dbt.adapters.capability import Capability
-from dbt.contracts.connection import AdapterResponse
+from dbt.adapters.contracts.connection import AdapterResponse
 from dbt.contracts.graph.nodes import SourceDefinition
-from dbt.events.base_types import EventLevel
+from dbt.common.events.base_types import EventLevel
 from dbt.graph import ResourceTypeSelector
 
 RESULT_FILE_NAME = "sources.json"

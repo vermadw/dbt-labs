@@ -9,8 +9,8 @@ from enum import Flag
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
 
-from dbt.events.functions import fire_event
-from dbt.events.types import (
+from dbt.common.events.functions import fire_event
+from dbt.common.events.types import (
     OpenCommand,
     DebugCmdOut,
     DebugCmdResult,
@@ -24,7 +24,7 @@ from dbt.contracts.results import RunStatus
 from dbt.clients.yaml_helper import load_yaml_text
 from dbt.links import ProfileConfigDocs
 from dbt.ui import green, red
-from dbt.events.format import pluralize
+from dbt.common.events.format import pluralize
 from dbt.version import get_installed_version
 
 from dbt.task.base import BaseTask, get_nearest_project_dir
@@ -87,7 +87,7 @@ class DebugTask(BaseTask):
             if args.project_dir:
                 self.project_dir = args.project_dir
             else:
-                self.project_dir = Path.cwd()
+                self.project_dir = str(Path.cwd())
         self.project_path = os.path.join(self.project_dir, "dbt_project.yml")
         self.cli_vars: Dict[str, Any] = args.vars
 

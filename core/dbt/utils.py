@@ -16,13 +16,13 @@ from pathlib import PosixPath, WindowsPath
 from contextlib import contextmanager
 
 from dbt.common.util import md5
-from dbt.events.types import RetryExternalCall, RecordRetryException
+from dbt.common.events.types import RetryExternalCall, RecordRetryException
 from dbt.exceptions import (
     ConnectionError,
     DbtInternalError,
     DbtConfigError,
-    DuplicateAliasError,
     RecursionError,
+    DuplicateAliasError,
 )
 from dbt.helper_types import WarnErrorOptions
 from dbt import flags
@@ -604,7 +604,7 @@ def _connection_exception_retry(fn, max_attempts: int, attempt: int = 0):
     ) as exc:
         if attempt <= max_attempts - 1:
             # This import needs to be inline to avoid circular dependency
-            from dbt.events.functions import fire_event
+            from dbt.common.events.functions import fire_event
 
             fire_event(RecordRetryException(exc=str(exc)))
             fire_event(RetryExternalCall(attempt=attempt, max=max_attempts))
