@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Any, Iterable, Dict
 
 import agate
 
-import dbt.clients.agate_helper
+import dbt.common.clients.agate_helper
 import dbt.exceptions
 from dbt.adapters.base import BaseConnectionManager
 from dbt.adapters.contracts.connection import Connection, ConnectionState, AdapterResponse
@@ -129,7 +129,7 @@ class SQLConnectionManager(BaseConnectionManager):
                 rows = cursor.fetchall()
             data = cls.process_results(column_names, rows)
 
-        return dbt.clients.agate_helper.table_from_data_flat(data, column_names)
+        return dbt.common.clients.agate_helper.table_from_data_flat(data, column_names)
 
     def execute(
         self, sql: str, auto_begin: bool = False, fetch: bool = False, limit: Optional[int] = None
@@ -140,7 +140,7 @@ class SQLConnectionManager(BaseConnectionManager):
         if fetch:
             table = self.get_result_from_cursor(cursor, limit)
         else:
-            table = dbt.clients.agate_helper.empty_table()
+            table = dbt.common.clients.agate_helper.empty_table()
         return response, table
 
     def add_begin_query(self):

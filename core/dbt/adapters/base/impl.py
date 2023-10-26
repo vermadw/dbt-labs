@@ -46,7 +46,7 @@ from dbt.exceptions import (
 )
 
 from dbt.adapters.protocol import AdapterConfig
-from dbt.clients.agate_helper import (
+from dbt.common.clients.agate_helper import (
     empty_table,
     get_column_value_uncased,
     merge_tables,

@@ -2245,7 +2245,7 @@ class ContractError(CompilationError):
 
     def get_mismatches(self) -> agate.Table:
         # avoid a circular import
-        from dbt.clients.agate_helper import table_from_data_flat
+        from dbt.common.clients.agate_helper import table_from_data_flat
 
         column_names = ["column_name", "definition_type", "contract_type", "mismatch_reason"]
         # list of mismatches
