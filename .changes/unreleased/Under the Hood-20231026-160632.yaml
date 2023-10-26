@@ -1,0 +1,6 @@
+kind: Under the Hood
+body: Remove usage of dbt.deprecations in dbt/adapters
+time: 2023-10-26T16:06:32.489368-04:00
+custom:
+  Author: michelleark
+  Issue: "8927"
