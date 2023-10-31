@@ -193,6 +193,7 @@ sample_values = [
     types.FinishedRunningStats(stat_line="", execution="", execution_time=0),
     types.ConstraintNotEnforced(constraint="", adapter=""),
     types.ConstraintNotSupported(constraint="", adapter=""),
+    types.TypeCodeNotFound(type_code=""),
     # I - Project parsing ======================
     types.InputFileDiffError(category="testing", file_id="my_file"),
     types.InvalidValueForField(field_name="test", field_value="test"),
