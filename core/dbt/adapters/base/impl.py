@@ -244,7 +244,7 @@ class BaseAdapter(metaclass=AdapterMeta):
 
     def __init__(self, config, mp_context: SpawnContext) -> None:
         self.config = config
-        self.cache = RelationsCache()
+        self.cache = RelationsCache(log_cache_events=config.log_cache_events)
         self.connections = self.ConnectionManager(config, mp_context)
         self._macro_manifest_lazy: Optional[MacroManifest] = None
 

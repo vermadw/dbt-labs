@@ -75,6 +75,7 @@ class Profile(HasCredentials):
     threads: int
     credentials: Credentials
     profile_env_vars: Dict[str, Any]
+    log_cache_events: bool
 
     def __init__(
         self,
@@ -93,6 +94,9 @@ class Profile(HasCredentials):
         self.threads = threads
         self.credentials = credentials
         self.profile_env_vars = {}  # never available on init
+        self.log_cache_events = (
+            get_flags().LOG_CACHE_EVENTS
+        )  # never available on init, set for adapter instantiation via AdapterRequiredConfig
 
     def to_profile_info(self, serialize_credentials: bool = False) -> Dict[str, Any]:
         """Unlike to_project_config, this dict is not a mirror of any existing
