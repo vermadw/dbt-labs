@@ -19,6 +19,7 @@ class Column:
     char_size: Optional[int] = None
     numeric_precision: Optional[Any] = None
     numeric_scale: Optional[Any] = None
+    comment: Optional[str] = None
 
     @classmethod
     def translate_type(cls, dtype: str) -> str:
