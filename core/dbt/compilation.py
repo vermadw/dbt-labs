@@ -199,6 +199,8 @@ class Linker:
             self.link_node(metric, manifest)
         for unit_test in manifest.unit_tests.values():
             self.link_node(unit_test, manifest)
+        for saved_query in manifest.saved_queries.values():
+            self.link_node(saved_query, manifest)
 
         cycle = self.find_cycles()
 
