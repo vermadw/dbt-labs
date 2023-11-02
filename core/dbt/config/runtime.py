@@ -134,6 +134,7 @@ class RuntimeConfig(Project, Profile, AdapterRequiredConfig):
         ).to_dict(omit_none=True)
 
         cli_vars: Dict[str, Any] = getattr(args, "vars", {})
+        log_cache_events: bool = getattr(args, "log_cache_events", profile.log_cache_events)
 
         return cls(
             project_name=project.project_name,
@@ -183,6 +184,7 @@ class RuntimeConfig(Project, Profile, AdapterRequiredConfig):
             credentials=profile.credentials,
             args=args,
             cli_vars=cli_vars,
+            log_cache_events=log_cache_events,
             dependencies=dependencies,
             dbt_cloud=project.dbt_cloud,
         )

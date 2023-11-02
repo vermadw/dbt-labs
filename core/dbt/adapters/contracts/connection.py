@@ -235,3 +235,4 @@ class AdapterRequiredConfig(HasCredentials, Protocol):
     query_comment: QueryComment
     cli_vars: Dict[str, Any]
     target_path: str
+    log_cache_events: bool
