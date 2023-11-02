@@ -1541,6 +1541,14 @@ class UnitTestContext(ModelContext):
         else:
             return super().env_var(var, default)
 
+    @contextproperty()
+    def this(self) -> Optional[str]:
+        if self.model.this_input_node_unique_id:
+            this_node = self.manifest.expect(self.model.this_input_node_unique_id)
+            self.model.set_cte(this_node.unique_id, None)  # type: ignore
+            return self.adapter.Relation.add_ephemeral_prefix(this_node.name)
+        return None
+
 
 # This is called by '_context_for', used in 'render_with_context'
 def generate_parser_model_context(

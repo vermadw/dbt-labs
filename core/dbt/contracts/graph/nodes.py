@@ -1065,7 +1065,8 @@ class GenericTestNode(TestShouldStoreFailures, CompiledNode, HasTestMetadata):
 @dataclass
 class UnitTestNode(CompiledNode):
     resource_type: NodeType = field(metadata={"restrict": [NodeType.Unit]})
-    attached_node: Optional[str] = None
+    tested_node_unique_id: Optional[str] = None
+    this_input_node_unique_id: Optional[str] = None
     overrides: Optional[UnitTestOverrides] = None
     config: UnitTestNodeConfig = field(default_factory=UnitTestNodeConfig)
 

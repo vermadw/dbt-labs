@@ -331,3 +331,77 @@ class TestUnitTestsWithInlineCSV:
         )
         with pytest.raises(ParsingError):
             results = run_dbt(["unit-test", "--select", "my_model"], expect_pass=False)
+
+
+event_sql = """
+select DATE '2020-01-01' as event_time, 1 as event
+union all
+select DATE '2020-01-02' as event_time, 2 as event
+union all
+select DATE '2020-01-03' as event_time, 3 as event
+"""
+
+my_incremental_model_sql = """
+{{
+    config(
+        materialized='incremental'
+    )
+}}
+
+select * from {{ ref('events') }}
+{% if is_incremental() %}
+where event_time > (select max(event_time) from {{ this }})
+{% endif %}
+"""
+
+test_my_model_incremental_yml = """
+unit:
+  - model: my_incremental_model
+    tests:
+      - name: incremental_false
+        overrides:
+          macros:
+            is_incremental: false
+        given:
+          - input: ref('events')
+            rows:
+              - {event_time: "2020-01-01", event: 1}
+        expect:
+          rows:
+            - {event_time: "2020-01-01", event: 1}
+      - name: incremental_true
+        overrides:
+          macros:
+            is_incremental: true
+        given:
+          - input: ref('events')
+            rows:
+              - {event_time: "2020-01-01", event: 1}
+              - {event_time: "2020-01-02", event: 2}
+              - {event_time: "2020-01-03", event: 3}
+          - input: this
+            rows:
+              - {event_time: "2020-01-01", event: 1}
+        expect:
+          rows:
+            - {event_time: "2020-01-02", event: 2}
+            - {event_time: "2020-01-03", event: 3}
+"""
+
+
+class TestUnitTestIncrementalModel:
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_incremental_model.sql": my_incremental_model_sql,
+            "events.sql": event_sql,
+            "test_my_incremental_model.yml": test_my_model_incremental_yml,
+        }
+
+    def test_basic(self, project):
+        results = run_dbt(["run"])
+        assert len(results) == 2
+
+        # Select by model name
+        results = run_dbt(["unit-test", "--select", "my_incremental_model"], expect_pass=True)
+        assert len(results) == 2

@@ -9,13 +9,12 @@ from dbt.contracts.graph.model_config import UnitTestNodeConfig, ModelConfig
 from dbt.contracts.graph.nodes import (
     ModelNode,
     UnitTestNode,
-    RefArgs,
     UnitTestDefinition,
     DependsOn,
     UnitTestConfig,
 )
 from dbt.contracts.graph.unparsed import UnparsedUnitTestSuite
-from dbt.exceptions import ParsingError
+from dbt.exceptions import ParsingError, InvalidUnitTestGivenInput
 from dbt.graph import UniqueId
 from dbt.node_types import NodeType
 from dbt.parser.schemas import (
@@ -28,7 +27,7 @@ from dbt.parser.schemas import (
     ParseResult,
 )
 from dbt.utils import get_pseudo_test_path
-from dbt_extractor import py_extract_from_source  # type: ignore
+from dbt_extractor import py_extract_from_source, ExtractionError  # type: ignore
 
 
 class UnitTestManifestLoader:
@@ -49,10 +48,11 @@ class UnitTestManifestLoader:
     def parse_unit_test_case(self, test_case: UnitTestDefinition):
         package_name = self.root_project.project_name
 
-        # Create unit test node based on the "actual" tested node
-        actual_node = self.manifest.ref_lookup.perform_lookup(
+        # Create unit test node based on the node being tested
+        tested_node = self.manifest.ref_lookup.perform_lookup(
             f"model.{package_name}.{test_case.model}", self.manifest
         )
+        assert isinstance(tested_node, ModelNode)
 
         # Create UnitTestNode based on model being tested. Since selection has
         # already been done, we don't have to care about fields that are necessary
@@ -69,13 +69,13 @@ class UnitTestManifestLoader:
             config=UnitTestNodeConfig(
                 materialized="unit", expected_rows=test_case.expect.get_rows()
             ),
-            raw_code=actual_node.raw_code,
-            database=actual_node.database,
-            schema=actual_node.schema,
+            raw_code=tested_node.raw_code,
+            database=tested_node.database,
+            schema=tested_node.schema,
             alias=name,
             fqn=test_case.unique_id.split("."),
             checksum=FileHash.empty(),
-            attached_node=actual_node.unique_id,
+            tested_node_unique_id=tested_node.unique_id,
             overrides=test_case.overrides,
         )
 
@@ -106,7 +106,7 @@ class UnitTestManifestLoader:
         # input models substituting for the same input ref'd model.
         for given in test_case.given:
             # extract the original_input_node from the ref in the "input" key of the given list
-            original_input_node = self._get_original_input_node(given.input)
+            original_input_node = self._get_original_input_node(given.input, tested_node)
 
             original_input_node_columns = None
             if (
@@ -117,11 +117,13 @@ class UnitTestManifestLoader:
                     column.name: column.data_type for column in original_input_node.columns
                 }
 
-            # TODO: package_name?
-            input_name = f"{test_case.model}__{test_case.name}__{original_input_node.name}"
+            # TODO: include package_name?
+            input_name = f"{unit_test_node.name}__{original_input_node.name}"
             input_unique_id = f"model.{package_name}.{input_name}"
             input_node = ModelNode(
-                raw_code=self._build_raw_code(given.get_rows(), original_input_node_columns),
+                raw_code=self._build_fixture_raw_code(
+                    given.get_rows(), original_input_node_columns
+                ),
                 resource_type=NodeType.Model,
                 package_name=package_name,
                 path=original_input_node.path,
@@ -136,37 +138,55 @@ class UnitTestManifestLoader:
                 checksum=FileHash.empty(),
             )
             self.unit_test_manifest.nodes[input_node.unique_id] = input_node
+
+            # Populate this_input_node_unique_id if input fixture represents node being tested
+            if original_input_node == tested_node:
+                unit_test_node.this_input_node_unique_id = input_node.unique_id
+
             # Add unique ids of input_nodes to depends_on
             unit_test_node.depends_on.nodes.append(input_node.unique_id)
 
-    def _build_raw_code(self, rows, column_name_to_data_types) -> str:
+    def _build_fixture_raw_code(self, rows, column_name_to_data_types) -> str:
         return ("{{{{ get_fixture_sql({rows}, {column_name_to_data_types}) }}}}").format(
             rows=rows, column_name_to_data_types=column_name_to_data_types
         )
 
-    def _get_original_input_node(self, input: str):
-        """input: ref('my_model_a')"""
-        # Exract the ref or sources
-        statically_parsed = py_extract_from_source(f"{{{{ {input} }}}}")
-        if statically_parsed["refs"]:
-            # set refs and sources on the node object
-            refs: List[RefArgs] = []
-            for ref in statically_parsed["refs"]:
-                name = ref.get("name")
-                package = ref.get("package")
-                version = ref.get("version")
-                refs.append(RefArgs(name, package, version))
-                # TODO: disabled lookup, versioned lookup, public models
-                original_input_node = self.manifest.ref_lookup.find(
-                    name, package, version, self.manifest
-                )
-        elif statically_parsed["sources"]:
-            input_package_name, input_source_name = statically_parsed["sources"][0]
-            original_input_node = self.manifest.source_lookup.find(
-                input_source_name, input_package_name, self.manifest
-            )
+    def _get_original_input_node(self, input: str, tested_node: ModelNode):
+        """
+        Returns the original input node as defined in the project given an input reference
+        and the node being tested.
+
+        input: str representing how input node is referenced in tested model sql
+          * examples:
+            - "ref('my_model_a')"
+            - "source('my_source_schema', 'my_source_name')"
+            - "this"
+        tested_node: ModelNode of representing node being tested
+        """
+        if input.strip() == "this":
+            original_input_node = tested_node
         else:
-            raise ParsingError("given input must be ref or source")
+            try:
+                statically_parsed = py_extract_from_source(f"{{{{ {input} }}}}")
+            except ExtractionError:
+                raise InvalidUnitTestGivenInput(input=input)
+
+            if statically_parsed["refs"]:
+                for ref in statically_parsed["refs"]:
+                    name = ref.get("name")
+                    package = ref.get("package")
+                    version = ref.get("version")
+                    # TODO: disabled lookup, versioned lookup, public models
+                    original_input_node = self.manifest.ref_lookup.find(
+                        name, package, version, self.manifest
+                    )
+            elif statically_parsed["sources"]:
+                input_package_name, input_source_name = statically_parsed["sources"][0]
+                original_input_node = self.manifest.source_lookup.find(
+                    input_source_name, input_package_name, self.manifest
+                )
+            else:
+                raise InvalidUnitTestGivenInput(input=input)
 
         return original_input_node
 
