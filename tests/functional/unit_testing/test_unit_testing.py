@@ -1,6 +1,6 @@
 import pytest
 from dbt.tests.util import run_dbt, write_file, get_manifest, get_artifact
-from dbt.exceptions import DuplicateResourceNameError, YamlParseDictError, ParsingError
+from dbt.exceptions import DuplicateResourceNameError, ParsingError, YamlParseDictError
 
 my_model_sql = """
 SELECT
@@ -35,78 +35,83 @@ SELECT
 
 test_my_model_yml = """
 unit_tests:
-  - model: my_model
-    tests:
-      - name: test_my_model
-        given:
-          - input: ref('my_model_a')
-            rows:
-              - {id: 1, a: 1}
-          - input: ref('my_model_b')
-            rows:
-              - {id: 1, b: 2}
-              - {id: 2, b: 2}
-        expect:
-          rows:
-            - {c: 2}
+  - name: test_my_model
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        rows:
+          - {id: 1, a: 1}
+      - input: ref('my_model_b')
+        rows:
+          - {id: 1, b: 2}
+          - {id: 2, b: 2}
+    expect:
+      rows:
+        - {c: 2}
 
-      - name: test_my_model_empty
-        given:
-          - input: ref('my_model_a')
-            rows: []
-          - input: ref('my_model_b')
-            rows:
-              - {id: 1, b: 2}
-              - {id: 2, b: 2}
-        expect:
-          rows: []
-      - name: test_my_model_overrides
-        given:
-          - input: ref('my_model_a')
-            rows:
-              - {id: 1, a: 1}
-          - input: ref('my_model_b')
-            rows:
-              - {id: 1, b: 2}
-              - {id: 2, b: 2}
-        overrides:
-          macros:
-            type_numeric: override
-            invocation_id: 123
-          vars:
-            my_test: var_override
-          env_vars:
-            MY_TEST: env_var_override
-        expect:
-          rows:
-            - {macro_call: override, var_call: var_override, env_var_call: env_var_override, invocation_id: 123}
-      - name: test_my_model_string_concat
-        given:
-          - input: ref('my_model_a')
-            rows:
-              - {id: 1, string_a: a}
-          - input: ref('my_model_b')
-            rows:
-              - {id: 1, string_b: b}
-        expect:
-          rows:
-            - {string_c: ab}
-        config:
-           tags: test_this
+  - name: test_my_model_empty
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        rows: []
+      - input: ref('my_model_b')
+        rows:
+          - {id: 1, b: 2}
+          - {id: 2, b: 2}
+    expect:
+      rows: []
+
+  - name: test_my_model_overrides
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        rows:
+          - {id: 1, a: 1}
+      - input: ref('my_model_b')
+        rows:
+          - {id: 1, b: 2}
+          - {id: 2, b: 2}
+    overrides:
+      macros:
+        type_numeric: override
+        invocation_id: 123
+      vars:
+        my_test: var_override
+      env_vars:
+        MY_TEST: env_var_override
+    expect:
+      rows:
+        - {macro_call: override, var_call: var_override, env_var_call: env_var_override, invocation_id: 123}
+
+  - name: test_my_model_string_concat
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        rows:
+          - {id: 1, string_a: a}
+      - input: ref('my_model_b')
+        rows:
+          - {id: 1, string_b: b}
+    expect:
+      rows:
+        - {string_c: ab}
+    config:
+        tags: test_this
 """
 
 datetime_test = """
-      - name: test_my_model_datetime
-        given:
-          - input: ref('my_model_a')
-            rows:
-              - {id: 1, date_a: "2020-01-01"}
-          - input: ref('my_model_b')
-            rows:
-              - {id: 1}
-        expect:
-          rows:
-            - {date_a: "2020-01-01"}
+  - name: test_my_model_datetime
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        rows:
+          - {id: 1, date_a: "2020-01-01"}
+      - input: ref('my_model_b')
+        rows:
+          - {id: 1}
+    expect:
+      rows:
+        - {date_a: "2020-01-01"}
 """
 
 
@@ -169,6 +174,8 @@ class TestUnitTests:
         assert len(unit_test_manifest["nodes"]) == 15
 
         # Check for duplicate unit test name
+        # this doesn't currently pass with partial parsing because of the root problem
+        # described in https://github.com/dbt-labs/dbt-core/issues/8982
         write_file(
             test_my_model_yml + datetime_test + datetime_test,
             project.project_root,
@@ -176,117 +183,121 @@ class TestUnitTests:
             "test_my_model.yml",
         )
         with pytest.raises(DuplicateResourceNameError):
-            run_dbt(["unit-test", "--select", "my_model"])
+            run_dbt(["run", "--no-partial-parse", "--select", "my_model"])
 
 
 test_my_model_csv_yml = """
 unit_tests:
-  - model: my_model
-    tests:
-      - name: test_my_model
-        given:
-          - input: ref('my_model_a')
-            format: csv
-            rows: |
-              id,a
-              1,1
-          - input: ref('my_model_b')
-            format: csv
-            rows: |
-              id,b
-              1,2
-              2,2
-        expect:
-          format: csv
-          rows: |
-            c
-            2
+  - name: test_my_model
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        rows: |
+          id,a
+          1,1
+      - input: ref('my_model_b')
+        format: csv
+        rows: |
+          id,b
+          1,2
+          2,2
+    expect:
+      format: csv
+      rows: |
+        c
+        2
 
-      - name: test_my_model_empty
-        given:
-          - input: ref('my_model_a')
-            rows: []
-          - input: ref('my_model_b')
-            format: csv
-            rows: |
-              id,b
-              1,2
-              2,2
-        expect:
-          rows: []
-      - name: test_my_model_overrides
-        given:
-          - input: ref('my_model_a')
-            format: csv
-            rows: |
-              id,a
-              1,1
-          - input: ref('my_model_b')
-            format: csv
-            rows: |
-              id,b
-              1,2
-              2,2
-        overrides:
-          macros:
-            type_numeric: override
-            invocation_id: 123
-          vars:
-            my_test: var_override
-          env_vars:
-            MY_TEST: env_var_override
-        expect:
-          rows:
-            - {macro_call: override, var_call: var_override, env_var_call: env_var_override, invocation_id: 123}
-      - name: test_my_model_string_concat
-        given:
-          - input: ref('my_model_a')
-            format: csv
-            rows: |
-              id,string_a
-              1,a
-          - input: ref('my_model_b')
-            format: csv
-            rows: |
-              id,string_b
-              1,b
-        expect:
-          format: csv
-          rows: |
-            string_c
-            ab
-        config:
-           tags: test_this
+  - name: test_my_model_empty
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        rows: []
+      - input: ref('my_model_b')
+        format: csv
+        rows: |
+          id,b
+          1,2
+          2,2
+    expect:
+      rows: []
+  - name: test_my_model_overrides
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        rows: |
+          id,a
+          1,1
+      - input: ref('my_model_b')
+        format: csv
+        rows: |
+          id,b
+          1,2
+          2,2
+    overrides:
+      macros:
+        type_numeric: override
+        invocation_id: 123
+      vars:
+        my_test: var_override
+      env_vars:
+        MY_TEST: env_var_override
+    expect:
+      rows:
+        - {macro_call: override, var_call: var_override, env_var_call: env_var_override, invocation_id: 123}
+  - name: test_my_model_string_concat
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        rows: |
+          id,string_a
+          1,a
+      - input: ref('my_model_b')
+        format: csv
+        rows: |
+          id,string_b
+          1,b
+    expect:
+      format: csv
+      rows: |
+        string_c
+        ab
+    config:
+        tags: test_this
 """
 
 datetime_test_invalid_format = """
-      - name: test_my_model_datetime
-        given:
-          - input: ref('my_model_a')
-            format: xxxx
-            rows:
-              - {id: 1, date_a: "2020-01-01"}
-          - input: ref('my_model_b')
-            rows:
-              - {id: 1}
-        expect:
-          rows:
-            - {date_a: "2020-01-01"}
+  - name: test_my_model_datetime
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: xxxx
+        rows:
+          - {id: 1, date_a: "2020-01-01"}
+      - input: ref('my_model_b')
+        rows:
+          - {id: 1}
+    expect:
+      rows:
+        - {date_a: "2020-01-01"}
 """
 
 datetime_test_invalid_format2 = """
-      - name: test_my_model_datetime
-        given:
-          - input: ref('my_model_a')
-            format: csv
-            rows:
-              - {id: 1, date_a: "2020-01-01"}
-          - input: ref('my_model_b')
-            rows:
-              - {id: 1}
-        expect:
-          rows:
-            - {date_a: "2020-01-01"}
+  - name: test_my_model_datetime
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        rows:
+          - {id: 1, date_a: "2020-01-01"}
+      - input: ref('my_model_b')
+        rows:
+          - {id: 1}
+    expect:
+      rows:
+        - {date_a: "2020-01-01"}
 """
 
 
@@ -356,36 +367,36 @@ where event_time > (select max(event_time) from {{ this }})
 
 test_my_model_incremental_yml = """
 unit_tests:
-  - model: my_incremental_model
-    tests:
-      - name: incremental_false
-        overrides:
-          macros:
-            is_incremental: false
-        given:
-          - input: ref('events')
-            rows:
-              - {event_time: "2020-01-01", event: 1}
-        expect:
-          rows:
-            - {event_time: "2020-01-01", event: 1}
-      - name: incremental_true
-        overrides:
-          macros:
-            is_incremental: true
-        given:
-          - input: ref('events')
-            rows:
-              - {event_time: "2020-01-01", event: 1}
-              - {event_time: "2020-01-02", event: 2}
-              - {event_time: "2020-01-03", event: 3}
-          - input: this
-            rows:
-              - {event_time: "2020-01-01", event: 1}
-        expect:
-          rows:
-            - {event_time: "2020-01-02", event: 2}
-            - {event_time: "2020-01-03", event: 3}
+  - name: incremental_false
+    model: my_incremental_model
+    overrides:
+      macros:
+        is_incremental: false
+    given:
+      - input: ref('events')
+        rows:
+          - {event_time: "2020-01-01", event: 1}
+    expect:
+      rows:
+        - {event_time: "2020-01-01", event: 1}
+  - name: incremental_true
+    model: my_incremental_model
+    overrides:
+      macros:
+        is_incremental: true
+    given:
+      - input: ref('events')
+        rows:
+          - {event_time: "2020-01-01", event: 1}
+          - {event_time: "2020-01-02", event: 2}
+          - {event_time: "2020-01-03", event: 3}
+      - input: this
+        rows:
+          - {event_time: "2020-01-01", event: 1}
+    expect:
+      rows:
+        - {event_time: "2020-01-02", event: 2}
+        - {event_time: "2020-01-03", event: 3}
 """
 
 
