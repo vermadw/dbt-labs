@@ -1,7 +1,7 @@
 import pytest
 from dbt.tests.util import run_dbt, write_file, get_manifest, get_artifact
 from dbt.exceptions import DuplicateResourceNameError
-from .fixtures import (
+from fixtures import (
     my_model_sql,
     my_model_a_sql,
     my_model_b_sql,
