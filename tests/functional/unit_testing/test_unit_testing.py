@@ -83,7 +83,7 @@ class TestUnitTests:
         with pytest.raises(DuplicateResourceNameError):
             run_dbt(["run", "--no-partial-parse", "--select", "my_model"])
 
-817777459 (adding tests)
+
 class TestUnitTestIncrementalModel:
     @pytest.fixture(scope="class")
     def models(self):

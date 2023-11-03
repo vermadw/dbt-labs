@@ -288,36 +288,6 @@ unit_tests:
         tags: test_this
 """
 
-datetime_test_invalid_format = """
-      - name: test_my_model_datetime
-        given:
-          - input: ref('my_model_a')
-            format: xxxx
-            rows:
-              - {id: 1, date_a: "2020-01-01"}
-          - input: ref('my_model_b')
-            rows:
-              - {id: 1}
-        expect:
-          rows:
-            - {date_a: "2020-01-01"}
-"""
-
-datetime_test_invalid_format2 = """
-      - name: test_my_model_datetime
-        given:
-          - input: ref('my_model_a')
-            format: csv
-            rows:
-              - {id: 1, date_a: "2020-01-01"}
-          - input: ref('my_model_b')
-            rows:
-              - {id: 1}
-        expect:
-          rows:
-            - {date_a: "2020-01-01"}
-"""
-
 # -- csv file tests
 test_my_model_file_csv_yml = """
 unit:
@@ -401,5 +371,3 @@ test_my_model_b_fixture_csv = """
 id,string_b
 1,b
 """
-
-
