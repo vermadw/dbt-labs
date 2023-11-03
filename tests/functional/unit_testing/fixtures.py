@@ -109,11 +109,13 @@ datetime_test = """
       rows:
         - {date_a: "2020-01-01"}
 """
-
-
-
-
-
+event_sql = """
+select DATE '2020-01-01' as event_time, 1 as event
+union all
+select DATE '2020-01-02' as event_time, 2 as event
+union all
+select DATE '2020-01-03' as event_time, 3 as event
+"""
 
 datetime_test_invalid_format = """
   - name: test_my_model_datetime
