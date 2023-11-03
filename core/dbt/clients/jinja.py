@@ -476,6 +476,8 @@ TEXT_FILTERS: Dict[str, Callable[[Any], Any]] = {
     "as_number": lambda x: x,
 }
 
+ENV_CACHE: Dict[Tuple[bool, bool], jinja2.Environment] = {}
+
 
 def get_environment(
     node=None,
@@ -485,6 +487,9 @@ def get_environment(
     args: Dict[str, List[Union[str, Type[jinja2.ext.Extension]]]] = {
         "extensions": ["jinja2.ext.do", "jinja2.ext.loopcontrols"]
     }
+
+    if node is None and (capture_macros, native) in ENV_CACHE:
+        return ENV_CACHE[(capture_macros, native)]
 
     if capture_macros:
         args["undefined"] = create_undefined(node)
@@ -505,6 +510,9 @@ def get_environment(
     env = env_cls(**args)
     env.filters.update(filters)
 
+    if node is None:
+        ENV_CACHE[(capture_macros, native)] = env
+
     return env
 
 
@@ -522,9 +530,18 @@ def catch_jinja(node=None) -> Iterator[None]:
         raise
 
 
+PARSE_CACHE: Dict[str, jinja2.Template] = {}
+
+
 def parse(string):
+    str_string = str(string)
+    if str_string in PARSE_CACHE:
+        return PARSE_CACHE[str_string]
+
     with catch_jinja():
-        return get_environment().parse(str(string))
+        parsed = get_environment().parse(str(string))
+        PARSE_CACHE[str_string] = parsed
+        return parsed
 
 
 def get_template(
