@@ -1,12 +1,22 @@
+from typing import Dict, Any
+
 import jinja2
 from dbt.clients.jinja import get_environment
 from dbt.exceptions import MacroNamespaceNotStringError, MacroNameNotStringError
 
 
+PARSED_MACRO_CACHE: Dict[str, Any] = {}
+
+
 def statically_extract_macro_calls(string, ctx, db_wrapper=None):
     # set 'capture_macros' to capture undefined
     env = get_environment(None, capture_macros=True)
-    parsed = env.parse(string)
+
+    parsed = PARSED_MACRO_CACHE.get(string, None)
+
+    if parsed is None:
+        parsed = env.parse(string)
+        PARSED_MACRO_CACHE[string] = parsed
 
     standard_calls = ["source", "ref", "config"]
     possible_macro_calls = []
@@ -15,21 +25,6 @@ def statically_extract_macro_calls(string, ctx, db_wrapper=None):
         if hasattr(func_call, "node") and hasattr(func_call.node, "name"):
             func_name = func_call.node.name
         else:
-            # func_call for dbt.current_timestamp macro
-            # Call(
-            #   node=Getattr(
-            #     node=Name(
-            #       name='dbt_utils',
-            #       ctx='load'
-            #     ),
-            #     attr='current_timestamp',
-            #     ctx='load
-            #   ),
-            #   args=[],
-            #   kwargs=[],
-            #   dyn_args=None,
-            #   dyn_kwargs=None
-            # )
             if (
                 hasattr(func_call, "node")
                 and hasattr(func_call.node, "node")
@@ -40,9 +35,7 @@ def statically_extract_macro_calls(string, ctx, db_wrapper=None):
                 macro_name = func_call.node.attr
                 if package_name == "adapter":
                     if macro_name == "dispatch":
-                        ad_macro_calls = statically_parse_adapter_dispatch(
-                            func_call, ctx, db_wrapper
-                        )
+                        ad_macro_calls = statically_parse_adapter_dispatch(func_call, db_wrapper)
                         possible_macro_calls.extend(ad_macro_calls)
                     else:
                         # This skips calls such as adapter.parse_index
@@ -87,7 +80,7 @@ def statically_extract_macro_calls(string, ctx, db_wrapper=None):
 #   dyn_args=None,
 #   dyn_kwargs=None
 # )
-def statically_parse_adapter_dispatch(func_call, ctx, db_wrapper):
+def statically_parse_adapter_dispatch(func_call, db_wrapper):
     possible_macro_calls = []
     # This captures an adapter.dispatch('<macro_name>') call.
 

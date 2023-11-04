@@ -626,11 +626,19 @@ def undefined_error(msg) -> NoReturn:
     raise jinja2.exceptions.UndefinedError(msg)
 
 
+TOP_LEVEL_BLOCK_CACHE: Dict[int, List[Union[BlockData, BlockTag]]] = {}
+
+
 def extract_toplevel_blocks(
     data: str,
     allowed_blocks: Optional[Set[str]] = None,
     collect_raw_data: bool = True,
 ) -> List[Union[BlockData, BlockTag]]:
+    allowed = tuple(allowed_blocks or [])
+    hash = data.__hash__() + allowed.__hash__() + collect_raw_data.__hash__()
+    if hash in TOP_LEVEL_BLOCK_CACHE:
+        return TOP_LEVEL_BLOCK_CACHE[hash]
+
     """Extract the top-level blocks with matching block types from a jinja
     file, with some special handling for block nesting.
 
@@ -645,9 +653,13 @@ def extract_toplevel_blocks(
     :return: A list of `BlockTag`s matching the allowed block types and (if
         `collect_raw_data` is `True`) `BlockData` objects.
     """
-    return BlockIterator(data).lex_for_blocks(
+    blocks = BlockIterator(data).lex_for_blocks(
         allowed_blocks=allowed_blocks, collect_raw_data=collect_raw_data
     )
+
+    TOP_LEVEL_BLOCK_CACHE[hash] = blocks
+
+    return blocks
 
 
 GENERIC_TEST_KWARGS_NAME = "_dbt_generic_test_kwargs"

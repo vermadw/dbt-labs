@@ -63,6 +63,9 @@ class dbtPlugin:
         raise NotImplementedError(f"get_manifest_artifacts hook not implemented for {self.name}")
 
 
+DBT_MODULES_CACHE = None
+
+
 class PluginManager:
     PLUGIN_MODULE_PREFIX = "dbt_"
     PLUGIN_ATTR_NAME = "plugins"
@@ -91,11 +94,16 @@ class PluginManager:
 
     @classmethod
     def from_modules(cls, project_name: str) -> "PluginManager":
-        discovered_dbt_modules = {
-            name: importlib.import_module(name)
-            for _, name, _ in pkgutil.iter_modules()
-            if name.startswith(cls.PLUGIN_MODULE_PREFIX)
-        }
+        global DBT_MODULES_CACHE
+        if DBT_MODULES_CACHE is None:
+            discovered_dbt_modules = {
+                name: importlib.import_module(name)
+                for _, name, _ in pkgutil.iter_modules()
+                if name.startswith(cls.PLUGIN_MODULE_PREFIX)
+            }
+            DBT_MODULES_CACHE = discovered_dbt_modules
+        else:
+            discovered_dbt_modules = DBT_MODULES_CACHE
 
         plugins = []
         for name, module in discovered_dbt_modules.items():
