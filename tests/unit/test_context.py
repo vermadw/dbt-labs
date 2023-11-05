@@ -201,6 +201,7 @@ REQUIRED_MACRO_KEYS = REQUIRED_QUERY_HEADER_KEYS | {
     "_sql_results",
     "load_result",
     "store_result",
+    "store_result_direct",
     "store_raw_result",
     "validation",
     "write",
