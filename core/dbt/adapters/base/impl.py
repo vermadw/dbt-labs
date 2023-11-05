@@ -308,6 +308,24 @@ class BaseAdapter(metaclass=AdapterMeta):
         """
         return self.connections.execute(sql=sql, auto_begin=auto_begin, fetch=fetch, limit=limit)
 
+    @available.parse(lambda *a, **k: ("", []))
+    def execute_and_fetch_direct(
+        self, sql: str, auto_begin: bool = False, limit: Optional[int] = None
+    ) -> Tuple[AdapterResponse, Iterable[Mapping[str, Any]]]:
+        """Execute the given SQL. This is a thin wrapper around
+        ConnectionManager.execute.
+
+        :param str sql: The sql to execute.
+        :param bool auto_begin: If set, and dbt is not currently inside a
+            transaction, automatically begin one.
+        :param Optional[int] limit: If set, only fetch n number of rows
+        :return: A tuple of the query status and results (empty if fetch=False).
+        :rtype: Tuple[AdapterResponse, agate.Table]
+        """
+        return self.connections.execute_and_fetch_direct(
+            sql=sql, auto_begin=auto_begin, limit=limit
+        )
+
     def validate_sql(self, sql: str) -> AdapterResponse:
         """Submit the given SQL to the engine for validation, but not execution.
 

@@ -804,6 +804,22 @@ class ProviderContext(ManifestContext):
         return ""
 
     @contextmember()
+    def store_result_direct(
+        self, name: str, response: Any, table: Optional[Iterable[Mapping[str, Any]]] = None
+    ) -> str:
+        if table is None:
+            table = []
+
+        self.sql_results[name] = AttrDict(
+            {
+                "response": response,
+                "data": None,
+                "table": table,
+            }
+        )
+        return ""
+
+    @contextmember()
     def store_raw_result(
         self,
         name: str,

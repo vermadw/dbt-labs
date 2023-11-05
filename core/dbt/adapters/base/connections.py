@@ -19,6 +19,7 @@ from typing import (
     Union,
     Iterable,
     Callable,
+    Mapping,
 )
 
 import agate
@@ -411,6 +412,22 @@ class BaseConnectionManager(metaclass=abc.ABCMeta):
         :param int limit: If set, limits the result set
         :return: A tuple of the query status and results (empty if fetch=False).
         :rtype: Tuple[AdapterResponse, agate.Table]
+        """
+        raise dbt.exceptions.NotImplementedError("`execute` is not implemented for this adapter!")
+
+    @abc.abstractmethod
+    def execute_and_fetch_direct(
+        self, sql: str, auto_begin: bool = False, limit: Optional[int] = None
+    ) -> Tuple[AdapterResponse, Iterable[Mapping[str, Any]]]:
+        """Execute the given SQL, and return the result directly, without further processing, or conversion to an Agate
+        table
+
+        :param str sql: The sql to execute.
+        :param bool auto_begin: If set, and dbt is not currently inside a
+            transaction, automatically begin one.
+        :param int limit: If set, limits the result set
+        :return: A tuple of the query status and results
+        :rtype: Tuple[AdapterResponse, Iterable[Mapping[str, Any]]]
         """
         raise dbt.exceptions.NotImplementedError("`execute` is not implemented for this adapter!")
 

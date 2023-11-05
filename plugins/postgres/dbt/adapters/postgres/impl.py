@@ -9,6 +9,7 @@ from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.postgres import PostgresConnectionManager
 from dbt.adapters.postgres.column import PostgresColumn
 from dbt.adapters.postgres import PostgresRelation
+from dbt.contracts.relation import Path
 from dbt.dataclass_schema import dbtClassMixin, ValidationError
 from dbt.contracts.graph.nodes import ConstraintType
 from dbt.exceptions import (
@@ -22,6 +23,7 @@ import dbt.utils
 
 
 GET_RELATIONS_MACRO_NAME = "postgres__get_relations"
+GET_RELATIONS_DIRECT_MACRO_NAME = "postgres__get_relations_direct"
 
 
 @dataclass
@@ -103,20 +105,31 @@ class PostgresAdapter(SQLAdapter):
         :param schemas: The set of schemas that should have links added.
         """
         database = self.config.credentials.database
-        table = self.execute_macro(GET_RELATIONS_MACRO_NAME)
+
+        table = self.execute_macro(GET_RELATIONS_DIRECT_MACRO_NAME)
 
         for (dep_schema, dep_name, refed_schema, refed_name) in table:
-            dependent = self.Relation.create(
-                database=database, schema=dep_schema, identifier=dep_name
-            )
-            referenced = self.Relation.create(
-                database=database, schema=refed_schema, identifier=refed_name
-            )
-
             # don't record in cache if this relation isn't in a relevant
             # schema
-            if refed_schema.lower() in schemas:
-                self.cache.add_link(referenced, dependent)
+            if refed_schema.lower() not in schemas:
+                continue
+
+            if self.Relation == PostgresRelation:
+                dependent = PostgresRelation(
+                    path=Path(database=database, schema=dep_schema, identifier=dep_name)
+                )
+                referenced = PostgresRelation(
+                    path=Path(database=database, schema=refed_schema, identifier=refed_name)
+                )
+            else:
+                dependent = self.Relation.create(
+                    database=database, schema=dep_schema, identifier=dep_name
+                )
+                referenced = self.Relation.create(
+                    database=database, schema=refed_schema, identifier=refed_name
+                )
+
+            self.cache.add_link(referenced, dependent)
 
     def _get_catalog_schemas(self, manifest):
         # postgres only allow one database (the main one)

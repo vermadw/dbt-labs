@@ -17,10 +17,14 @@ def statically_extract_macro_calls(string, ctx, db_wrapper=None):
     if parsed is None:
         parsed = env.parse(string)
         PARSED_MACRO_CACHE[string] = parsed
+        func_calls = tuple(parsed.find_all(jinja2.nodes.Call))
+        setattr(parsed, "_dbt_cached_calls", func_calls)
+    else:
+        func_calls = getattr(parsed, "_dbt_cached_calls")
 
     standard_calls = ["source", "ref", "config"]
     possible_macro_calls = []
-    for func_call in parsed.find_all(jinja2.nodes.Call):
+    for func_call in func_calls:
         func_name = None
         if hasattr(func_call, "node") and hasattr(func_call.node, "name"):
             func_name = func_call.node.name

@@ -5,7 +5,7 @@ from dbt.events import types_pb2
 import sys
 from google.protobuf.json_format import ParseDict, MessageToDict, MessageToJson
 from google.protobuf.message import Message
-from dbt.events.helpers import get_json_string_utcnow
+from google.protobuf.timestamp_pb2 import Timestamp
 from typing import Optional
 
 if sys.version_info >= (3, 8):
@@ -134,23 +134,29 @@ def msg_from_base_event(event: BaseEvent, level: Optional[EventLevel] = None):
 
     msg_class_name = f"{type(event).__name__}Msg"
     msg_cls = getattr(types_pb2, msg_class_name)
+    new_event = msg_cls()
 
     # level in EventInfo must be a string, not an EventLevel
     msg_level: str = level.value if level else event.level_tag().value
     assert msg_level is not None
-    event_info = {
-        "level": msg_level,
-        "msg": event.message(),
-        "invocation_id": get_invocation_id(),
-        "extra": get_global_metadata_vars(),
-        "ts": get_json_string_utcnow(),
-        "pid": get_pid(),
-        "thread": get_thread_name(),
-        "code": event.code(),
-        "name": type(event).__name__,
-    }
-    new_event = ParseDict({"info": event_info}, msg_cls())
+
+    new_event.info.level = msg_level
+    new_event.info.msg = event.message()
+    new_event.info.invocation_id = get_invocation_id()
+
+    for k, v in get_global_metadata_vars().items():
+        new_event.info.extra[k] = v
+
+    ts = Timestamp()
+    ts.GetCurrentTime()
+    new_event.info.ts.CopyFrom(ts)
+    new_event.info.pid = get_pid()
+    new_event.info.thread = get_thread_name()
+    new_event.info.code = event.code()
+    new_event.info.name = type(event).__name__
+
     new_event.data.CopyFrom(event.pb_msg)
+
     return new_event
 
 

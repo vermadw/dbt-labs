@@ -1,3 +1,5 @@
+import functools
+
 from dbt.constants import METADATA_ENV_PREFIX
 from dbt.events.base_types import BaseEvent, EventLevel, EventMsg
 from dbt.events.eventmgr import EventManager, IEventManager
@@ -10,7 +12,7 @@ from functools import partial
 import json
 import os
 import sys
-from typing import Callable, Dict, List, Optional, TextIO
+from typing import Callable, Dict, List, Optional, TextIO, Iterable
 import uuid
 from google.protobuf.json_format import MessageToDict
 
@@ -100,7 +102,7 @@ def _get_stdout_config(
         level=level,
         use_colors=use_colors,
         line_format=line_format,
-        scrubber=env_scrubber,
+        scrubber=functools.partial(env_scrubber, env_secrets()),
         filter=partial(
             _stdout_filter,
             log_cache_events,
@@ -132,7 +134,7 @@ def _get_logfile_config(
         line_format=line_format,
         use_colors=use_colors,
         level=level,  # File log is *always* debug level
-        scrubber=env_scrubber,
+        scrubber=functools.partial(env_scrubber, env_secrets()),
         filter=partial(_logfile_filter, bool(get_flags().LOG_CACHE_EVENTS), line_format),
         invocation_id=EVENT_MANAGER.invocation_id,
         output_file_name=log_path,
@@ -166,8 +168,8 @@ def _get_logbook_log_config(
     return config
 
 
-def env_scrubber(msg: str) -> str:
-    return scrub_secrets(msg, env_secrets())
+def env_scrubber(secrets: Iterable[str], msg: str) -> str:
+    return scrub_secrets(msg, secrets)
 
 
 def cleanup_event_logger() -> None:

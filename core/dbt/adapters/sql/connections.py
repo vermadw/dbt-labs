@@ -1,6 +1,6 @@
 import abc
 import time
-from typing import List, Optional, Tuple, Any, Iterable, Dict
+from typing import List, Optional, Tuple, Any, Iterable, Dict, Mapping
 
 import agate
 
@@ -141,6 +141,22 @@ class SQLConnectionManager(BaseConnectionManager):
             table = self.get_result_from_cursor(cursor, limit)
         else:
             table = dbt.clients.agate_helper.empty_table()
+        return response, table
+
+    def execute_and_fetch_direct(
+        self, sql: str, auto_begin: bool = False, limit: Optional[int] = None
+    ) -> Tuple[AdapterResponse, Iterable[Mapping[str, Any]]]:
+        sql = self._add_query_comment(sql)
+        _, cursor = self.add_query(sql, auto_begin)
+        response = self.get_response(cursor)
+
+        if cursor.description is None:
+            table = []  # REVIEW: raise exception?
+        elif limit:
+            table = cursor.fetchmany(limit)
+        else:
+            table = cursor.fetchall()
+
         return response, table
 
     def add_begin_query(self):
