@@ -109,6 +109,7 @@ datetime_test = """
       rows:
         - {date_a: "2020-01-01"}
 """
+
 event_sql = """
 select DATE '2020-01-01' as event_time, 1 as event
 union all
@@ -117,7 +118,7 @@ union all
 select DATE '2020-01-03' as event_time, 3 as event
 """
 
-datetime_test_invalid_format = """
+datetime_test_invalid_format_key = """
   - name: test_my_model_datetime
     model: my_model
     given:
@@ -133,12 +134,28 @@ datetime_test_invalid_format = """
         - {date_a: "2020-01-01"}
 """
 
-datetime_test_invalid_format2 = """
+datetime_test_invalid_csv_values = """
   - name: test_my_model_datetime
     model: my_model
     given:
       - input: ref('my_model_a')
         format: csv
+        rows:
+          - {id: 1, date_a: "2020-01-01"}
+      - input: ref('my_model_b')
+        rows:
+          - {id: 1}
+    expect:
+      rows:
+        - {date_a: "2020-01-01"}
+"""
+
+datetime_test_invalid_csv_file_values = """
+  - name: test_my_model_datetime
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv_file
         rows:
           - {id: 1, date_a: "2020-01-01"}
       - input: ref('my_model_b')

@@ -7,8 +7,13 @@ from fixtures import (
     my_model_b_sql,
     test_my_model_csv_yml,
     datetime_test,
-    datetime_test_invalid_format,
-    datetime_test_invalid_format2,
+    datetime_test_invalid_format_key,
+    datetime_test_invalid_csv_values,
+    test_my_model_file_csv_yml,
+    test_my_model_fixture_csv,
+    test_my_model_a_fixture_csv,
+    test_my_model_b_fixture_csv,
+    datetime_test_invalid_csv_file_values,
 )
 
 
@@ -34,9 +39,9 @@ class TestUnitTestsWithInlineCSV:
         results = run_dbt(["unit-test", "--select", "my_model"], expect_pass=False)
         assert len(results) == 5
 
-        # Check error with invalid format
+        # Check error with invalid format key
         write_file(
-            test_my_model_csv_yml + datetime_test_invalid_format,
+            test_my_model_csv_yml + datetime_test_invalid_format_key,
             project.project_root,
             "models",
             "test_my_model.yml",
@@ -44,9 +49,9 @@ class TestUnitTestsWithInlineCSV:
         with pytest.raises(YamlParseDictError):
             results = run_dbt(["unit-test", "--select", "my_model"], expect_pass=False)
 
-        # Check error with format not matching rows
+        # Check error with csv format defined not dict on rows
         write_file(
-            test_my_model_csv_yml + datetime_test_invalid_format2,
+            test_my_model_csv_yml + datetime_test_invalid_csv_values,
             project.project_root,
             "models",
             "test_my_model.yml",
@@ -62,7 +67,10 @@ class TestUnitTestsWithFileCSV:
             "my_model.sql": my_model_sql,
             "my_model_a.sql": my_model_a_sql,
             "my_model_b.sql": my_model_b_sql,
-            "test_my_model.yml": test_my_model_csv_yml + datetime_test,
+            "test_my_model.yml": test_my_model_file_csv_yml + datetime_test,
+            "test_my_model_fixture.yml": test_my_model_fixture_csv,
+            "test_my_model_a_fixture.yml": test_my_model_a_fixture_csv,
+            "test_my_model_b_fixture.yml": test_my_model_b_fixture_csv,
         }
 
     @pytest.fixture(scope="class")
@@ -77,9 +85,9 @@ class TestUnitTestsWithFileCSV:
         results = run_dbt(["unit-test", "--select", "my_model"], expect_pass=False)
         assert len(results) == 5
 
-        # Check error with invalid format
+        # Check error with invalid format key
         write_file(
-            test_my_model_csv_yml + datetime_test_invalid_format,
+            test_my_model_csv_yml + datetime_test_invalid_format_key,
             project.project_root,
             "models",
             "test_my_model.yml",
@@ -87,9 +95,9 @@ class TestUnitTestsWithFileCSV:
         with pytest.raises(YamlParseDictError):
             results = run_dbt(["unit-test", "--select", "my_model"], expect_pass=False)
 
-        # Check error with format not matching rows
+        # Check error with csv format defined not dict on rows
         write_file(
-            test_my_model_csv_yml + datetime_test_invalid_format2,
+            test_my_model_csv_yml + datetime_test_invalid_csv_file_values,
             project.project_root,
             "models",
             "test_my_model.yml",
