@@ -796,13 +796,19 @@ class UnitTestFixture:
             assert isinstance(self.rows, List)
             return self.rows
         elif self.format == UnitTestFormat.CSV:
-            assert isinstance(self.rows, str)
-            dummy_file = StringIO(self.rows)
-            reader = csv.DictReader(dummy_file)
-            rows = []
-            for row in reader:
-                rows.append(row)
-            return rows
+            if self.rows is not None:
+                assert isinstance(self.rows, str)
+                dummy_file = StringIO(self.rows)
+                reader = csv.DictReader(dummy_file)
+                rows = []
+                for row in reader:
+                    rows.append(row)
+                return rows
+            if self.fixture is not None:
+                # TODO: not true but debugging...
+                raise DbtInternalError(
+                    "Cannot use fixture with CSV format, this should have been caught earlier"
+                )
 
     def validate_fixture(self, fixture_type, test_name) -> None:
         if (self.format == UnitTestFormat.Dict and not isinstance(self.rows, list)) or (

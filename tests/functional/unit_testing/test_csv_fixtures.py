@@ -13,6 +13,10 @@ from fixtures import (
     test_my_model_fixture_csv,
     test_my_model_a_fixture_csv,
     test_my_model_b_fixture_csv,
+    test_my_model_basic_fixture_csv,
+    test_my_model_a_numeric_fixture_csv,
+    test_my_model_a_empty_fixture_csv,
+    test_my_model_concat_fixture_csv,
     datetime_test_invalid_csv_file_values,
 )
 
@@ -71,6 +75,10 @@ class TestUnitTestsWithFileCSV:
             "test_my_model_fixture.csv": test_my_model_fixture_csv,
             "test_my_model_a_fixture.csv": test_my_model_a_fixture_csv,
             "test_my_model_b_fixture.csv": test_my_model_b_fixture_csv,
+            "test_my_model_basic_fixture.csv": test_my_model_basic_fixture_csv,
+            "test_my_model_a_numeric_fixture.csv": test_my_model_a_numeric_fixture_csv,
+            "test_my_model_a_empty_fixture.csv": test_my_model_a_empty_fixture_csv,
+            "test_my_model_concat_fixture.csv": test_my_model_concat_fixture_csv,
         }
 
     @pytest.fixture(scope="class")

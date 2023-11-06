@@ -155,7 +155,7 @@ datetime_test_invalid_csv_file_values = """
     model: my_model
     given:
       - input: ref('my_model_a')
-        format: csv_file
+        format: csv
         rows:
           - {id: 1, date_a: "2020-01-01"}
       - input: ref('my_model_b')
@@ -307,70 +307,68 @@ unit_tests:
 
 # -- csv file tests
 test_my_model_file_csv_yml = """
-unit:
-  - model: my_model
-    tests:
-      - name: test_my_model
-        given:
-          - input: ref('my_model_a')
-            format: csv
-            rows: |
-              id,a
-              1,1
-          - input: ref('my_model_b')
-            format: csv
-            rows: test_my_model_fixture
-        expect:
-          format: csv
-          rows: |
-            c
-            2
+unit_tests:
+  - name: test_my_model
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        fixture: test_my_model_a_numeric_fixture_csv
+      - input: ref('my_model_b')
+        format: csv
+        fixture: test_my_model_fixture
+    expect:
+      format: csv
+      fixture: test_my_model_basic_fixture_csv
 
-      - name: test_my_model_empty
-        given:
-          - input: ref('my_model_a')
-            rows: []
-          - input: ref('my_model_b')
-            format: csv_file
-            rows: test_my_model_fixture
-        expect:
-          rows: []
-      - name: test_my_model_overrides
-        given:
-          - input: ref('my_model_a')
-            format: csv_file
-            rows: |
-              id,a
-              1,1
-          - input: ref('my_model_b')
-            format: csv_file
-            rows: test_my_model_fixture
-        overrides:
-          macros:
-            type_numeric: override
-            invocation_id: 123
-          vars:
-            my_test: var_override
-          env_vars:
-            MY_TEST: env_var_override
-        expect:
-          rows:
-            - {macro_call: override, var_call: var_override, env_var_call: env_var_override, invocation_id: 123}
-      - name: test_my_model_string_concat
-        given:
-          - input: ref('my_model_a')
-            format: csv_file
-            rows: test_my_model_a_fixture
-          - input: ref('my_model_b')
-            format: csv_file
-            rows: test_my_model_b_fixture
-        expect:
-          format: csv
-          rows: |
-            string_c
-            ab
-        config:
-           tags: test_this
+  - name: test_my_model_empty
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        fixture: test_my_model_a_empty_fixture_csv
+      - input: ref('my_model_b')
+        format: csv
+        fixture: test_my_model_fixture
+    expect:
+      format: csv
+      fixture: test_my_model_a_empty_fixture_csv
+
+  - name: test_my_model_overrides
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        fixture: test_my_model_a_numeric_fixture_csv
+      - input: ref('my_model_b')
+        format: csv
+        fixture: test_my_model_fixture
+    overrides:
+      macros:
+        type_numeric: override
+        invocation_id: 123
+      vars:
+        my_test: var_override
+      env_vars:
+        MY_TEST: env_var_override
+    expect:
+      rows:
+        - {macro_call: override, var_call: var_override, env_var_call: env_var_override, invocation_id: 123}
+
+  - name: test_my_model_string_concat
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        fixture: test_my_model_a_fixture
+      - input: ref('my_model_b')
+        format: csv
+        fixture: test_my_model_b_fixture
+    expect:
+      format: csv
+      fixture: test_my_model_concat_fixture_csv
+    config:
+      tags: test_this
 """
 
 test_my_model_fixture_csv = """
@@ -384,7 +382,24 @@ id,string_a
 1,a
 """
 
+test_my_model_a_empty_fixture_csv = """
+"""
+
+test_my_model_a_numeric_fixture_csv = """
+id,a
+1,1
+"""
+
 test_my_model_b_fixture_csv = """
 id,string_b
 1,b
+"""
+test_my_model_basic_fixture_csv = """
+c
+2
+"""
+
+test_my_model_concat_fixture_csv = """
+string_c
+ab
 """
