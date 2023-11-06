@@ -49,7 +49,7 @@ class TestUnitTestsWithInlineCSV:
         with pytest.raises(YamlParseDictError):
             results = run_dbt(["unit-test", "--select", "my_model"], expect_pass=False)
 
-        # Check error with csv format defined not dict on rows
+        # Check error with csv format defined but dict on rows
         write_file(
             test_my_model_csv_yml + datetime_test_invalid_csv_values,
             project.project_root,
@@ -68,9 +68,9 @@ class TestUnitTestsWithFileCSV:
             "my_model_a.sql": my_model_a_sql,
             "my_model_b.sql": my_model_b_sql,
             "test_my_model.yml": test_my_model_file_csv_yml + datetime_test,
-            "test_my_model_fixture.yml": test_my_model_fixture_csv,
-            "test_my_model_a_fixture.yml": test_my_model_a_fixture_csv,
-            "test_my_model_b_fixture.yml": test_my_model_b_fixture_csv,
+            "test_my_model_fixture.csv": test_my_model_fixture_csv,
+            "test_my_model_a_fixture.csv": test_my_model_a_fixture_csv,
+            "test_my_model_b_fixture.csv": test_my_model_b_fixture_csv,
         }
 
     @pytest.fixture(scope="class")
@@ -95,7 +95,7 @@ class TestUnitTestsWithFileCSV:
         with pytest.raises(YamlParseDictError):
             results = run_dbt(["unit-test", "--select", "my_model"], expect_pass=False)
 
-        # Check error with csv format defined not dict on rows
+        # Check error with csv format defined but dict on rows
         write_file(
             test_my_model_csv_yml + datetime_test_invalid_csv_file_values,
             project.project_root,
