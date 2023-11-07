@@ -403,3 +403,81 @@ test_my_model_concat_fixture_csv = """
 string_c
 ab
 """
+
+# -- mixed inline and file csv
+test_my_model_mixed_csv_yml = """
+unit_tests:
+  - name: test_my_model
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        rows: |
+          id,a
+          1,1
+      - input: ref('my_model_b')
+        format: csv
+        rows: |
+          id,b
+          1,2
+          2,2
+    expect:
+      format: csv
+      fixture: test_my_model_basic_fixture_csv
+
+  - name: test_my_model_empty
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        fixture: test_my_model_a_empty_fixture_csv
+      - input: ref('my_model_b')
+        format: csv
+        rows: |
+          id,b
+          1,2
+          2,2
+    expect:
+      format: csv
+      fixture: test_my_model_a_empty_fixture_csv
+
+  - name: test_my_model_overrides
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        rows: |
+          id,a
+          1,1
+      - input: ref('my_model_b')
+        format: csv
+        fixture: test_my_model_fixture
+    overrides:
+      macros:
+        type_numeric: override
+        invocation_id: 123
+      vars:
+        my_test: var_override
+      env_vars:
+        MY_TEST: env_var_override
+    expect:
+      rows:
+        - {macro_call: override, var_call: var_override, env_var_call: env_var_override, invocation_id: 123}
+
+  - name: test_my_model_string_concat
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        fixture: test_my_model_a_fixture
+      - input: ref('my_model_b')
+        format: csv
+        fixture: test_my_model_b_fixture
+    expect:
+      format: csv
+      rows: |
+        string_c
+        ab
+    config:
+      tags: test_this
+"""
