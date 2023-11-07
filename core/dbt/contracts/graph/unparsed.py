@@ -796,24 +796,31 @@ class UnitTestFixture:
             assert isinstance(self.rows, List)
             return self.rows
         elif self.format == UnitTestFormat.CSV:
-            if self.rows is not None:
+            if self.fixture:
+                # TODO: need to add logic to parse csv file into rows list. this is the exact logis as inline csv for now?
+                assert isinstance(self.fixture, str)
+                dummy_file = StringIO(self.fixture)
+                reader = csv.DictReader(dummy_file)
+                rows = []
+                for row in reader:
+                    rows.append(row)
+            else:  # using inline csv
                 assert isinstance(self.rows, str)
                 dummy_file = StringIO(self.rows)
                 reader = csv.DictReader(dummy_file)
                 rows = []
                 for row in reader:
                     rows.append(row)
-                return rows
-            if self.fixture is not None:
-                # TODO: not true but debugging...
-                raise DbtInternalError(
-                    "Cannot use fixture with CSV format, this should have been caught earlier"
-                )
+            return rows
 
     def validate_fixture(self, fixture_type, test_name) -> None:
-        if (self.format == UnitTestFormat.Dict and not isinstance(self.rows, list)) or (
-            self.format == UnitTestFormat.CSV
-            and not (isinstance(self.rows, str) or (self.fixture is not None))
+        if self.format == UnitTestFormat.Dict and not isinstance(self.rows, list):
+            raise ParsingError(
+                f"Unit test {test_name} has {fixture_type} rows which do not match format {self.format}"
+            )
+
+        if self.format == UnitTestFormat.CSV and not (
+            isinstance(self.rows, str) or (self.fixture is not None)
         ):
             raise ParsingError(
                 f"Unit test {test_name} has {fixture_type} rows which do not match format {self.format}"
