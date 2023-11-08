@@ -72,6 +72,7 @@ from .model_config import (
     ModelConfig,
     SeedConfig,
     TestConfig,
+    FixtureConfig,
     SourceConfig,
     MetricConfig,
     ExposureConfig,
@@ -91,8 +92,8 @@ from .model_config import (
 # manifest contains "macros", "sources", "metrics", "exposures", "docs",
 # and "disabled" dictionaries.
 #
-# The SeedNode is a ManifestNode, but can't be compiled because it has
-# no SQL.
+# The SeedNode & FixtureNode is a ManifestNode, but can't be compiled
+# because they have no SQL.
 #
 # All objects defined in this file should have BaseNode as a parent
 # class.
@@ -405,10 +406,10 @@ class ParsedNode(NodeInfoMixin, ParsedNodeMandatory, SerializableType):
                 return GenericTestNode.from_dict(dct)
             else:
                 return SingularTestNode.from_dict(dct)
+        elif resource_type == "fixture":
+            return FixtureNode.from_dict(dct)
         elif resource_type == "operation":
             return HookNode.from_dict(dct)
-        elif resource_type == "seed":
-            return SeedNode.from_dict(dct)
         elif resource_type == "snapshot":
             return SnapshotNode.from_dict(dct)
         else:
@@ -1060,6 +1061,127 @@ class GenericTestNode(TestShouldStoreFailures, CompiledNode, HasTestMetadata):
     @property
     def test_node_type(self):
         return "generic"
+
+
+# ====================================
+# Fixture node
+# ====================================
+
+
+@dataclass
+class FixtureNode(ParsedNode):  # No SQLDefaults!
+    resource_type: Literal[NodeType.Fixture]
+    config: FixtureConfig = field(default_factory=FixtureConfig)
+    # fixtures need the root_path because the contents are not loaded initially
+    # and we need the root_path to load the fixture later
+    root_path: Optional[str] = None
+    depends_on: MacroDependsOn = field(default_factory=MacroDependsOn)
+    defer_relation: Optional[DeferRelation] = None
+
+    def same_fixtures(self, other: "FixtureNode") -> bool:
+        # for fixtures, we check the hashes. If the hashes are different types,
+        # no match. If the hashes are both the same 'path', log a warning and
+        # assume they are the same
+        # if the current checksum is a path, we want to log a warning.
+        result = self.checksum == other.checksum
+
+        # TODO: implement this for fixtures
+        # if self.checksum.name == "path":
+        #     msg: str
+        #     if other.checksum.name != "path":
+        #         warn_or_error(
+        #             SeedIncreased(package_name=self.package_name, name=self.name), node=self
+        #         )
+        #     elif result:
+        #         warn_or_error(
+        #             SeedExceedsLimitSamePath(package_name=self.package_name, name=self.name),
+        #             node=self,
+        #         )
+        #     elif not result:
+        #         warn_or_error(
+        #             SeedExceedsLimitAndPathChanged(package_name=self.package_name, name=self.name),
+        #             node=self,
+        #         )
+        #     else:
+        #         warn_or_error(
+        #             SeedExceedsLimitChecksumChanged(
+        #                 package_name=self.package_name,
+        #                 name=self.name,
+        #                 checksum_name=other.checksum.name,
+        #             ),
+        #             node=self,
+        #         )
+
+        return result
+
+    # TODO: should this be true?  probably because they at least have columns names
+    @property
+    def empty(self):
+        """Fixtures are never empty"""
+        return False
+
+    # TODO: I think we need to do something like this for fixtures
+    def _disallow_implicit_dependencies(self):
+        """Disallow seeds to take implicit upstream dependencies via pre/post hooks"""
+        # Seeds are root nodes in the DAG. They cannot depend on other nodes.
+        # However, it's possible to define pre- and post-hooks on seeds, and for those
+        # hooks to include {{ ref(...) }}. This worked in previous versions, but it
+        # was never officially documented or supported behavior. Let's raise an explicit error,
+        # which will surface during parsing if the user has written code such that we attempt
+        # to capture & record a ref/source/metric call on the SeedNode.
+        # For more details: https://github.com/dbt-labs/dbt-core/issues/6806
+        hooks = [f'- pre_hook: "{hook.sql}"' for hook in self.config.pre_hook] + [
+            f'- post_hook: "{hook.sql}"' for hook in self.config.post_hook
+        ]
+        hook_list = "\n".join(hooks)
+        message = f"""
+Seeds cannot depend on other nodes. dbt detected a seed with a pre- or post-hook
+that calls 'ref', 'source', or 'metric', either directly or indirectly via other macros.
+
+Error raised for '{self.unique_id}', which has these hooks defined: \n{hook_list}
+        """
+        raise ParsingError(message)
+
+    @property
+    def refs(self):
+        self._disallow_implicit_dependencies()
+
+    @property
+    def sources(self):
+        self._disallow_implicit_dependencies()
+
+    @property
+    def metrics(self):
+        self._disallow_implicit_dependencies()
+
+    def same_body(self, other) -> bool:
+        return self.same_fixtures(other)
+
+    @property
+    def depends_on_nodes(self):
+        return []
+
+    @property
+    def depends_on_macros(self) -> List[str]:
+        return self.depends_on.macros
+
+    @property
+    def extra_ctes(self):
+        return []
+
+    @property
+    def extra_ctes_injected(self):
+        return False
+
+    # TODO: ??
+    @property
+    def language(self):
+        return "sql"
+
+
+# ====================================
+# Unit Test node
+# ====================================
 
 
 @dataclass
@@ -1893,11 +2015,8 @@ ManifestSQLNode = Union[
     UnitTestNode,
 ]
 
-# All SQL nodes plus SeedNode (csv files)
-ManifestNode = Union[
-    ManifestSQLNode,
-    SeedNode,
-]
+# All SQL nodes plus SeedNode/FixtureNode (csv files)
+ManifestNode = Union[ManifestSQLNode, SeedNode, FixtureNode]
 
 ResultNode = Union[
     ManifestNode,

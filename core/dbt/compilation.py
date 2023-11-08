@@ -24,6 +24,7 @@ from dbt.contracts.graph.nodes import (
     GraphMemberNode,
     InjectedCTE,
     SeedNode,
+    FixtureNode,
     UnitTestNode,
 )
 from dbt.exceptions import (
@@ -48,6 +49,7 @@ def print_compile_stats(stats):
     names = {
         NodeType.Model: "model",
         NodeType.Test: "test",
+        NodeType.Fixture: "fixture",
         NodeType.Unit: "unit test",
         NodeType.Snapshot: "snapshot",
         NodeType.Analysis: "analysis",
@@ -342,8 +344,8 @@ class Compiler:
 
         # Just to make it plain that nothing is actually injected for this case
         if len(model.extra_ctes) == 0:
-            # SeedNodes don't have compilation attributes
-            if not isinstance(model, SeedNode):
+            # SeedNodes and FixtureNodes don't have compilation attributes
+            if not isinstance(model, (SeedNode, FixtureNode)):
                 model.extra_ctes_injected = True
             return (model, [])
 
@@ -363,7 +365,7 @@ class Compiler:
                     f"could not be resolved: {cte.id}"
                 )
             cte_model = manifest.nodes[cte.id]
-            assert not isinstance(cte_model, SeedNode)
+            assert not isinstance(cte_model, (SeedNode, FixtureNode))
 
             if not cte_model.is_ephemeral_model:
                 raise DbtInternalError(f"{cte.id} is not ephemeral")
@@ -517,6 +519,7 @@ class Compiler:
         if not node.extra_ctes_injected or node.resource_type in (
             NodeType.Snapshot,
             NodeType.Seed,
+            NodeType.Fixture,
         ):
             return node
         fire_event(WritingInjectedSQLForNode(node_info=get_node_info()))

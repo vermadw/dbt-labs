@@ -21,6 +21,7 @@ class NodeType(StrEnum):
     Model = "model"
     Analysis = "analysis"
     Test = "test"
+    Fixture = "fixture"
     Snapshot = "snapshot"
     Operation = "operation"
     Seed = "seed"

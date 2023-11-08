@@ -796,25 +796,24 @@ class UnitTestFixture:
             assert isinstance(self.rows, List)
             return self.rows
         elif self.format == UnitTestFormat.CSV:
+            rows: List[Dict[str, Any]] = []
             if self.fixture is not None:
                 # resolve name to file Path
                 # read file into row dict
                 # breakpoint()
-                assert isinstance(self.rows, str)
-                dummy_file = StringIO(self.rows)
-                reader = csv.DictReader(dummy_file)
-                rows = []
-                for row in reader:
-                    rows.append(row)
-                return rows
+                # assert isinstance(self.rows, str)
+                # dummy_file = StringIO(self.rows)
+                # reader = {csv.DictReader(dummy_file)}
+                # for row in reader:
+                #     rows.append(row)
+                pass
             else:  # using inline csv
                 assert isinstance(self.rows, str)
                 dummy_file = StringIO(self.rows)
                 reader = csv.DictReader(dummy_file)
-                rows = []
                 for row in reader:
                     rows.append(row)
-                return rows
+            return rows
 
     def validate_fixture(self, fixture_type, test_name) -> None:
         if self.format == UnitTestFormat.Dict and not isinstance(self.rows, list):

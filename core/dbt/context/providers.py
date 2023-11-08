@@ -1421,7 +1421,12 @@ class ModelContext(ProviderContext):
 
     @contextproperty()
     def pre_hooks(self) -> List[Dict[str, Any]]:
-        if self.model.resource_type in [NodeType.Source, NodeType.Test, NodeType.Unit]:
+        if self.model.resource_type in [
+            NodeType.Source,
+            NodeType.Test,
+            NodeType.Unit,
+            NodeType.Fixture,
+        ]:
             return []
         # TODO CT-211
         return [
@@ -1430,7 +1435,12 @@ class ModelContext(ProviderContext):
 
     @contextproperty()
     def post_hooks(self) -> List[Dict[str, Any]]:
-        if self.model.resource_type in [NodeType.Source, NodeType.Test, NodeType.Unit]:
+        if self.model.resource_type in [
+            NodeType.Source,
+            NodeType.Test,
+            NodeType.Unit,
+            NodeType.Fixture,
+        ]:
             return []
         # TODO CT-211
         return [

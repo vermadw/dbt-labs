@@ -18,6 +18,7 @@ class ParseFileType(StrEnum):
     Analysis = "analysis"
     SingularTest = "singular_test"
     GenericTest = "generic_test"
+    Fixture = "fixture"
     Seed = "seed"
     Documentation = "docs"
     Schema = "schema"
@@ -31,6 +32,7 @@ parse_file_type_to_parser = {
     ParseFileType.Analysis: "AnalysisParser",
     ParseFileType.SingularTest: "SingularTestParser",
     ParseFileType.GenericTest: "GenericTestParser",
+    ParseFileType.Fixture: "FixtureParser",
     ParseFileType.Seed: "SeedParser",
     ParseFileType.Documentation: "DocumentationParser",
     ParseFileType.Schema: "SchemaParser",

@@ -407,6 +407,11 @@ def get_file_types_for_project(project):
             "extensions": [".sql"],
             "parser": "GenericTestParser",
         },
+        ParseFileType.Fixture: {
+            "paths": project.fixture_paths,
+            "extensions": [".csv"],
+            "parser": "FixtureParser",
+        },
         ParseFileType.Seed: {
             "paths": project.seed_paths,
             "extensions": [".csv"],

@@ -557,6 +557,19 @@ class UnitTestNodeConfig(NodeConfig):
 
 
 @dataclass
+class FixtureConfig(NodeConfig):
+    materialized: str = "fixture"  # TODO: ?? does this get materialized?
+    delimiter: str = ","
+    quote_columns: Optional[bool] = None
+
+    @classmethod
+    def validate(cls, data):
+        super().validate(data)
+        if data.get("materialized") and data.get("materialized") != "fixture":
+            raise ValidationError("A fixture must have a materialized value of 'seed'")
+
+
+@dataclass
 class SeedConfig(NodeConfig):
     materialized: str = "seed"
     delimiter: str = ","
@@ -748,6 +761,7 @@ RESOURCE_TYPES: Dict[NodeType, Type[BaseConfig]] = {
     NodeType.Source: SourceConfig,
     NodeType.Seed: SeedConfig,
     NodeType.Test: TestConfig,
+    NodeType.Fixture: FixtureConfig,
     NodeType.Model: NodeConfig,
     NodeType.Snapshot: SnapshotConfig,
     NodeType.Unit: UnitTestConfig,
