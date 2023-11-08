@@ -784,8 +784,8 @@ class UnitTestFixture:
         return UnitTestFormat.Dict
 
     @property
-    def rows(self) -> Union[str, List[Dict[str, Any]]]:
-        return []
+    def rows(self) -> Optional[Union[str, List[Dict[str, Any]]]]:
+        return None
 
     @property
     def fixture(self) -> Optional[str]:  # TODO: typing
@@ -796,7 +796,10 @@ class UnitTestFixture:
             assert isinstance(self.rows, List)
             return self.rows
         elif self.format == UnitTestFormat.CSV:
-            if self.rows is not None:
+            if self.fixture is not None:
+                # resolve name to file Path
+                # read file into row dict
+                breakpoint()
                 assert isinstance(self.rows, str)
                 dummy_file = StringIO(self.rows)
                 reader = csv.DictReader(dummy_file)
@@ -804,17 +807,24 @@ class UnitTestFixture:
                 for row in reader:
                     rows.append(row)
                 return rows
-            if self.fixture is not None:
-                # TODO: not true but debugging...
-                raise DbtInternalError(
-                    "Cannot use fixture with CSV format, this should have been caught earlier"
-                )
+            else:  # using inline csv
+                assert isinstance(self.rows, str)
+                dummy_file = StringIO(self.rows)
+                reader = csv.DictReader(dummy_file)
+                rows = []
+                for row in reader:
+                    rows.append(row)
+                return rows
 
     def validate_fixture(self, fixture_type, test_name) -> None:
-        if (self.format == UnitTestFormat.Dict and not isinstance(self.rows, list)) or (
-            self.format == UnitTestFormat.CSV
-            and not (isinstance(self.rows, str) or (self.fixture is not None))
+        if self.format == UnitTestFormat.Dict and not isinstance(self.rows, list):
+            raise ParsingError(
+                f"Unit test {test_name} has {fixture_type} rows which do not match format {self.format}"
+            )
+        if self.format == UnitTestFormat.CSV and not (
+            isinstance(self.rows, str) or isinstance(self.fixture, str)
         ):
+            # TODO: update this message
             raise ParsingError(
                 f"Unit test {test_name} has {fixture_type} rows which do not match format {self.format}"
             )
@@ -823,14 +833,14 @@ class UnitTestFixture:
 @dataclass
 class UnitTestInputFixture(dbtClassMixin, UnitTestFixture):
     input: str
-    rows: Union[str, List[Dict[str, Any]]] = ""
+    rows: Optional[Union[str, List[Dict[str, Any]]]] = None
     format: UnitTestFormat = UnitTestFormat.Dict
     fixture: Optional[str] = None
 
 
 @dataclass
 class UnitTestOutputFixture(dbtClassMixin, UnitTestFixture):
-    rows: Union[str, List[Dict[str, Any]]] = ""
+    rows: Optional[Union[str, List[Dict[str, Any]]]] = None
     format: UnitTestFormat = UnitTestFormat.Dict
     fixture: Optional[str] = None
 
