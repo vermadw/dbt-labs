@@ -799,7 +799,7 @@ class UnitTestFixture:
             if self.fixture is not None:
                 # resolve name to file Path
                 # read file into row dict
-                breakpoint()
+                # breakpoint()
                 assert isinstance(self.rows, str)
                 dummy_file = StringIO(self.rows)
                 reader = csv.DictReader(dummy_file)
