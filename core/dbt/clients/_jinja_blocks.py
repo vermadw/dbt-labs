@@ -143,7 +143,8 @@ class TagIterator:
         positioned_match = self._past_matches.get(pattern)
 
         if positioned_match is None or positioned_match.start_pos > self.pos:
-            # We did not have a cached search, just do one from scratch.
+            # We did not have a cached search, or we did, but it was done at a location
+            # further along in the string. Do a new search and cache it.
             match = pattern.search(self.data, self.pos)
             self._past_matches[pattern] = PositionedMatch(self.pos, match)
         else:
@@ -153,11 +154,12 @@ class TagIterator:
                 # ...but there is no match in the rest of the 'data'.
                 match = None
             elif positioned_match.match.start() >= self.pos:
-                # ...and there is a match we can reuse, because we have not yet reached
-                # the location of the match.
+                # ...and there is a match we can reuse, because we have not yet passed
+                # the start position of the match. It's still the next match.
                 match = positioned_match.match
             else:
-                # ...but we have passed the match, and need to re-search from the position.
+                # ...but we have passed the start of the cached match, and need to do a
+                # new search from our current position and cache it.
                 match = pattern.search(self.data, self.pos)
                 self._past_matches[pattern] = PositionedMatch(self.pos, match)
 
