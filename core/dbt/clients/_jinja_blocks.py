@@ -1,5 +1,7 @@
+import dataclasses
 import re
 from collections import namedtuple
+from typing import Dict, Optional
 
 from dbt.exceptions import (
     BlockDefinitionNotAtTopError,
@@ -97,12 +99,25 @@ STRING_PATTERN = regex(r"(?P<string>('([^'\\]*(?:\\.[^'\\]*)*)'|" r'"([^"\\]*(?:
 QUOTE_START_PATTERN = regex(r"""(?P<quote>(['"]))""")
 
 
+@dataclasses.dataclass
+class PositionedMatch:
+    """Used to accelerate TagIterator. Records the result of searching a string, starting
+    at start_pos and finding match (or None)."""
+
+    start_pos: int
+    match: Optional[re.Match]
+
+
 class TagIterator:
     def __init__(self, data):
         self.data = data
-        self.blocks = []
-        self._parenthesis_stack = []
+        self.blocks = []  # unused?
+        self._parenthesis_stack = []  # unused?
         self.pos = 0
+
+        # Performance enhancement: A cache of the most recent matches seen for each pattern.
+        # Includes the start position used for the search.
+        self._past_matches: Dict[re.Pattern, PositionedMatch] = {}
 
     def linepos(self, end=None) -> str:
         """Given an absolute position in the input data, return a pair of
@@ -122,8 +137,31 @@ class TagIterator:
     def rewind(self, amount=1):
         self.pos -= amount
 
-    def _search(self, pattern):
-        return pattern.search(self.data, self.pos)
+    def _search(self, pattern) -> Optional[re.Match]:
+
+        # Check to see if we have a cached search on this pattern.
+        positioned_match = self._past_matches.get(pattern)
+
+        if positioned_match is None or positioned_match.start_pos > self.pos:
+            # We did not have a cached search, just do one from scratch.
+            match = pattern.search(self.data, self.pos)
+            self._past_matches[pattern] = PositionedMatch(self.pos, match)
+        else:
+            # We have a cached search and its start position falls before (or at) the
+            # current search position...
+            if positioned_match.match is None:
+                # ...but there is no match in the rest of the 'data'.
+                match = None
+            elif positioned_match.match.start() >= self.pos:
+                # ...and there is a match we can reuse, because we have not yet reached
+                # the location of the match.
+                match = positioned_match.match
+            else:
+                # ...but we have passed the match, and need to re-search from the position.
+                match = pattern.search(self.data, self.pos)
+                self._past_matches[pattern] = PositionedMatch(self.pos, match)
+
+        return match
 
     def _match(self, pattern):
         return pattern.match(self.data, self.pos)
