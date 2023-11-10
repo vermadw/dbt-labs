@@ -10,11 +10,13 @@ from click.core import Command as ClickCommand, Group, ParameterSource
 from dbt.cli.exceptions import DbtUsageException
 from dbt.cli.resolvers import default_log_path, default_project_dir
 from dbt.cli.types import Command as CliCommand
+from dbt.common import ui
+from dbt.common.events import functions
 from dbt.config.profile import read_user_config
 from dbt.contracts.project import UserConfig
-from dbt.exceptions import DbtInternalError
+from dbt.common.exceptions import DbtInternalError
 from dbt.deprecations import renamed_env_var
-from dbt.helper_types import WarnErrorOptions
+from dbt.common.helper_types import WarnErrorOptions
 
 if os.name != "nt":
     # https://bugs.python.org/issue41567
@@ -253,6 +255,8 @@ class Flags:
         for param in params:
             object.__setattr__(self, param.lower(), getattr(self, param))
 
+        self.set_common_global_flags()
+
     def __str__(self) -> str:
         return str(pf(self.__dict__))
 
@@ -292,6 +296,19 @@ class Flags:
         flags = cls(ctx=ctx)
         flags.fire_deprecations()
         return flags
+
+    def set_common_global_flags(self):
+        # Set globals for common.ui
+        if getattr(self, "PRINTER_WIDTH", None) is not None:
+            ui.PRINTER_WIDTH = getattr(self, "PRINTER_WIDTH")
+        if getattr(self, "USE_COLORS", None) is not None:
+            ui.USE_COLOR = getattr(self, "USE_COLORS")
+
+        # Set globals for common.events.functions
+        #
+        functions.WARN_ERROR = getattr(self, "WARN_ERROR", False)
+        if getattr(self, "WARN_ERROR_OPTIONS", None) is not None:
+            functions.WARN_ERROR_OPTIONS = getattr(self, "WARN_ERROR_OPTIONS")
 
 
 CommandParams = List[str]

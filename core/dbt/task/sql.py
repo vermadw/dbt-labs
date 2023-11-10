@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Generic, TypeVar
 import traceback
 
+import dbt.common.exceptions.base
 import dbt.exceptions
 from dbt.contracts.sql import (
     RemoteCompileResult,
@@ -25,7 +26,7 @@ class GenericSqlRunner(CompileRunner, Generic[SQLResult]):
     def handle_exception(self, e, ctx):
         fire_event(SQLRunnerException(exc=str(e), exc_info=traceback.format_exc()))
         if isinstance(e, dbt.exceptions.Exception):
-            if isinstance(e, dbt.exceptions.DbtRuntimeError):
+            if isinstance(e, dbt.common.exceptions.DbtRuntimeError):
                 e.add_node(ctx.node)
             return e
 
@@ -51,7 +52,9 @@ class GenericSqlRunner(CompileRunner, Generic[SQLResult]):
         raise error
 
     def ephemeral_result(self, node, start_time, timing_info):
-        raise dbt.exceptions.NotImplementedError("cannot execute ephemeral nodes remotely!")
+        raise dbt.common.exceptions.base.NotImplementedError(
+            "cannot execute ephemeral nodes remotely!"
+        )
 
 
 class SqlCompileRunner(GenericSqlRunner[RemoteCompileResult]):

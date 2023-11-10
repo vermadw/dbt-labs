@@ -6,10 +6,10 @@ from dbt.contracts.results import RunStatus, RunResult
 from dbt.common.events.base_types import EventLevel
 from dbt.common.events.functions import fire_event
 from dbt.common.events.types import CompiledNode, Note, ParseInlineNodeError
-from dbt.exceptions import (
+from dbt.common.exceptions import (
     CompilationError,
     DbtInternalError,
-    Exception as DbtException,
+    DbtBaseException as DbtException,
 )
 
 from dbt.graph import ResourceTypeSelector

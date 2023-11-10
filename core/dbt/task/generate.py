@@ -24,7 +24,8 @@ from dbt.contracts.results import (
     ColumnMetadata,
     CatalogArtifact,
 )
-from dbt.exceptions import DbtInternalError, AmbiguousCatalogMatchError
+from dbt.common.exceptions import DbtInternalError
+from dbt.exceptions import AmbiguousCatalogMatchError
 from dbt.graph import ResourceTypeSelector
 from dbt.node_types import NodeType
 from dbt.include.global_project import DOCS_INDEX_FILE_PATH
@@ -87,7 +88,7 @@ class Catalog(Dict[CatalogKey, CatalogTable]):
                 str(data["table_name"]),
             )
         except KeyError as exc:
-            raise dbt.exceptions.CompilationError(
+            raise dbt.common.exceptions.CompilationError(
                 "Catalog information missing required key {} (got {})".format(exc, data)
             )
         table: CatalogTable

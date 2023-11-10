@@ -11,16 +11,13 @@ from dbt.contracts.relation import (
     Policy,
     Path,
 )
-from dbt.exceptions import (
-    ApproximateMatchError,
-    DbtInternalError,
-    MultipleDatabasesNotAllowedError,
-)
+from dbt.common.exceptions import DbtInternalError
+from dbt.adapters.exceptions import MultipleDatabasesNotAllowedError, ApproximateMatchError
 from dbt.node_types import NodeType
 from dbt.common.utils import filter_null_values, deep_merge
 from dbt.adapters.utils import classproperty
 
-import dbt.exceptions
+import dbt.common.exceptions
 
 
 Self = TypeVar("Self", bound="BaseRelation")
@@ -101,7 +98,7 @@ class BaseRelation(FakeAPIObject, Hashable):
 
         if not search:
             # nothing was passed in
-            raise dbt.exceptions.DbtRuntimeError(
+            raise dbt.common.exceptions.DbtRuntimeError(
                 "Tried to match relation, but no search path was passed!"
             )
 
@@ -387,7 +384,7 @@ class InformationSchema(BaseRelation):
 
     def __post_init__(self):
         if not isinstance(self.information_schema_view, (type(None), str)):
-            raise dbt.exceptions.CompilationError(
+            raise dbt.common.exceptions.CompilationError(
                 "Got an invalid name: {}".format(self.information_schema_view)
             )
 

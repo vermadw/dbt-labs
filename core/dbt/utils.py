@@ -13,13 +13,12 @@ from pathlib import PosixPath, WindowsPath
 
 from dbt.common.utils import md5
 from dbt.common.events.types import RetryExternalCall, RecordRetryException
-from dbt.exceptions import (
-    ConnectionError,
+from dbt.common.exceptions import (
     DbtInternalError,
     RecursionError,
-    DuplicateAliasError,
 )
-from dbt.helper_types import WarnErrorOptions
+from dbt.exceptions import ConnectionError, DuplicateAliasError
+from dbt.common.helper_types import WarnErrorOptions
 from dbt import flags
 from enum import Enum
 from typing import (
@@ -213,16 +212,6 @@ class JSONEncoder(json.JSONEncoder):
             return obj.to_dict(omit_none=True)
         else:
             return super().default(obj)
-
-
-class ForgivingJSONEncoder(JSONEncoder):
-    def default(self, obj):
-        # let dbt's default JSON encoder handle it if possible, fallback to
-        # str()
-        try:
-            return super().default(obj)
-        except TypeError:
-            return str(obj)
 
 
 class Translator:
