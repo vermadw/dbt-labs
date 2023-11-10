@@ -166,6 +166,7 @@ class RuntimeConfig(Project, Profile, AdapterRequiredConfig):
             query_comment=project.query_comment,
             sources=project.sources,
             tests=project.tests,
+            data_tests=project.data_tests,  # TODO: I think this should be to_project_config | project.tests?
             unit_tests=project.unit_tests,
             metrics=project.metrics,
             semantic_models=project.semantic_models,
@@ -325,6 +326,7 @@ class RuntimeConfig(Project, Profile, AdapterRequiredConfig):
             "snapshots": self._get_config_paths(self.snapshots),
             "sources": self._get_config_paths(self.sources),
             "tests": self._get_config_paths(self.tests),
+            "data_tests": self._get_config_paths(self.data_tests),
             "unit_tests": self._get_config_paths(self.unit_tests),
             "metrics": self._get_config_paths(self.metrics),
             "semantic_models": self._get_config_paths(self.semantic_models),

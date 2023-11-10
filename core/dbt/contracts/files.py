@@ -221,7 +221,7 @@ class SourceFile(BaseSourceFile):
 class SchemaSourceFile(BaseSourceFile):
     dfy: Dict[str, Any] = field(default_factory=dict)
     # these are in the manifest.nodes dictionary
-    tests: Dict[str, Any] = field(default_factory=dict)
+    data_tests: Dict[str, Any] = field(default_factory=dict)
     sources: List[str] = field(default_factory=list)
     exposures: List[str] = field(default_factory=list)
     metrics: List[str] = field(default_factory=list)

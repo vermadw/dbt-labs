@@ -71,7 +71,7 @@ from .model_config import (
     NodeConfig,
     ModelConfig,
     SeedConfig,
-    TestConfig,
+    DataTestConfig,
     SourceConfig,
     MetricConfig,
     ExposureConfig,
@@ -1007,10 +1007,10 @@ class TestShouldStoreFailures:
 
 @dataclass
 class SingularTestNode(TestShouldStoreFailures, CompiledNode):
-    resource_type: Literal[NodeType.Test]
+    resource_type: Literal[NodeType.DataTest]
     # Was not able to make mypy happy and keep the code working. We need to
     # refactor the various configs.
-    config: TestConfig = field(default_factory=TestConfig)  # type: ignore
+    config: DataTestConfig = field(default_factory=DataTestConfig)  # type: ignore
 
     @property
     def test_node_type(self):
@@ -1043,12 +1043,12 @@ class HasTestMetadata(dbtClassMixin):
 
 @dataclass
 class GenericTestNode(TestShouldStoreFailures, CompiledNode, HasTestMetadata):
-    resource_type: Literal[NodeType.Test]
+    resource_type: Literal[NodeType.DataTest]
     column_name: Optional[str] = None
     file_key_name: Optional[str] = None
     # Was not able to make mypy happy and keep the code working. We need to
     # refactor the various configs.
-    config: TestConfig = field(default_factory=TestConfig)  # type: ignore
+    config: DataTestConfig = field(default_factory=DataTestConfig)  # type: ignore
     attached_node: Optional[str] = None
 
     def same_contents(self, other, adapter_type: Optional[str]) -> bool:

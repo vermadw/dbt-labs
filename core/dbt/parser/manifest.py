@@ -1300,7 +1300,7 @@ def invalid_target_fail_unless_test(
     disabled: Optional[bool] = None,
     should_warn_if_disabled: bool = True,
 ):
-    if node.resource_type == NodeType.Test:
+    if node.resource_type == NodeType.DataTest:
         if disabled:
             event = InvalidDisabledTargetInTestNode(
                 resource_type_title=node.resource_type.title(),

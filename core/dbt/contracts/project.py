@@ -213,6 +213,7 @@ class Project(dbtClassMixin, Replaceable):
     analyses: Dict[str, Any] = field(default_factory=dict)
     sources: Dict[str, Any] = field(default_factory=dict)
     tests: Dict[str, Any] = field(default_factory=dict)
+    data_tests: Dict[str, Any] = field(default_factory=dict)
     unit_tests: Dict[str, Any] = field(default_factory=dict)
     metrics: Dict[str, Any] = field(default_factory=dict)
     semantic_models: Dict[str, Any] = field(default_factory=dict)
@@ -256,6 +257,7 @@ class Project(dbtClassMixin, Replaceable):
             "semantic_models": "semantic-models",
             "saved_queries": "saved-queries",
             "dbt_cloud": "dbt-cloud",
+            "data_tests": "data-tests",
             "unit_tests": "unit-tests",
         }
 
@@ -277,6 +279,10 @@ class Project(dbtClassMixin, Replaceable):
         if "dbt_cloud" in data and not isinstance(data["dbt_cloud"], dict):
             raise ValidationError(
                 f"Invalid dbt_cloud config. Expected a 'dict' but got '{type(data['dbt_cloud'])}'"
+            )
+        if data.get("tests", None) and data.get("data_tests", None):
+            raise ValidationError(
+                "Invalid project config: cannot have both 'tests' and 'data_tests' defined"
             )
 
 

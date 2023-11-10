@@ -13,7 +13,7 @@ class SingularTestParser(SimpleSQLParser[SingularTestNode]):
 
     @property
     def resource_type(self) -> NodeType:
-        return NodeType.Test
+        return NodeType.DataTest
 
     @classmethod
     def get_compiled_path(cls, block: FileBlock):

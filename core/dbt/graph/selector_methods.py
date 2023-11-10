@@ -540,7 +540,7 @@ class TestNameSelectorMethod(SelectorMethod):
 
     def search(self, included_nodes: Set[UniqueId], selector: str) -> Iterator[UniqueId]:
         for unique_id, node in self.parsed_and_unit_nodes(included_nodes):
-            if node.resource_type == NodeType.Test and hasattr(node, "test_metadata"):
+            if node.resource_type == NodeType.DataTest and hasattr(node, "test_metadata"):
                 if fnmatch(node.test_metadata.name, selector):  # type: ignore[union-attr]
                     yield unique_id
             elif node.resource_type == NodeType.Unit:

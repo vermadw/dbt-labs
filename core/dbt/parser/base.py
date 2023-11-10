@@ -379,7 +379,7 @@ class ConfiguredParser(
         self.update_parsed_node_relation_names(parsed_node, config_dict)
 
         # tests don't have hooks
-        if parsed_node.resource_type == NodeType.Test:
+        if parsed_node.resource_type == NodeType.DataTest:
             return
 
         # at this point, we've collected our hooks. Use the node context to

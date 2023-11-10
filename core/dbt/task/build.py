@@ -83,7 +83,7 @@ class BuildTask(RunTask):
         NodeType.Model: run_model_runner,
         NodeType.Snapshot: snapshot_model_runner,
         NodeType.Seed: seed_runner,
-        NodeType.Test: test_runner,
+        NodeType.DataTest: test_runner,
         NodeType.Unit: test_runner,
     }
     ALL_RESOURCE_VALUES = frozenset({x for x in RUNNER_MAP.keys()})
@@ -111,7 +111,7 @@ class BuildTask(RunTask):
 
         resource_types = self.resource_types
 
-        if resource_types == [NodeType.Test]:
+        if resource_types == [NodeType.DataTest]:
             return TestSelector(
                 graph=self.graph,
                 manifest=self.manifest,

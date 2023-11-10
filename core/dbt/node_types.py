@@ -20,7 +20,7 @@ class AccessType(StrEnum):
 class NodeType(StrEnum):
     Model = "model"
     Analysis = "analysis"
-    Test = "test"
+    DataTest = "data_test"
     Snapshot = "snapshot"
     Operation = "operation"
     Seed = "seed"
@@ -41,7 +41,7 @@ class NodeType(StrEnum):
     def executable(cls) -> List["NodeType"]:
         return [
             cls.Model,
-            cls.Test,
+            cls.DataTest,
             cls.Snapshot,
             cls.Analysis,
             cls.Operation,

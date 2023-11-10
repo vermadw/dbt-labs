@@ -51,14 +51,14 @@ class PackageInstallPathDeprecation(DBTDeprecation):
     _event = "PackageInstallPathDeprecation"
 
 
-class ConfigSourcePathDeprecation(DBTDeprecation):
-    _name = "project-config-source-paths"
-    _event = "ConfigSourcePathDeprecation"
+# class ConfigSourcePathDeprecation(DBTDeprecation):
+#     _name = "project-config-source-paths"
+#     _event = "ConfigSourcePathDeprecation"
 
 
-class ConfigDataPathDeprecation(DBTDeprecation):
-    _name = "project-config-data-paths"
-    _event = "ConfigDataPathDeprecation"
+# class ConfigDataPathDeprecation(DBTDeprecation):
+#     _name = "project-config-data-paths"
+#     _event = "ConfigDataPathDeprecation"
 
 
 def renamed_method(old_name: str, new_name: str):
@@ -71,9 +71,9 @@ def renamed_method(old_name: str, new_name: str):
     deprecations[dep.name] = dep
 
 
-class MetricAttributesRenamed(DBTDeprecation):
-    _name = "metric-attr-renamed"
-    _event = "MetricAttributesRenamed"
+# class MetricAttributesRenamed(DBTDeprecation):
+#     _name = "metric-attr-renamed"
+#     _event = "MetricAttributesRenamed"
 
 
 class ExposureNameDeprecation(DBTDeprecation):
@@ -81,14 +81,14 @@ class ExposureNameDeprecation(DBTDeprecation):
     _event = "ExposureNameDeprecation"
 
 
-class ConfigLogPathDeprecation(DBTDeprecation):
-    _name = "project-config-log-path"
-    _event = "ConfigLogPathDeprecation"
+# class ConfigLogPathDeprecation(DBTDeprecation):
+#     _name = "project-config-log-path"
+#     _event = "ConfigLogPathDeprecation"
 
 
-class ConfigTargetPathDeprecation(DBTDeprecation):
-    _name = "project-config-target-path"
-    _event = "ConfigTargetPathDeprecation"
+# class ConfigTargetPathDeprecation(DBTDeprecation):
+#     _name = "project-config-target-path"
+#     _event = "ConfigTargetPathDeprecation"
 
 
 class CollectFreshnessReturnSignature(DBTDeprecation):
@@ -127,12 +127,12 @@ active_deprecations: Set[str] = set()
 deprecations_list: List[DBTDeprecation] = [
     PackageRedirectDeprecation(),
     PackageInstallPathDeprecation(),
-    ConfigSourcePathDeprecation(),
-    ConfigDataPathDeprecation(),
-    MetricAttributesRenamed(),
+    # ConfigSourcePathDeprecation(),
+    # ConfigDataPathDeprecation(),
+    # MetricAttributesRenamed(),
     ExposureNameDeprecation(),
-    ConfigLogPathDeprecation(),
-    ConfigTargetPathDeprecation(),
+    # ConfigLogPathDeprecation(),
+    # ConfigTargetPathDeprecation(),
     CollectFreshnessReturnSignature(),
 ]
 

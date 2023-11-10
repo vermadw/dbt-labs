@@ -41,8 +41,8 @@ class UnrenderedConfig(ConfigSource):
             model_configs = unrendered.get("snapshots")
         elif resource_type == NodeType.Source:
             model_configs = unrendered.get("sources")
-        elif resource_type == NodeType.Test:
-            model_configs = unrendered.get("tests")
+        elif resource_type == NodeType.DataTest:
+            model_configs = unrendered.get("data_tests")
         elif resource_type == NodeType.Metric:
             model_configs = unrendered.get("metrics")
         elif resource_type == NodeType.SemanticModel:
@@ -72,8 +72,8 @@ class RenderedConfig(ConfigSource):
             model_configs = self.project.snapshots
         elif resource_type == NodeType.Source:
             model_configs = self.project.sources
-        elif resource_type == NodeType.Test:
-            model_configs = self.project.tests
+        elif resource_type == NodeType.DataTest:
+            model_configs = self.project.data_tests
         elif resource_type == NodeType.Metric:
             model_configs = self.project.metrics
         elif resource_type == NodeType.SemanticModel:

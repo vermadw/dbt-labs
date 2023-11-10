@@ -576,7 +576,7 @@ SEVERITY_PATTERN = r"^([Ww][Aa][Rr][Nn]|[Ee][Rr][Rr][Oo][Rr])$"
 
 
 @dataclass
-class TestConfig(NodeAndTestConfig):
+class DataTestConfig(NodeAndTestConfig):
     __test__ = False
 
     # this is repeated because of a different default
@@ -750,7 +750,7 @@ RESOURCE_TYPES: Dict[NodeType, Type[BaseConfig]] = {
     NodeType.Exposure: ExposureConfig,
     NodeType.Source: SourceConfig,
     NodeType.Seed: SeedConfig,
-    NodeType.Test: TestConfig,
+    NodeType.DataTest: DataTestConfig,
     NodeType.Model: NodeConfig,
     NodeType.Snapshot: SnapshotConfig,
     NodeType.Unit: UnitTestConfig,

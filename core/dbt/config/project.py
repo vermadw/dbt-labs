@@ -432,6 +432,7 @@ class PartialProject(RenderComponents):
         snapshots: Dict[str, Any]
         sources: Dict[str, Any]
         tests: Dict[str, Any]
+        data_tests: Dict[str, Any]
         unit_tests: Dict[str, Any]
         metrics: Dict[str, Any]
         semantic_models: Dict[str, Any]
@@ -446,6 +447,7 @@ class PartialProject(RenderComponents):
         snapshots = cfg.snapshots
         sources = cfg.sources
         tests = cfg.tests
+        data_tests = cfg.data_tests
         unit_tests = cfg.unit_tests
         metrics = cfg.metrics
         semantic_models = cfg.semantic_models
@@ -507,6 +509,7 @@ class PartialProject(RenderComponents):
             query_comment=query_comment,
             sources=sources,
             tests=tests,
+            data_tests=data_tests,
             unit_tests=unit_tests,
             metrics=metrics,
             semantic_models=semantic_models,
@@ -618,6 +621,7 @@ class Project:
     snapshots: Dict[str, Any]
     sources: Dict[str, Any]
     tests: Dict[str, Any]
+    data_tests: Dict[str, Any]
     unit_tests: Dict[str, Any]
     metrics: Dict[str, Any]
     semantic_models: Dict[str, Any]
@@ -703,7 +707,8 @@ class Project:
                 "seeds": self.seeds,
                 "snapshots": self.snapshots,
                 "sources": self.sources,
-                "tests": self.tests,
+                "tests": self.tests,  # keep for backwards compatibility, but deprecate
+                "data-tests": self.data_tests,
                 "unit-tests": self.unit_tests,
                 "metrics": self.metrics,
                 "semantic-models": self.semantic_models,
