@@ -447,7 +447,7 @@ class PartialProject(RenderComponents):
         sources = cfg.sources
         # the `tests` config is deprecated but still allowed. Copy it into
         # `data_tests` to simlify logic throughout the rest of the system.
-        data_tests = cfg.tests if "tests" in rendered.project_dict else cfg.data_tests
+        data_tests = cfg.data_tests if "data-tests" in rendered.project_dict else cfg.tests
         unit_tests = cfg.unit_tests
         metrics = cfg.metrics
         semantic_models = cfg.semantic_models

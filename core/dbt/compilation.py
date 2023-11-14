@@ -122,13 +122,13 @@ def _get_tests_for_node(manifest: Manifest, unique_id: UniqueID) -> List[UniqueI
     """Get a list of tests that depend on the node with the
     provided unique id"""
 
-    tests = []
+    data_tests = []
     if unique_id in manifest.child_map:
         for child_unique_id in manifest.child_map[unique_id]:
             if child_unique_id.startswith("test."):
-                tests.append(child_unique_id)
+                data_tests.append(child_unique_id)
 
-    return tests
+    return data_tests
 
 
 class Linker:

@@ -72,10 +72,10 @@ class SchemaGenericTestParser(SimpleParser):
     def parse_column_tests(
         self, block: TestBlock, column: UnparsedColumn, version: Optional[NodeVersion]
     ) -> None:
-        if not column.tests:
+        if not column.data_tests:
             return
 
-        for test in column.tests:
+        for test in column.data_tests:
             self.parse_test(block, test, column, version)
 
     def create_test_node(
@@ -387,7 +387,7 @@ class SchemaGenericTestParser(SimpleParser):
         for column in block.columns:
             self.parse_column_tests(block, column, None)
 
-        for test in block.tests:
+        for test in block.data_tests:
             self.parse_test(block, test, None, None)
 
     def parse_versioned_tests(self, block: VersionedTestBlock) -> None:

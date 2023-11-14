@@ -78,7 +78,7 @@ class TargetBlock(YamlBlock, Generic[Target]):
         return []
 
     @property
-    def tests(self) -> List[TestDef]:
+    def data_tests(self) -> List[TestDef]:
         return []
 
     @classmethod
@@ -103,11 +103,11 @@ class TargetColumnsBlock(TargetBlock[ColumnTarget], Generic[ColumnTarget]):
 @dataclass
 class TestBlock(TargetColumnsBlock[Testable], Generic[Testable]):
     @property
-    def tests(self) -> List[TestDef]:
-        if self.target.tests is None:
+    def data_tests(self) -> List[TestDef]:
+        if self.target.data_tests is None:
             return []
         else:
-            return self.target.tests
+            return self.target.data_tests
 
     @property
     def quote_columns(self) -> Optional[bool]:
@@ -132,11 +132,11 @@ class VersionedTestBlock(TestBlock, Generic[Versioned]):
             raise DbtInternalError(".columns for VersionedTestBlock with versions")
 
     @property
-    def tests(self) -> List[TestDef]:
+    def data_tests(self) -> List[TestDef]:
         if not self.target.versions:
-            return super().tests
+            return super().data_tests
         else:
-            raise DbtInternalError(".tests for VersionedTestBlock with versions")
+            raise DbtInternalError(".data_tests for VersionedTestBlock with versions")
 
     @classmethod
     def from_yaml_block(cls, src: YamlBlock, target: Versioned) -> "VersionedTestBlock[Versioned]":

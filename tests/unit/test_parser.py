@@ -11,7 +11,12 @@ from dbt import tracking
 from dbt.context.context_config import ContextConfig
 from dbt.contracts.files import SourceFile, FileHash, FilePath, SchemaSourceFile
 from dbt.contracts.graph.manifest import Manifest
-from dbt.contracts.graph.model_config import NodeConfig, TestConfig, SnapshotConfig, ModelConfig
+from dbt.contracts.graph.model_config import (
+    NodeConfig,
+    DataTestConfig,
+    SnapshotConfig,
+    ModelConfig,
+)
 from dbt.contracts.graph.nodes import (
     ModelNode,
     Macro,
@@ -1572,7 +1577,7 @@ class SingularTestParserTest(BaseParserTest):
             package_name="snowplow",
             original_file_path=normalize("tests/test_1.sql"),
             refs=[RefArgs(name="blah")],
-            config=TestConfig(severity="ERROR"),
+            config=DataTestConfig(severity="ERROR"),
             tags=[],
             path=normalize("test_1.sql"),
             language="sql",
