@@ -29,7 +29,7 @@ def can_select_indirectly(node):
     Today, only Test nodes can be indirectly selected. In the future,
     other node types or invocation flags might qualify.
     """
-    if node.resource_type == NodeType.DataTest:
+    if node.resource_type == NodeType.Test:
         return True
     elif node.resource_type == NodeType.Unit:
         return True

@@ -750,7 +750,7 @@ RESOURCE_TYPES: Dict[NodeType, Type[BaseConfig]] = {
     NodeType.Exposure: ExposureConfig,
     NodeType.Source: SourceConfig,
     NodeType.Seed: SeedConfig,
-    NodeType.DataTest: DataTestConfig,
+    NodeType.Test: DataTestConfig,
     NodeType.Model: NodeConfig,
     NodeType.Snapshot: SnapshotConfig,
     NodeType.Unit: UnitTestConfig,

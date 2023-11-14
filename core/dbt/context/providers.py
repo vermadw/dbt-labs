@@ -1444,7 +1444,7 @@ class ModelContext(ProviderContext):
 
     @contextproperty()
     def pre_hooks(self) -> List[Dict[str, Any]]:
-        if self.model.resource_type in [NodeType.Source, NodeType.DataTest, NodeType.Unit]:
+        if self.model.resource_type in [NodeType.Source, NodeType.Test, NodeType.Unit]:
             return []
         # TODO CT-211
         return [
@@ -1453,7 +1453,7 @@ class ModelContext(ProviderContext):
 
     @contextproperty()
     def post_hooks(self) -> List[Dict[str, Any]]:
-        if self.model.resource_type in [NodeType.Source, NodeType.DataTest, NodeType.Unit]:
+        if self.model.resource_type in [NodeType.Source, NodeType.Test, NodeType.Unit]:
             return []
         # TODO CT-211
         return [
@@ -1812,7 +1812,7 @@ class TestContext(ProviderContext):
                 )
                 # the "model" should only be test nodes, but just in case, check
                 # TODO CT-211
-                if self.model.resource_type == NodeType.DataTest and self.model.file_key_name:  # type: ignore[union-attr] # noqa
+                if self.model.resource_type == NodeType.Test and self.model.file_key_name:  # type: ignore[union-attr] # noqa
                     source_file = self.manifest.files[self.model.file_id]
                     # TODO CT-211
                     (yaml_key, name) = self.model.file_key_name.split(".")  # type: ignore[union-attr] # noqa

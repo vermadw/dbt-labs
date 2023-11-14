@@ -151,7 +151,7 @@ class SchemaParser(SimpleParser[YamlBlock, ModelNode]):
 
     @property
     def resource_type(self) -> NodeType:
-        return NodeType.DataTest
+        return NodeType.Test
 
     def parse_file(self, block: FileBlock, dct: Optional[Dict] = None) -> None:
         assert isinstance(block.file, SchemaSourceFile)

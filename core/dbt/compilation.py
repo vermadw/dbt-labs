@@ -48,7 +48,7 @@ graph_file_name = "graph.gpickle"
 def print_compile_stats(stats):
     names = {
         NodeType.Model: "model",
-        NodeType.DataTest: "data test",
+        NodeType.Test: "test",
         NodeType.Unit: "unit test",
         NodeType.Snapshot: "snapshot",
         NodeType.Analysis: "analysis",
@@ -78,7 +78,7 @@ def print_compile_stats(stats):
 
 def _node_enabled(node: ManifestNode):
     # Disabled models are already excluded from the manifest
-    if node.resource_type == NodeType.DataTest and not node.config.enabled:
+    if node.resource_type == NodeType.Test and not node.config.enabled:
         return False
     else:
         return True
@@ -233,7 +233,7 @@ class Linker:
             # represent a test, continue.
             if (
                 node_id in manifest.nodes
-                and manifest.nodes[node_id].resource_type != NodeType.DataTest
+                and manifest.nodes[node_id].resource_type != NodeType.Test
             ):
                 # Get *everything* upstream of the node
                 all_upstream_nodes = nx.traversal.bfs_tree(self.graph, node_id, reverse=True)
@@ -446,7 +446,7 @@ class Compiler:
         # relation_name is set at parse time, except for tests without store_failures,
         # but cli param can turn on store_failures, so we set here.
         if (
-            node.resource_type == NodeType.DataTest
+            node.resource_type == NodeType.Test
             and node.relation_name is None
             and node.is_relational
         ):

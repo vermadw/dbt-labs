@@ -397,7 +397,7 @@ class PartialParsing:
         for unique_id in unique_ids:
             if unique_id in self.saved_manifest.nodes:
                 node = self.saved_manifest.nodes[unique_id]
-                if node.resource_type == NodeType.DataTest and node.test_node_type == "generic":
+                if node.resource_type == NodeType.Test and node.test_node_type == "generic":
                     # test nodes are handled separately. Must be removed from schema file
                     continue
                 file_id = node.file_id
@@ -525,9 +525,9 @@ class PartialParsing:
         for unique_id in unique_ids:
             if unique_id in self.saved_manifest.nodes:
                 node = self.saved_manifest.nodes[unique_id]
-                # Both generic tests from yaml files and singular tests have NodeType.DataTest
+                # Both generic tests from yaml files and singular tests have NodeType.Test
                 # so check for generic test.
-                if node.resource_type == NodeType.DataTest and node.test_node_type == "generic":
+                if node.resource_type == NodeType.Test and node.test_node_type == "generic":
                     schema_file_id = node.file_id
                     schema_file = self.saved_manifest.files[schema_file_id]
                     (key, name) = schema_file.get_key_and_name_for_test(node.unique_id)

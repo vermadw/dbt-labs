@@ -24,7 +24,7 @@ class ListTask(GraphRunnableTask):
             NodeType.Model,
             NodeType.Snapshot,
             NodeType.Seed,
-            NodeType.DataTest,
+            NodeType.Test,
             NodeType.Source,
             NodeType.Exposure,
             NodeType.Metric,
@@ -193,7 +193,7 @@ class ListTask(GraphRunnableTask):
     def get_node_selector(self):
         if self.manifest is None or self.graph is None:
             raise DbtInternalError("manifest and graph must be set to get perform node selection")
-        if self.resource_types == [NodeType.DataTest]:
+        if self.resource_types == [NodeType.Test]:
             return TestSelector(
                 graph=self.graph,
                 manifest=self.manifest,

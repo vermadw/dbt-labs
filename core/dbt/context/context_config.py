@@ -41,7 +41,7 @@ class UnrenderedConfig(ConfigSource):
             model_configs = unrendered.get("snapshots")
         elif resource_type == NodeType.Source:
             model_configs = unrendered.get("sources")
-        elif resource_type == NodeType.DataTest:
+        elif resource_type == NodeType.Test:
             model_configs = unrendered.get("data_tests")
         elif resource_type == NodeType.Metric:
             model_configs = unrendered.get("metrics")
@@ -72,7 +72,7 @@ class RenderedConfig(ConfigSource):
             model_configs = self.project.snapshots
         elif resource_type == NodeType.Source:
             model_configs = self.project.sources
-        elif resource_type == NodeType.DataTest:
+        elif resource_type == NodeType.Test:
             model_configs = self.project.data_tests
         elif resource_type == NodeType.Metric:
             model_configs = self.project.metrics

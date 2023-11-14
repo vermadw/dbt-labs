@@ -55,7 +55,7 @@ class SchemaGenericTestParser(SimpleParser):
 
     @property
     def resource_type(self) -> NodeType:
-        return NodeType.DataTest
+        return NodeType.Test
 
     @classmethod
     def get_compiled_path(cls, block: FileBlock) -> str:

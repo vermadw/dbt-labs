@@ -1007,7 +1007,7 @@ class TestShouldStoreFailures:
 
 @dataclass
 class SingularTestNode(TestShouldStoreFailures, CompiledNode):
-    resource_type: Literal[NodeType.DataTest]
+    resource_type: Literal[NodeType.Test]
     # Was not able to make mypy happy and keep the code working. We need to
     # refactor the various configs.
     config: DataTestConfig = field(default_factory=DataTestConfig)  # type: ignore
@@ -1043,7 +1043,7 @@ class HasTestMetadata(dbtClassMixin):
 
 @dataclass
 class GenericTestNode(TestShouldStoreFailures, CompiledNode, HasTestMetadata):
-    resource_type: Literal[NodeType.DataTest]
+    resource_type: Literal[NodeType.Test]
     column_name: Optional[str] = None
     file_key_name: Optional[str] = None
     # Was not able to make mypy happy and keep the code working. We need to
