@@ -122,3 +122,29 @@ class TestExposureNameDeprecation:
         exc_str = " ".join(str(exc.value).split())  # flatten all whitespace
         expected_msg = "Starting in v1.3, the 'name' of an exposure should contain only letters, numbers, and underscores."
         assert expected_msg in exc_str
+
+
+class TestTestsConfigDeprecation:
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {"model.sql": models_trivial__model_sql}
+
+    @pytest.fixture(scope="class")
+    def project_config_update(self, unique_schema):
+        return {"tests": {"enabled": "true"}}
+
+    def test_tests_config(self, project):
+        deprecations.reset_deprecations()
+        assert deprecations.active_deprecations == set()
+        run_dbt(["parse"])
+        expected = {"project-test-config"}
+        assert expected == deprecations.active_deprecations
+
+    def test_tests_config_deprecation(self, project):
+        deprecations.reset_deprecations()
+        assert deprecations.active_deprecations == set()
+        with pytest.raises(dbt.exceptions.CompilationError) as exc:
+            run_dbt(["--warn-error", "--no-partial-parse", "parse"])
+        exc_str = " ".join(str(exc.value).split())  # flatten all whitespace
+        expected_msg = "The `tests` config has been renamed to `data-tests`"
+        assert expected_msg in exc_str

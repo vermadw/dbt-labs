@@ -1,0 +1,7 @@
+kind: Under the Hood
+body: Deprecate the `tests` config in favor of a new `data-tests` config to reduce
+  confusion with `unit-tests`
+time: 2023-11-14T08:50:30.695918-06:00
+custom:
+  Author: emmyoop
+  Issue: "8699"
