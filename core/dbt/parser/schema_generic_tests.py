@@ -75,8 +75,8 @@ class SchemaGenericTestParser(SimpleParser):
         if not column.data_tests:
             return
 
-        for test in column.data_tests:
-            self.parse_test(block, test, column, version)
+        for data_test in column.data_tests:
+            self.parse_test(block, data_test, column, version)
 
     def create_test_node(
         self,

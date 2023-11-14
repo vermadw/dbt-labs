@@ -81,6 +81,10 @@ class TargetBlock(YamlBlock, Generic[Target]):
     def data_tests(self) -> List[TestDef]:
         return []
 
+    @property
+    def tests(self) -> List[TestDef]:
+        return []
+
     @classmethod
     def from_yaml_block(cls, src: YamlBlock, target: Target) -> "TargetBlock[Target]":
         return cls(
@@ -113,11 +117,22 @@ class TestBlock(TargetColumnsBlock[Testable], Generic[Testable]):
         #     deprecations.warn(
         #         "project-test-config", deprecated_path="tests", exp_path="data_tests"
         #     )
-        if self.target.data_tests:
+        # if self.target.data_tests:
+        #     return self.target.data_tests
+        # elif self.target.tests:
+        #     return self.target.tests
+        # return []
+        if self.target.data_tests is None:
+            return []
+        else:
             return self.target.data_tests
-        elif self.target.tests:
+
+    @property
+    def tests(self) -> List[TestDef]:
+        if self.target.tests is None:
+            return []
+        else:
             return self.target.tests
-        return []
 
     @property
     def quote_columns(self) -> Optional[bool]:
