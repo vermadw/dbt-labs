@@ -104,10 +104,20 @@ class TargetColumnsBlock(TargetBlock[ColumnTarget], Generic[ColumnTarget]):
 class TestBlock(TargetColumnsBlock[Testable], Generic[Testable]):
     @property
     def data_tests(self) -> List[TestDef]:
-        if self.target.data_tests is None:
-            return []
-        else:
+        # TODO: when to throw deprecation?
+        # if self.target.get("tests", None) and self.target.get("data_tests", None):
+        #     raise ValidationError(
+        #         "Invalid project config: cannot have both 'tests' and 'data_tests' defined"
+        #     )
+        # if "tests" in self.target:
+        #     deprecations.warn(
+        #         "project-test-config", deprecated_path="tests", exp_path="data_tests"
+        #     )
+        if self.target.data_tests:
             return self.target.data_tests
+        elif self.target.tests:
+            return self.target.tests
+        return []
 
     @property
     def quote_columns(self) -> Optional[bool]:

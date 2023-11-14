@@ -30,6 +30,17 @@ exposures:
       email: something@example.com
 """
 
+old_tests_yaml = """
+version: 2
+
+models:
+  - name: model
+    columns:
+     - name: id
+       tests:
+         - not_null
+"""
+
 
 class TestAdapterDeprecations:
     @pytest.fixture(scope="class")
@@ -140,11 +151,33 @@ class TestTestsConfigDeprecation:
         expected = {"project-test-config"}
         assert expected == deprecations.active_deprecations
 
-    def test_tests_config_deprecation(self, project):
+    def test_tests_config_fail(self, project):
         deprecations.reset_deprecations()
         assert deprecations.active_deprecations == set()
         with pytest.raises(dbt.exceptions.CompilationError) as exc:
             run_dbt(["--warn-error", "--no-partial-parse", "parse"])
         exc_str = " ".join(str(exc.value).split())  # flatten all whitespace
         expected_msg = "The `tests` config has been renamed to `data-tests`"
+        assert expected_msg in exc_str
+
+
+class TestSchemaTestDeprecation:
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {"model.sql": models_trivial__model_sql, "schema.yml": old_tests_yaml}
+
+    def test_tests_config(self, project):
+        deprecations.reset_deprecations()
+        assert deprecations.active_deprecations == set()
+        run_dbt(["parse"])
+        expected = {"project-test-config"}
+        assert expected == deprecations.active_deprecations
+
+    def test_schema_tests_fail(self, project):
+        deprecations.reset_deprecations()
+        assert deprecations.active_deprecations == set()
+        with pytest.raises(dbt.exceptions.CompilationError) as exc:
+            run_dbt(["--warn-error", "--no-partial-parse", "parse"])
+        exc_str = " ".join(str(exc.value).split())  # flatten all whitespace
+        expected_msg = "The `tests` config has been renamed to `data_tests`"
         assert expected_msg in exc_str

@@ -193,6 +193,7 @@ class ListTask(GraphRunnableTask):
     def get_node_selector(self):
         if self.manifest is None or self.graph is None:
             raise DbtInternalError("manifest and graph must be set to get perform node selection")
+        # breakpoint()
         if self.resource_types == [NodeType.Test]:
             return TestSelector(
                 graph=self.graph,

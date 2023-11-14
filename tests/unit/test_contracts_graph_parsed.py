@@ -10,7 +10,7 @@ from dbt.contracts.graph.model_config import (
     ModelConfig,
     NodeConfig,
     SeedConfig,
-    TestConfig,
+    DataTestConfig,
     SnapshotConfig,
     SourceConfig,
     ExposureConfig,
@@ -1090,7 +1090,7 @@ def basic_parsed_schema_test_object():
         alias="bar",
         tags=[],
         meta={},
-        config=TestConfig(),
+        config=DataTestConfig(),
         test_metadata=TestMetadata(namespace=None, name="foo", kwargs={}),
         checksum=FileHash.from_contents(""),
     )
@@ -1159,7 +1159,7 @@ def complex_parsed_schema_test_dict():
 
 @pytest.fixture
 def complex_parsed_schema_test_object():
-    cfg = TestConfig(materialized="table", severity="WARN")
+    cfg = DataTestConfig(materialized="table", severity="WARN")
     cfg._extra.update({"extra_key": "extra value"})
     return GenericTestNode(
         package_name="test",

@@ -5,6 +5,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, Type, TypeVar
 from dataclasses import dataclass, field
 
+from dbt import deprecations
 from dbt.dataclass_schema import ValidationError, dbtClassMixin
 
 from dbt.clients.yaml_helper import load_yaml_text
@@ -489,6 +490,7 @@ class PatchParser(YamlReader, Generic[NonSourceTarget, Parsed]):
                     self.normalize_group_attribute(data, path)
                     self.normalize_contract_attribute(data, path)
                     self.normalize_access_attribute(data, path)
+                    self.validate_data_tests(data)
                 node = self._target_type().from_dict(data)
             except (ValidationError, JSONValidationError) as exc:
                 raise YamlParseDictError(path, self.key, data, exc)
@@ -525,6 +527,28 @@ class PatchParser(YamlReader, Generic[NonSourceTarget, Parsed]):
 
     def normalize_access_attribute(self, data, path):
         return self.normalize_attribute(data, path, "access")
+
+    def validate_data_tests(self, data):
+        if "tests" in data and "data_tests" in data:
+            raise ValidationError(
+                "Invalid test config: cannot have both 'tests' and 'data_tests' defined"
+            )
+        if data.get("columns"):
+            for column in data["columns"]:
+                if "tests" in column and "data_tests" in column:
+                    raise ValidationError(
+                        "Invalid test config: cannot have both 'tests' and 'data_tests' defined"
+                    )
+                if "tests" in column:
+                    deprecations.warn(
+                        "project-test-config",
+                        deprecated_path="tests",
+                        exp_path="data_tests",
+                    )
+        if "tests" in data:
+            deprecations.warn(
+                "project-test-config", deprecated_path="tests", exp_path="data_tests"
+            )
 
     def patch_node_config(self, node, patch):
         # Get the ContextConfig that's used in calculating the config

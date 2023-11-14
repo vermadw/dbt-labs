@@ -98,6 +98,7 @@ TestDef = Union[Dict[str, Any], str]
 
 @dataclass
 class HasColumnAndTestProps(HasColumnProps):
+    tests: List[TestDef] = field(default_factory=list)  # deprecated
     data_tests: List[TestDef] = field(default_factory=list)
 
 

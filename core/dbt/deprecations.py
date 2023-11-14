@@ -51,6 +51,30 @@ class PackageInstallPathDeprecation(DBTDeprecation):
     _event = "PackageInstallPathDeprecation"
 
 
+# deprecations with a pattern of `project-config-*` for the name are not hardcoded
+# they are called programatically via the pattern
+
+
+class ConfigSourcePathDeprecation(DBTDeprecation):
+    _name = "project-config-source-paths"
+    _event = "ConfigSourcePathDeprecation"
+
+
+class ConfigDataPathDeprecation(DBTDeprecation):
+    _name = "project-config-data-paths"
+    _event = "ConfigDataPathDeprecation"
+
+
+class ConfigLogPathDeprecation(DBTDeprecation):
+    _name = "project-config-log-path"
+    _event = "ConfigLogPathDeprecation"
+
+
+class ConfigTargetPathDeprecation(DBTDeprecation):
+    _name = "project-config-target-path"
+    _event = "ConfigTargetPathDeprecation"
+
+
 def renamed_method(old_name: str, new_name: str):
     class AdapterDeprecationWarning(DBTDeprecation):
         _name = "adapter:{}".format(old_name)
@@ -107,7 +131,10 @@ active_deprecations: Set[str] = set()
 deprecations_list: List[DBTDeprecation] = [
     PackageRedirectDeprecation(),
     PackageInstallPathDeprecation(),
-    ExposureNameDeprecation(),
+    ConfigSourcePathDeprecation(),
+    ConfigDataPathDeprecation(),
+    ConfigLogPathDeprecation(),
+    ConfigTargetPathDeprecation(),
     TestsConfigDeprecation(),
     CollectFreshnessReturnSignature(),
 ]
