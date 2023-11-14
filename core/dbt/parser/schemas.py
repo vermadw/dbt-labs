@@ -320,7 +320,7 @@ class YamlReader(metaclass=ABCMeta):
             if "name" not in entry and "model" not in entry:
                 raise ParsingError("Entry did not contain a name")
 
-            # Render the data (except for tests and descriptions).
+            # Render the data (except for tests, data_tests and descriptions).
             # See the SchemaYamlRenderer
             entry = self.render_entry(entry)
             if self.schema_yaml_vars.env_vars:
@@ -446,6 +446,7 @@ class PatchParser(YamlReader, Generic[NonSourceTarget, Parsed]):
             # node_block is a TargetBlock (Macro or Analysis)
             # or a TestBlock (all of the others)
             node_block = self.get_block(node)
+            breakpoint()
             if isinstance(node_block, TestBlock):
                 # TestablePatchParser = seeds, snapshots
                 test_blocks.append(node_block)
@@ -490,7 +491,8 @@ class PatchParser(YamlReader, Generic[NonSourceTarget, Parsed]):
                     self.normalize_group_attribute(data, path)
                     self.normalize_contract_attribute(data, path)
                     self.normalize_access_attribute(data, path)
-                    self.validate_data_tests(data)
+                # `tests` has been deprecated, convert to `data_tests` here if present
+                self.validate_data_tests(data)
                 node = self._target_type().from_dict(data)
             except (ValidationError, JSONValidationError) as exc:
                 raise YamlParseDictError(path, self.key, data, exc)
@@ -545,10 +547,12 @@ class PatchParser(YamlReader, Generic[NonSourceTarget, Parsed]):
                         deprecated_path="tests",
                         exp_path="data_tests",
                     )
+                    column["data_tests"] = column.pop("tests")
         if "tests" in data:
             deprecations.warn(
                 "project-test-config", deprecated_path="tests", exp_path="data_tests"
             )
+            data["data_tests"] = data.pop("tests")
 
     def patch_node_config(self, node, patch):
         # Get the ContextConfig that's used in calculating the config

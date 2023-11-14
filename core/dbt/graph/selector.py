@@ -350,4 +350,5 @@ class ResourceTypeSelector(NodeSelector):
         self.resource_types: Set[NodeType] = set(resource_types)
 
     def node_is_match(self, node):
+        breakpoint()
         return node.resource_type in self.resource_types

@@ -33,13 +33,15 @@ class SchemaYamlRenderer(BaseRenderer):
 
         Return True if it's data_tests or description - those aren't rendered now
         because they're rendered later in parse_generic_tests or process_docs.
+
+        "tests" and "data_tests" are both currently supported but "tests" has been deprecated
         """
         # top level descriptions and tests
-        if len(keypath) >= 1 and keypath[0] in ("data_tests", "description"):
+        if len(keypath) >= 1 and keypath[0] in ("tests", "data_tests", "description"):
             return True
 
         # columns descriptions and tests
-        if len(keypath) == 2 and keypath[1] in ("data_tests", "description"):
+        if len(keypath) == 2 and keypath[1] in ("tests", "data_tests", "description"):
             return True
 
         # versions
@@ -49,7 +51,7 @@ class SchemaYamlRenderer(BaseRenderer):
         if (
             len(keypath) >= 3
             and keypath[0] in ("columns", "dimensions", "measures", "entities")
-            and keypath[2] in ("data_tests", "description")
+            and keypath[2] in ("tests", "data_tests", "description")
         ):
             return True
 
