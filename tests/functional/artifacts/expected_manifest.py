@@ -513,7 +513,7 @@ def expected_seeded_manifest(project, model_database=None, quote_model=False):
                     project.database, my_schema_name, "seed"
                 ),
             },
-            "test.test.not_null_model_id.d01cc630e6": {
+            "data_test.test.not_null_model_id.d01cc630e6": {
                 "alias": "not_null_model_id",
                 "attached_node": "model.test.model",
                 "compiled_path": os.path.join(
@@ -549,7 +549,7 @@ def expected_seeded_manifest(project, model_database=None, quote_model=False):
                 "database": project.database,
                 "tags": [],
                 "meta": {},
-                "unique_id": "test.test.not_null_model_id.d01cc630e6",
+                "unique_id": "data_test.test.not_null_model_id.d01cc630e6",
                 "docs": {"node_color": None, "show": True},
                 "compiled": True,
                 "compiled_code": AnyStringWith("where id is null"),
@@ -614,7 +614,7 @@ def expected_seeded_manifest(project, model_database=None, quote_model=False):
                 "unique_id": "snapshot.test.snapshot_seed",
                 "unrendered_config": unrendered_snapshot_config,
             },
-            "test.test.test_nothing_model_.5d38568946": {
+            "data_test.test.test_nothing_model_.5d38568946": {
                 "alias": "test_nothing_model_",
                 "attached_node": "model.test.model",
                 "compiled_path": os.path.join(
@@ -651,7 +651,7 @@ def expected_seeded_manifest(project, model_database=None, quote_model=False):
                 "database": project.database,
                 "tags": [],
                 "meta": {},
-                "unique_id": "test.test.test_nothing_model_.5d38568946",
+                "unique_id": "data_test.test.test_nothing_model_.5d38568946",
                 "docs": {"node_color": None, "show": True},
                 "compiled": True,
                 "compiled_code": AnyStringWith("select 0"),
@@ -667,7 +667,7 @@ def expected_seeded_manifest(project, model_database=None, quote_model=False):
                 "checksum": {"name": "none", "checksum": ""},
                 "unrendered_config": unrendered_test_config,
             },
-            "test.test.unique_model_id.67b76558ff": {
+            "data_test.test.unique_model_id.67b76558ff": {
                 "alias": "unique_model_id",
                 "attached_node": "model.test.model",
                 "compiled_path": os.path.join(
@@ -704,7 +704,7 @@ def expected_seeded_manifest(project, model_database=None, quote_model=False):
                 "database": project.database,
                 "tags": [],
                 "meta": {},
-                "unique_id": "test.test.unique_model_id.67b76558ff",
+                "unique_id": "data_test.test.unique_model_id.67b76558ff",
                 "docs": {"node_color": None, "show": True},
                 "compiled": True,
                 "compiled_code": AnyStringWith("count(*)"),
@@ -856,17 +856,17 @@ def expected_seeded_manifest(project, model_database=None, quote_model=False):
             "seed.test.seed": [],
             "snapshot.test.snapshot_seed": ["seed.test.seed"],
             "source.test.my_source.my_table": [],
-            "test.test.not_null_model_id.d01cc630e6": ["model.test.model"],
-            "test.test.test_nothing_model_.5d38568946": ["model.test.model"],
-            "test.test.unique_model_id.67b76558ff": ["model.test.model"],
+            "data_test.test.not_null_model_id.d01cc630e6": ["model.test.model"],
+            "data_test.test.test_nothing_model_.5d38568946": ["model.test.model"],
+            "data_test.test.unique_model_id.67b76558ff": ["model.test.model"],
         },
         "child_map": {
             "model.test.model": [
                 "exposure.test.notebook_exposure",
                 "exposure.test.simple_exposure",
-                "test.test.not_null_model_id.d01cc630e6",
-                "test.test.test_nothing_model_.5d38568946",
-                "test.test.unique_model_id.67b76558ff",
+                "data_test.test.not_null_model_id.d01cc630e6",
+                "data_test.test.test_nothing_model_.5d38568946",
+                "data_test.test.unique_model_id.67b76558ff",
             ],
             "model.test.second_model": ["exposure.test.notebook_exposure"],
             "exposure.test.notebook_exposure": [],
@@ -878,9 +878,9 @@ def expected_seeded_manifest(project, model_database=None, quote_model=False):
             ],
             "snapshot.test.snapshot_seed": [],
             "source.test.my_source.my_table": ["exposure.test.simple_exposure"],
-            "test.test.not_null_model_id.d01cc630e6": [],
-            "test.test.test_nothing_model_.5d38568946": [],
-            "test.test.unique_model_id.67b76558ff": [],
+            "data_test.test.not_null_model_id.d01cc630e6": [],
+            "data_test.test.test_nothing_model_.5d38568946": [],
+            "data_test.test.unique_model_id.67b76558ff": [],
         },
         "group_map": {},
         "docs": {
@@ -1676,7 +1676,7 @@ def expected_versions_manifest(project):
                 "version": None,
                 "latest_version": None,
             },
-            "test.test.unique_versioned_model_v1_first_name.6138195dec": {
+            "data_test.test.unique_versioned_model_v1_first_name.6138195dec": {
                 "alias": "unique_versioned_model_v1_first_name",
                 "attached_node": "model.test.versioned_model.v1",
                 "compiled_path": os.path.join(
@@ -1713,7 +1713,7 @@ def expected_versions_manifest(project):
                 "database": project.database,
                 "tags": [],
                 "meta": {},
-                "unique_id": "test.test.unique_versioned_model_v1_first_name.6138195dec",
+                "unique_id": "data_test.test.unique_versioned_model_v1_first_name.6138195dec",
                 "docs": {"node_color": None, "show": True},
                 "compiled": True,
                 "compiled_code": AnyStringWith("count(*)"),
@@ -1730,7 +1730,7 @@ def expected_versions_manifest(project):
                 "checksum": {"name": "none", "checksum": ""},
                 "unrendered_config": unrendered_test_config,
             },
-            "test.test.unique_versioned_model_v1_count.0b4c0b688a": {
+            "data_test.test.unique_versioned_model_v1_count.0b4c0b688a": {
                 "alias": "unique_versioned_model_v1_count",
                 "attached_node": "model.test.versioned_model.v1",
                 "compiled_path": os.path.join(
@@ -1767,7 +1767,7 @@ def expected_versions_manifest(project):
                 "database": project.database,
                 "tags": [],
                 "meta": {},
-                "unique_id": "test.test.unique_versioned_model_v1_count.0b4c0b688a",
+                "unique_id": "data_test.test.unique_versioned_model_v1_count.0b4c0b688a",
                 "docs": {"node_color": None, "show": True},
                 "compiled": True,
                 "compiled_code": AnyStringWith("count(*)"),
@@ -1784,7 +1784,7 @@ def expected_versions_manifest(project):
                 "checksum": {"name": "none", "checksum": ""},
                 "unrendered_config": unrendered_test_config,
             },
-            "test.test.unique_versioned_model_v2_first_name.998430d28e": {
+            "data_test.test.unique_versioned_model_v2_first_name.998430d28e": {
                 "alias": "unique_versioned_model_v2_first_name",
                 "attached_node": "model.test.versioned_model.v2",
                 "compiled_path": os.path.join(
@@ -1821,7 +1821,7 @@ def expected_versions_manifest(project):
                 "database": project.database,
                 "tags": [],
                 "meta": {},
-                "unique_id": "test.test.unique_versioned_model_v2_first_name.998430d28e",
+                "unique_id": "data_test.test.unique_versioned_model_v2_first_name.998430d28e",
                 "docs": {"node_color": None, "show": True},
                 "compiled": True,
                 "compiled_code": AnyStringWith("count(*)"),
@@ -1888,19 +1888,19 @@ def expected_versions_manifest(project):
         "child_map": {
             "model.test.versioned_model.v1": [
                 "model.test.ref_versioned_model",
-                "test.test.unique_versioned_model_v1_count.0b4c0b688a",
-                "test.test.unique_versioned_model_v1_first_name.6138195dec",
+                "data_test.test.unique_versioned_model_v1_count.0b4c0b688a",
+                "data_test.test.unique_versioned_model_v1_first_name.6138195dec",
             ],
             "model.test.versioned_model.v2": [
                 "exposure.test.notebook_exposure",
                 "model.test.ref_versioned_model",
-                "test.test.unique_versioned_model_v2_first_name.998430d28e",
+                "data_test.test.unique_versioned_model_v2_first_name.998430d28e",
             ],
             "model.test.ref_versioned_model": [],
             "exposure.test.notebook_exposure": [],
-            "test.test.unique_versioned_model_v1_first_name.6138195dec": [],
-            "test.test.unique_versioned_model_v1_count.0b4c0b688a": [],
-            "test.test.unique_versioned_model_v2_first_name.998430d28e": [],
+            "data_test.test.unique_versioned_model_v1_first_name.6138195dec": [],
+            "data_test.test.unique_versioned_model_v1_count.0b4c0b688a": [],
+            "data_test.test.unique_versioned_model_v2_first_name.998430d28e": [],
         },
         "parent_map": {
             "model.test.versioned_model.v1": [],
@@ -1910,13 +1910,13 @@ def expected_versions_manifest(project):
                 "model.test.versioned_model.v2",
             ],
             "exposure.test.notebook_exposure": ["model.test.versioned_model.v2"],
-            "test.test.unique_versioned_model_v1_first_name.6138195dec": [
+            "data_test.test.unique_versioned_model_v1_first_name.6138195dec": [
                 "model.test.versioned_model.v1"
             ],
-            "test.test.unique_versioned_model_v1_count.0b4c0b688a": [
+            "data_test.test.unique_versioned_model_v1_count.0b4c0b688a": [
                 "model.test.versioned_model.v1"
             ],
-            "test.test.unique_versioned_model_v2_first_name.998430d28e": [
+            "data_test.test.unique_versioned_model_v2_first_name.998430d28e": [
                 "model.test.versioned_model.v2"
             ],
         },
@@ -1924,9 +1924,9 @@ def expected_versions_manifest(project):
             "test_group": [
                 "model.test.versioned_model.v1",
                 "model.test.versioned_model.v2",
-                "test.test.unique_versioned_model_v1_first_name.6138195dec",
-                "test.test.unique_versioned_model_v1_count.0b4c0b688a",
-                "test.test.unique_versioned_model_v2_first_name.998430d28e",
+                "data_test.test.unique_versioned_model_v1_first_name.6138195dec",
+                "data_test.test.unique_versioned_model_v1_count.0b4c0b688a",
+                "data_test.test.unique_versioned_model_v2_first_name.998430d28e",
             ]
         },
         "disabled": {},

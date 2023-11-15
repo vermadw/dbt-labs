@@ -53,7 +53,7 @@ class GenerateTest(unittest.TestCase):
             }
         ]
         expected = {
-            "test.model.test_table": {
+            "data_test.model.test_table": {
                 "metadata": {
                     "owner": None,
                     "comment": None,
@@ -74,10 +74,12 @@ class GenerateTest(unittest.TestCase):
                         "include": False,
                     },
                 },
-                "unique_id": "test.model.test_table",
+                "unique_id": "data_test.model.test_table",
             },
         }
-        self.map_uids([("test_database", "test_schema", "test_table", "test.model.test_table")])
+        self.map_uids(
+            [("test_database", "test_schema", "test_table", "data_test.model.test_table")]
+        )
 
         result = self.generate_catalog_dict(columns)
 

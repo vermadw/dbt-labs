@@ -446,7 +446,6 @@ class PatchParser(YamlReader, Generic[NonSourceTarget, Parsed]):
             # node_block is a TargetBlock (Macro or Analysis)
             # or a TestBlock (all of the others)
             node_block = self.get_block(node)
-            breakpoint()
             if isinstance(node_block, TestBlock):
                 # TestablePatchParser = seeds, snapshots
                 test_blocks.append(node_block)

@@ -21,7 +21,7 @@ class TestSelectionExpansion:
         indirect_selection="eager",
         selector_name=None,
     ):
-        list_args = ["ls", "--resource-type", "test"]
+        list_args = ["ls", "--resource-type", "data_test"]
         if include:
             list_args.extend(("--select", include))
         if exclude:
@@ -30,7 +30,6 @@ class TestSelectionExpansion:
             list_args.extend(("--indirect-selection", indirect_selection))
         if selector_name:
             list_args.extend(("--selector", selector_name))
-
         listed = run_dbt(list_args)
         assert len(listed) == len(expected_tests)
 

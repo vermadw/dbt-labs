@@ -295,7 +295,6 @@ class SchemaSourceFile(BaseSourceFile):
     def get_key_and_name_for_test(self, test_unique_id):
         yaml_key = None
         block_name = None
-        breakpoint()
         for key in self.data_tests.keys():
             for name in self.data_tests[key]:
                 for unique_id in self.data_tests[key][name]:

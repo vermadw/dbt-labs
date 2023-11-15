@@ -393,7 +393,8 @@ resource_type = click.option(
             "source",
             "analysis",
             "model",
-            "test",
+            "test",  # deprecated
+            "data_test",
             "exposure",
             "snapshot",
             "seed",
