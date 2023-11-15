@@ -7,11 +7,10 @@
 
   {%- set target_relation = this.incorporate(type='table') -%}
   {%- set temp_relation = make_temp_relation(target_relation)-%}
-  {% do run_query(get_create_table_as_sql(True, temp_relation, get_empty_subquery_sql(sql))) %}
-  {%- set columns_in_relation = adapter.get_columns_in_relation(temp_relation) -%}
+  {% set columns_in_relation = adapter.get_column_schema_from_query(get_empty_subquery_sql(sql)) %}
   {%- set column_name_to_data_types = {} -%}
   {%- for column in columns_in_relation -%}
-  {%- do column_name_to_data_types.update({column.name: column.dtype}) -%}
+  {%- do column_name_to_data_types.update({column.name: column.data_type}) -%}
   {%- endfor -%}
 
   {% set unit_test_sql = get_unit_test_sql(sql, get_expected_sql(expected_rows, column_name_to_data_types), tested_expected_column_names) %}
