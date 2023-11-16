@@ -1,4 +1,8 @@
+from csv import DictReader
+from pathlib import Path
 from typing import List, Set, Dict, Any
+
+from dbt_extractor import py_extract_from_source, ExtractionError  # type: ignore
 
 from dbt.config import RuntimeConfig
 from dbt.context.context_config import ContextConfig
@@ -28,7 +32,6 @@ from dbt.parser.schemas import (
     ParseResult,
 )
 from dbt.utils import get_pseudo_test_path
-from dbt_extractor import py_extract_from_source, ExtractionError  # type: ignore
 
 
 class UnitTestManifestLoader:
@@ -130,7 +133,7 @@ class UnitTestManifestLoader:
                 ),
             }
 
-            if original_input_node.resource_type == NodeType.Model:
+            if original_input_node.resource_type in (NodeType.Model, NodeType.Seed):
                 input_name = f"{unit_test_node.name}__{original_input_node.name}"
                 input_node = ModelNode(
                     **common_fields,
@@ -219,6 +222,35 @@ class UnitTestParser(YamlReader):
         self.schema_parser = schema_parser
         self.yaml = yaml
 
+    def _load_rows_from_seed(self, ref_str: str) -> List[Dict[str, Any]]:
+        """Read rows from seed file on disk if not specified in YAML config. If seed file doesn't exist, return empty list."""
+        ref = py_extract_from_source("{{ " + ref_str + " }}")["refs"][0]
+
+        rows: List[Dict[str, Any]] = []
+
+        seed_name = ref["name"]
+        package_name = ref.get("package", self.project.project_name)
+
+        seed_node = self.manifest.ref_lookup.find(seed_name, package_name, None, self.manifest)
+
+        if not seed_node or seed_node.resource_type != NodeType.Seed:
+            # Seed not found in custom package specified
+            if package_name != self.project.project_name:
+                raise ParsingError(
+                    f"Unable to find seed '{package_name}.{seed_name}' for unit tests in '{package_name}' package"
+                )
+            else:
+                raise ParsingError(
+                    f"Unable to find seed '{package_name}.{seed_name}' for unit tests in directories: {self.project.seed_paths}"
+                )
+
+        seed_path = Path(seed_node.root_path) / seed_node.original_file_path
+        with open(seed_path, "r") as f:
+            for row in DictReader(f):
+                rows.append(row)
+
+        return rows
+
     def parse(self) -> ParseResult:
         for data in self.get_key_dicts():
             unit_test = self._get_unit_test(data)
@@ -232,6 +264,8 @@ class UnitTestParser(YamlReader):
 
             # Check that format and type of rows matches for each given input
             for input in unit_test.given:
+                if input.rows is None and input.fixture is None:
+                    input.rows = self._load_rows_from_seed(input.input)
                 input.validate_fixture("input", unit_test.name)
             unit_test.expect.validate_fixture("expected", unit_test.name)
 
