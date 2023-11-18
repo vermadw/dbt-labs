@@ -58,6 +58,7 @@ from dbt.contracts.graph.manifest import (
     Disabled,
     MacroManifest,
     ManifestStateCheck,
+    ParsingInfo,
 )
 from dbt.contracts.graph.nodes import (
     SourceDefinition,
@@ -425,6 +426,8 @@ class ManifestLoader:
 
                     if os.environ.get("DBT_PP_TEST"):
                         raise exc
+                finally:
+                    self.manifest._parsing_info = self.manifest._parsing_info or ParsingInfo()
 
         if self.skip_parsing:
             fire_event(PartialParsingSkipParsing())
