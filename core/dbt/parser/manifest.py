@@ -332,6 +332,117 @@ class ManifestLoader:
 
         return manifest
 
+    def load_macros_and_tests(self, project_parser_files: Dict[str, Dict[str, List[str]]]) -> None:
+        """
+        Load Macros and tests
+        We need to parse the macros first, so they're resolvable when
+        the other files are loaded.  Also need to parse tests, specifically
+        generic tests
+        """
+        start_load_macros = time.perf_counter()
+        orig_project_parser_files = deepcopy(project_parser_files)
+        self.load_and_parse_macros(project_parser_files)
+
+        # If we're partially parsing check that certain macros have not been changed
+        if self.partially_parsing and self.skip_partial_parsing_because_of_macros():
+            fire_event(
+                UnableToPartialParse(
+                    reason="change detected to override macro. Starting full parse."
+                )
+            )
+
+            # Get new Manifest with original file records and move over the macros
+            self.manifest = self.new_manifest  # contains newly read files
+            project_parser_files = orig_project_parser_files
+            self.partially_parsing = False
+            self.load_and_parse_macros(project_parser_files)
+
+        self._perf_info.load_macros_elapsed = time.perf_counter() - start_load_macros
+
+        # Now that the macros are parsed, parse the rest of the files.
+        # This is currently done on a per project basis.
+        start_parse_projects = time.perf_counter()
+
+        # Load the rest of the files except for schema yaml files
+        parser_types: List[Type[Parser]] = [
+            ModelParser,
+            SnapshotParser,
+            AnalysisParser,
+            SingularTestParser,
+            SeedParser,
+            DocumentationParser,
+            HookParser,
+        ]
+        for project in self.all_projects.values():
+            if project.project_name not in project_parser_files:
+                continue
+            self.parse_project(project, project_parser_files[project.project_name], parser_types)
+
+        # Now that we've loaded most of the nodes (except for schema tests, sources, metrics)
+        # load up the Lookup objects to resolve them by name, so the SourceFiles store
+        # the unique_id instead of the name. Sources are loaded from yaml files, so
+        # aren't in place yet
+        self.manifest.rebuild_ref_lookup()
+        self.manifest.rebuild_doc_lookup()
+        self.manifest.rebuild_disabled_lookup()
+
+        # Load yaml files
+        parser_types = [SchemaParser]  # type: ignore
+        for project in self.all_projects.values():
+            if project.project_name not in project_parser_files:
+                continue
+            self.parse_project(project, project_parser_files[project.project_name], parser_types)
+
+        self.cleanup_disabled()
+
+        self._perf_info.parse_project_elapsed = time.perf_counter() - start_parse_projects
+
+        # patch_sources converts the UnparsedSourceDefinitions in the
+        # Manifest.sources to SourceDefinition via 'patch_source'
+        # in SourcePatcher
+        start_patch = time.perf_counter()
+        patcher = SourcePatcher(self.root_project, self.manifest)
+        patcher.construct_sources()
+        self.manifest.sources = patcher.sources
+        self._perf_info.patch_sources_elapsed = time.perf_counter() - start_patch
+
+        # We need to rebuild disabled in order to include disabled sources
+        self.manifest.rebuild_disabled_lookup()
+
+        # copy the selectors from the root_project to the manifest
+        self.manifest.selectors = self.root_project.manifest_selectors
+
+        # inject any available external nodes
+        self.manifest.build_parent_and_child_maps()
+        external_nodes_modified = self.inject_external_nodes()
+        if external_nodes_modified:
+            self.manifest.rebuild_ref_lookup()
+
+        # update the refs, sources, docs and metrics depends_on.nodes
+        # These check the created_at time on the nodes to
+        # determine whether they need processing.
+        start_process = time.perf_counter()
+        self.process_sources(self.root_project.project_name)
+        self.process_refs(self.root_project.project_name, self.root_project.dependencies)
+        self.process_docs(self.root_project)
+        self.process_metrics(self.root_project)
+        self.process_saved_queries(self.root_project)
+        self.check_valid_group_config()
+        self.check_valid_access_property()
+
+        semantic_manifest = SemanticManifest(self.manifest)
+        if not semantic_manifest.validate():
+            raise dbt.exceptions.ParsingError("Semantic Manifest validation failed.")
+
+        # update tracking data
+        self._perf_info.process_manifest_elapsed = time.perf_counter() - start_process
+        self._perf_info.static_analysis_parsed_path_count = (
+            self.manifest._parsing_info.static_analysis_parsed_path_count
+        )
+        self._perf_info.static_analysis_path_count = (
+            self.manifest._parsing_info.static_analysis_path_count
+        )
+
     # This is where the main action happens
     def load(self) -> Manifest:
         start_read_files = time.perf_counter()
@@ -363,7 +474,7 @@ class ManifestLoader:
         # Set the files in the manifest and save the project_parser_files
         file_reader.read_files()
         self.manifest.files = file_reader.files
-        project_parser_files = orig_project_parser_files = file_reader.project_parser_files
+        project_parser_files = file_reader.project_parser_files
         self._perf_info.path_count = len(self.manifest.files)
         self._perf_info.read_files_elapsed = time.perf_counter() - start_read_files
 
@@ -432,116 +543,7 @@ class ManifestLoader:
         if self.skip_parsing:
             fire_event(PartialParsingSkipParsing())
         else:
-            # Load Macros and tests
-            # We need to parse the macros first, so they're resolvable when
-            # the other files are loaded.  Also need to parse tests, specifically
-            # generic tests
-            start_load_macros = time.perf_counter()
-            self.load_and_parse_macros(project_parser_files)
-
-            # If we're partially parsing check that certain macros have not been changed
-            if self.partially_parsing and self.skip_partial_parsing_because_of_macros():
-                fire_event(
-                    UnableToPartialParse(
-                        reason="change detected to override macro. Starting full parse."
-                    )
-                )
-
-                # Get new Manifest with original file records and move over the macros
-                self.manifest = self.new_manifest  # contains newly read files
-                project_parser_files = orig_project_parser_files
-                self.partially_parsing = False
-                self.load_and_parse_macros(project_parser_files)
-
-            self._perf_info.load_macros_elapsed = time.perf_counter() - start_load_macros
-
-            # Now that the macros are parsed, parse the rest of the files.
-            # This is currently done on a per project basis.
-            start_parse_projects = time.perf_counter()
-
-            # Load the rest of the files except for schema yaml files
-            parser_types: List[Type[Parser]] = [
-                ModelParser,
-                SnapshotParser,
-                AnalysisParser,
-                SingularTestParser,
-                SeedParser,
-                DocumentationParser,
-                HookParser,
-            ]
-            for project in self.all_projects.values():
-                if project.project_name not in project_parser_files:
-                    continue
-                self.parse_project(
-                    project, project_parser_files[project.project_name], parser_types
-                )
-
-            # Now that we've loaded most of the nodes (except for schema tests, sources, metrics)
-            # load up the Lookup objects to resolve them by name, so the SourceFiles store
-            # the unique_id instead of the name. Sources are loaded from yaml files, so
-            # aren't in place yet
-            self.manifest.rebuild_ref_lookup()
-            self.manifest.rebuild_doc_lookup()
-            self.manifest.rebuild_disabled_lookup()
-
-            # Load yaml files
-            parser_types = [SchemaParser]  # type: ignore
-            for project in self.all_projects.values():
-                if project.project_name not in project_parser_files:
-                    continue
-                self.parse_project(
-                    project, project_parser_files[project.project_name], parser_types
-                )
-
-            self.cleanup_disabled()
-
-            self._perf_info.parse_project_elapsed = time.perf_counter() - start_parse_projects
-
-            # patch_sources converts the UnparsedSourceDefinitions in the
-            # Manifest.sources to SourceDefinition via 'patch_source'
-            # in SourcePatcher
-            start_patch = time.perf_counter()
-            patcher = SourcePatcher(self.root_project, self.manifest)
-            patcher.construct_sources()
-            self.manifest.sources = patcher.sources
-            self._perf_info.patch_sources_elapsed = time.perf_counter() - start_patch
-
-            # We need to rebuild disabled in order to include disabled sources
-            self.manifest.rebuild_disabled_lookup()
-
-            # copy the selectors from the root_project to the manifest
-            self.manifest.selectors = self.root_project.manifest_selectors
-
-            # inject any available external nodes
-            self.manifest.build_parent_and_child_maps()
-            external_nodes_modified = self.inject_external_nodes()
-            if external_nodes_modified:
-                self.manifest.rebuild_ref_lookup()
-
-            # update the refs, sources, docs and metrics depends_on.nodes
-            # These check the created_at time on the nodes to
-            # determine whether they need processing.
-            start_process = time.perf_counter()
-            self.process_sources(self.root_project.project_name)
-            self.process_refs(self.root_project.project_name, self.root_project.dependencies)
-            self.process_docs(self.root_project)
-            self.process_metrics(self.root_project)
-            self.process_saved_queries(self.root_project)
-            self.check_valid_group_config()
-            self.check_valid_access_property()
-
-            semantic_manifest = SemanticManifest(self.manifest)
-            if not semantic_manifest.validate():
-                raise dbt.exceptions.ParsingError("Semantic Manifest validation failed.")
-
-            # update tracking data
-            self._perf_info.process_manifest_elapsed = time.perf_counter() - start_process
-            self._perf_info.static_analysis_parsed_path_count = (
-                self.manifest._parsing_info.static_analysis_parsed_path_count
-            )
-            self._perf_info.static_analysis_path_count = (
-                self.manifest._parsing_info.static_analysis_path_count
-            )
+            self.load_macros_and_tests(project_parser_files)
 
         # Inject any available external nodes, reprocess refs if changes to the manifest were made.
         external_nodes_modified = False
