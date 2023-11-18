@@ -1,9 +1,13 @@
+import datetime
+import json
+import os
+import pprint
+import time
+import traceback
 from copy import deepcopy
 from dataclasses import dataclass
 from dataclasses import field
-import datetime
-import os
-import traceback
+from itertools import chain
 from typing import (
     Dict,
     Optional,
@@ -16,31 +20,63 @@ from typing import (
     Tuple,
     Set,
 )
-from itertools import chain
-import time
 
-from dbt.contracts.graph.semantic_manifest import SemanticManifest
-from dbt.events.base_types import EventLevel
-import json
-import pprint
 import msgpack
+from dbt_semantic_interfaces.enum_extension import assert_values_exhausted
+from dbt_semantic_interfaces.type_enums import MetricType
 
 import dbt.exceptions
 import dbt.tracking
 import dbt.utils
-from dbt.flags import get_flags
-
+from dbt import plugins
 from dbt.adapters.factory import (
     get_adapter,
     get_relation_class_by_name,
     get_adapter_package_names,
 )
+from dbt.clients.jinja import get_rendered, MacroStack
+from dbt.clients.jinja_static import statically_extract_macro_calls
+from dbt.clients.system import (
+    make_directory,
+    path_exists,
+    read_json,
+    write_file,
+)
+from dbt.config import Project, RuntimeConfig
 from dbt.constants import (
     MANIFEST_FILE_NAME,
     PARTIAL_PARSE_FILE_NAME,
     SEMANTIC_MANIFEST_FILE_NAME,
 )
-from dbt.helper_types import PathSet
+from dbt.context.configured import generate_macro_context
+from dbt.context.docs import generate_runtime_docs_context
+from dbt.context.macro_resolver import MacroResolver, TestMacroNamespace
+from dbt.context.providers import ParseProvider
+from dbt.contracts.files import FileHash, ParseFileType, SchemaSourceFile
+from dbt.contracts.graph.manifest import (
+    Manifest,
+    Disabled,
+    MacroManifest,
+    ManifestStateCheck,
+)
+from dbt.contracts.graph.nodes import (
+    SourceDefinition,
+    Macro,
+    Exposure,
+    Metric,
+    SavedQuery,
+    SeedNode,
+    SemanticModel,
+    ManifestNode,
+    ResultNode,
+    ModelNode,
+    NodeRelation,
+)
+from dbt.contracts.graph.semantic_manifest import SemanticManifest
+from dbt.contracts.graph.unparsed import NodeVersion
+from dbt.contracts.util import Writable
+from dbt.dataclass_schema import StrEnum, dbtClassMixin
+from dbt.events.base_types import EventLevel
 from dbt.events.functions import fire_event, get_invocation_id, warn_or_error
 from dbt.events.types import (
     PartialParsingErrorProcessingFile,
@@ -58,22 +94,23 @@ from dbt.events.types import (
     DeprecatedReference,
     UpcomingReferenceDeprecation,
 )
+from dbt.exceptions import (
+    TargetNotFoundError,
+    AmbiguousAliasError,
+    InvalidAccessTypeError,
+)
+from dbt.flags import get_flags
+from dbt.helper_types import PathSet
 from dbt.logger import DbtProcessState
 from dbt.node_types import NodeType, AccessType
-from dbt.clients.jinja import get_rendered, MacroStack
-from dbt.clients.jinja_static import statically_extract_macro_calls
-from dbt.clients.system import (
-    make_directory,
-    path_exists,
-    read_json,
-    write_file,
-)
-from dbt.config import Project, RuntimeConfig
-from dbt.context.docs import generate_runtime_docs_context
-from dbt.context.macro_resolver import MacroResolver, TestMacroNamespace
-from dbt.context.configured import generate_macro_context
-from dbt.context.providers import ParseProvider
-from dbt.contracts.files import FileHash, ParseFileType, SchemaSourceFile
+from dbt.parser.analysis import AnalysisParser
+from dbt.parser.base import Parser
+from dbt.parser.docs import DocumentationParser
+from dbt.parser.generic_test import GenericTestParser
+from dbt.parser.hooks import HookParser
+from dbt.parser.macros import MacroParser
+from dbt.parser.models import ModelParser
+from dbt.parser.partial import PartialParsing, special_override_macros
 from dbt.parser.read_files import (
     ReadFilesFromFileSystem,
     load_source_file,
@@ -81,54 +118,13 @@ from dbt.parser.read_files import (
     ReadFilesFromDiff,
     ReadFiles,
 )
-from dbt.parser.partial import PartialParsing, special_override_macros
-from dbt.contracts.graph.manifest import (
-    Manifest,
-    Disabled,
-    MacroManifest,
-    ManifestStateCheck,
-    ParsingInfo,
-)
-from dbt.contracts.graph.nodes import (
-    SourceDefinition,
-    Macro,
-    Exposure,
-    Metric,
-    SavedQuery,
-    SeedNode,
-    SemanticModel,
-    ManifestNode,
-    ResultNode,
-    ModelNode,
-    NodeRelation,
-)
-from dbt.contracts.graph.unparsed import NodeVersion
-from dbt.contracts.util import Writable
-from dbt.exceptions import (
-    TargetNotFoundError,
-    AmbiguousAliasError,
-    InvalidAccessTypeError,
-)
-from dbt.parser.base import Parser
-from dbt.parser.analysis import AnalysisParser
-from dbt.parser.generic_test import GenericTestParser
-from dbt.parser.singular_test import SingularTestParser
-from dbt.parser.docs import DocumentationParser
-from dbt.parser.hooks import HookParser
-from dbt.parser.macros import MacroParser
-from dbt.parser.models import ModelParser
 from dbt.parser.schemas import SchemaParser
 from dbt.parser.search import FileBlock
 from dbt.parser.seeds import SeedParser
+from dbt.parser.singular_test import SingularTestParser
 from dbt.parser.snapshots import SnapshotParser
 from dbt.parser.sources import SourcePatcher
 from dbt.version import __version__
-
-from dbt.dataclass_schema import StrEnum, dbtClassMixin
-from dbt import plugins
-
-from dbt_semantic_interfaces.enum_extension import assert_values_exhausted
-from dbt_semantic_interfaces.type_enums import MetricType
 
 PARSING_STATE = DbtProcessState("parsing")
 PERF_INFO_FILE_NAME = "perf_info.json"
@@ -267,6 +263,8 @@ class ManifestLoader:
         # This is a saved manifest from a previous run that's used for partial parsing
         self.saved_manifest: Optional[Manifest] = self.read_manifest_for_partial_parse()
 
+        self.skip_parsing = False
+
     # This is the method that builds a complete manifest. We sometimes
     # use an abbreviated process in tests.
     @classmethod
@@ -368,11 +366,10 @@ class ManifestLoader:
         self._perf_info.path_count = len(self.manifest.files)
         self._perf_info.read_files_elapsed = time.perf_counter() - start_read_files
 
-        skip_parsing = False
         if self.saved_manifest is not None:
             self.partial_parser = PartialParsing(self.saved_manifest, self.manifest.files)
-            skip_parsing = self.partial_parser.skip_parsing()
-            if skip_parsing:
+            self.skip_parsing = self.partial_parser.skip_parsing()
+            if self.skip_parsing:
                 # nothing changed, so we don't need to generate project_parser_files
                 self.manifest = self.saved_manifest
             else:
@@ -429,10 +426,7 @@ class ManifestLoader:
                     if os.environ.get("DBT_PP_TEST"):
                         raise exc
 
-        if self.manifest._parsing_info is None:
-            self.manifest._parsing_info = ParsingInfo()
-
-        if skip_parsing:
+        if self.skip_parsing:
             fire_event(PartialParsingSkipParsing())
         else:
             # Load Macros and tests
@@ -548,7 +542,7 @@ class ManifestLoader:
 
         # Inject any available external nodes, reprocess refs if changes to the manifest were made.
         external_nodes_modified = False
-        if skip_parsing:
+        if self.skip_parsing:
             # If we didn't skip parsing, this will have already run because it must run
             # before process_refs. If we did skip parsing, then it's possible that only
             # external nodes have changed and we need to run this to capture that.
@@ -562,7 +556,7 @@ class ManifestLoader:
                 )
                 # parent and child maps will be rebuilt by write_manifest
 
-        if not skip_parsing or external_nodes_modified:
+        if not self.skip_parsing or external_nodes_modified:
             # write out the fully parsed manifest
             self.write_manifest_for_partial_parse()
 
@@ -587,7 +581,7 @@ class ManifestLoader:
 
                 resolved_refs = self.manifest.resolve_refs(node, self.root_project.project_name)
                 resolved_model_refs = [r for r in resolved_refs if isinstance(r, ModelNode)]
-                node.depends_on
+
                 for resolved_ref in resolved_model_refs:
                     if resolved_ref.deprecation_date:
 
