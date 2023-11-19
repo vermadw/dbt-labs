@@ -332,7 +332,11 @@ class ManifestLoader:
 
         return manifest
 
-    def load_macros_and_tests(self, project_parser_files: Dict[str, Dict[str, List[str]]]) -> None:
+    def load_macros_and_tests(
+        self,
+        project_parser_files: Dict[str, Dict[str, List[str]]],
+        orig_project_parser_files: Dict[str, Dict[str, List[str]]],
+    ) -> None:
         """
         Load Macros and tests
         We need to parse the macros first, so they're resolvable when
@@ -340,7 +344,6 @@ class ManifestLoader:
         generic tests
         """
         start_load_macros = time.perf_counter()
-        orig_project_parser_files = deepcopy(project_parser_files)
         self.load_and_parse_macros(project_parser_files)
 
         # If we're partially parsing check that certain macros have not been changed
@@ -474,7 +477,7 @@ class ManifestLoader:
         # Set the files in the manifest and save the project_parser_files
         file_reader.read_files()
         self.manifest.files = file_reader.files
-        project_parser_files = file_reader.project_parser_files
+        project_parser_files = orig_project_parser_files = file_reader.project_parser_files
         self._perf_info.path_count = len(self.manifest.files)
         self._perf_info.read_files_elapsed = time.perf_counter() - start_read_files
 
@@ -543,7 +546,7 @@ class ManifestLoader:
         if self.skip_parsing:
             fire_event(PartialParsingSkipParsing())
         else:
-            self.load_macros_and_tests(project_parser_files)
+            self.load_macros_and_tests(project_parser_files, orig_project_parser_files)
 
         # Inject any available external nodes, reprocess refs if changes to the manifest were made.
         external_nodes_modified = False
