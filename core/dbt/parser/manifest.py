@@ -448,38 +448,9 @@ class ManifestLoader:
 
     # This is where the main action happens
     def load(self) -> Manifest:
-        start_read_files = time.perf_counter()
-
-        # This updates the "files" dictionary in self.manifest, and creates
-        # the partial_parser_files dictionary (see read_files.py),
-        # which is a dictionary of projects to a dictionary
-        # of parsers to lists of file strings. The file strings are
-        # used to get the SourceFiles from the manifest files.
-        saved_files = self.saved_manifest.files if self.saved_manifest else {}
-        file_reader: Optional[ReadFiles] = None
-        if self.file_diff:
-            # We're getting files from a file diff
-            file_reader = ReadFilesFromDiff(
-                all_projects=self.all_projects,
-                files=self.manifest.files,
-                saved_files=saved_files,
-                root_project_name=self.root_project.project_name,
-                file_diff=self.file_diff,
-            )
-        else:
-            # We're getting files from the file system
-            file_reader = ReadFilesFromFileSystem(
-                all_projects=self.all_projects,
-                files=self.manifest.files,
-                saved_files=saved_files,
-            )
-
-        # Set the files in the manifest and save the project_parser_files
-        file_reader.read_files()
+        file_reader = self.get_file_reader()
         self.manifest.files = file_reader.files
         project_parser_files = orig_project_parser_files = file_reader.project_parser_files
-        self._perf_info.path_count = len(self.manifest.files)
-        self._perf_info.read_files_elapsed = time.perf_counter() - start_read_files
 
         if self.saved_manifest is not None:
             self.partial_parser = PartialParsing(self.saved_manifest, self.manifest.files)
@@ -552,6 +523,41 @@ class ManifestLoader:
         self.check_for_model_deprecations()
 
         return self.manifest
+
+    def get_file_reader(self):
+        """
+        This updates the "files" dictionary in self.manifest, and creates
+        the partial_parser_files dictionary (see read_files.py),
+        which is a dictionary of projects to a dictionary
+        of parsers to lists of file strings. The file strings are
+        used to get the SourceFiles from the manifest files.
+        """
+        start_time = time.perf_counter()
+
+        saved_files = self.saved_manifest.files if self.saved_manifest else {}
+        file_reader: Optional[ReadFiles] = None
+        if self.file_diff:
+            # We're getting files from a file diff
+            file_reader = ReadFilesFromDiff(
+                all_projects=self.all_projects,
+                files=self.manifest.files,
+                saved_files=saved_files,
+                root_project_name=self.root_project.project_name,
+                file_diff=self.file_diff,
+            )
+        else:
+            # We're getting files from the file system
+            file_reader = ReadFilesFromFileSystem(
+                all_projects=self.all_projects,
+                files=self.manifest.files,
+                saved_files=saved_files,
+            )
+
+        file_reader.read_files()
+        self._perf_info.path_count = len(file_reader.files)
+        self._perf_info.read_files_elapsed = time.perf_counter() - start_time
+
+        return file_reader
 
     def load_external_nodes(self):
         # Inject any available external nodes, reprocess refs if changes to the manifest were made.
