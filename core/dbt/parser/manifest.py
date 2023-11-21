@@ -561,7 +561,9 @@ class ManifestLoader:
                 self.root_project.project_name,
                 self.root_project.dependencies,
             )
+            # parent and child maps will be rebuilt by write_manifest
 
+        if not self.skip_parsing or external_nodes_modified:
             # write out the fully parsed manifest
             self.write_manifest_for_partial_parse()
 
