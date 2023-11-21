@@ -27,7 +27,7 @@
 {%-   set default_row_copy = default_row.copy() -%}
 {%-   do default_row_copy.update(row) -%}
 select
-{%-   for column_name, column_value in default_row_copy.items() %} {{ column_value }} AS {{ column_name }}{% if not loop.last -%}, {%- endif %}
+{%-   for column_name, column_value in default_row_copy.items() %} {{ column_value }} as {{ column_name }}{% if not loop.last -%}, {%- endif %}
 {%-   endfor %}
 {%-   if not loop.last %}
 union all
@@ -36,7 +36,7 @@ union all
 
 {%- if (rows | length) == 0 -%}
     select
-    {%- for column_name, column_value in default_row.items() %} {{ column_value }} AS {{ column_name }}{% if not loop.last -%},{%- endif %}
+    {%- for column_name, column_value in default_row.items() %} {{ column_value }} as {{ column_name }}{% if not loop.last -%},{%- endif %}
     {%- endfor %}
     limit 0
 {%- endif -%}
@@ -52,7 +52,7 @@ union all
 {%- for row in rows -%}
 {%- do format_row(row, column_name_to_data_types) -%}
 select
-{%- for column_name, column_value in row.items() %} {{ column_value }} AS {{ column_name }}{% if not loop.last -%}, {%- endif %}
+{%- for column_name, column_value in row.items() %} {{ column_value }} as {{ column_name }}{% if not loop.last -%}, {%- endif %}
 {%- endfor %}
 {%- if not loop.last %}
 union all
