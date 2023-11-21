@@ -545,14 +545,11 @@ class ManifestLoader:
 
         if self.skip_parsing:
             fire_event(PartialParsingSkipParsing())
-            # If we didn't skip parsing, this will have already run because it must run
-            # before process_refs. If we did skip parsing, then it's possible that only
-            # external nodes have changed and we need to run this to capture that.
-            self.manifest.build_parent_and_child_maps()
         else:
             self.load_macros_and_tests(project_parser_files, orig_project_parser_files)
 
         # Inject any available external nodes, reprocess refs if changes to the manifest were made.
+        self.manifest.build_parent_and_child_maps()
         external_nodes_modified = self.inject_external_nodes()
 
         if external_nodes_modified:
