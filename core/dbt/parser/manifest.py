@@ -453,66 +453,7 @@ class ManifestLoader:
         project_parser_files = orig_project_parser_files = file_reader.project_parser_files
 
         if self.saved_manifest is not None:
-            self.partial_parser = PartialParsing(self.saved_manifest, self.manifest.files)
-            self.skip_parsing = self.partial_parser.skip_parsing()
-            if self.skip_parsing:
-                # nothing changed, so we don't need to generate project_parser_files
-                self.manifest = self.saved_manifest
-            else:
-                # create child_map and parent_map
-                self.saved_manifest.build_parent_and_child_maps()
-                # create group_map
-                self.saved_manifest.build_group_map()
-                # files are different, we need to create a new set of
-                # project_parser_files.
-                try:
-                    project_parser_files = self.partial_parser.get_parsing_files()
-                    self.partially_parsing = True
-                    self.manifest = self.saved_manifest
-                except Exception as exc:
-                    # pp_files should still be the full set and manifest is new manifest,
-                    # since get_parsing_files failed
-                    fire_event(
-                        UnableToPartialParse(
-                            reason="an error occurred. Switching to full reparse."
-                        )
-                    )
-
-                    # Get traceback info
-                    tb_info = traceback.format_exc()
-                    formatted_lines = tb_info.splitlines()
-                    (_, line, method) = formatted_lines[-3].split(", ")
-                    exc_info = {
-                        "traceback": tb_info,
-                        "exception": formatted_lines[-1],
-                        "code": formatted_lines[-2],
-                        "location": f"{line} {method}",
-                    }
-
-                    # get file info for local logs
-                    parse_file_type: str = ""
-                    file_id = self.partial_parser.processing_file
-                    if file_id:
-                        source_file = None
-                        if file_id in self.saved_manifest.files:
-                            source_file = self.saved_manifest.files[file_id]
-                        elif file_id in self.manifest.files:
-                            source_file = self.manifest.files[file_id]
-                        if source_file:
-                            parse_file_type = source_file.parse_file_type
-                            fire_event(PartialParsingErrorProcessingFile(file=file_id))
-                    exc_info["parse_file_type"] = parse_file_type
-                    fire_event(PartialParsingError(exc_info=exc_info))
-
-                    # Send event
-                    if dbt.tracking.active_user is not None:
-                        exc_info["full_reparse_reason"] = ReparseReason.exception
-                        dbt.tracking.track_partial_parser(exc_info)
-
-                    if os.environ.get("DBT_PP_TEST"):
-                        raise exc
-                finally:
-                    self.manifest._parsing_info = self.manifest._parsing_info or ParsingInfo()
+            project_parser_files = self.rebuild_manifest_pp(project_parser_files)
 
         if self.skip_parsing:
             fire_event(PartialParsingSkipParsing())
@@ -523,6 +464,68 @@ class ManifestLoader:
         self.check_for_model_deprecations()
 
         return self.manifest
+
+    def rebuild_manifest_pp(self, project_parser_files):
+        self.partial_parser = PartialParsing(self.saved_manifest, self.manifest.files)
+        self.skip_parsing = self.partial_parser.skip_parsing()
+        if self.skip_parsing:
+            # nothing changed, so we don't need to generate project_parser_files
+            self.manifest = self.saved_manifest
+        else:
+            # create child_map and parent_map
+            self.saved_manifest.build_parent_and_child_maps()
+            # create group_map
+            self.saved_manifest.build_group_map()
+            # files are different, we need to create a new set of
+            # project_parser_files.
+            try:
+                project_parser_files = self.partial_parser.get_parsing_files()
+                self.partially_parsing = True
+                self.manifest = self.saved_manifest
+            except Exception as exc:
+                # pp_files should still be the full set and manifest is new manifest,
+                # since get_parsing_files failed
+                fire_event(
+                    UnableToPartialParse(reason="an error occurred. Switching to full reparse.")
+                )
+
+                # Get traceback info
+                tb_info = traceback.format_exc()
+                formatted_lines = tb_info.splitlines()
+                (_, line, method) = formatted_lines[-3].split(", ")
+                exc_info = {
+                    "traceback": tb_info,
+                    "exception": formatted_lines[-1],
+                    "code": formatted_lines[-2],
+                    "location": f"{line} {method}",
+                }
+
+                # get file info for local logs
+                parse_file_type: str = ""
+                file_id = self.partial_parser.processing_file
+                if file_id:
+                    source_file = None
+                    if file_id in self.saved_manifest.files:
+                        source_file = self.saved_manifest.files[file_id]
+                    elif file_id in self.manifest.files:
+                        source_file = self.manifest.files[file_id]
+                    if source_file:
+                        parse_file_type = source_file.parse_file_type
+                        fire_event(PartialParsingErrorProcessingFile(file=file_id))
+                exc_info["parse_file_type"] = parse_file_type
+                fire_event(PartialParsingError(exc_info=exc_info))
+
+                # Send event
+                if dbt.tracking.active_user is not None:
+                    exc_info["full_reparse_reason"] = ReparseReason.exception
+                    dbt.tracking.track_partial_parser(exc_info)
+
+                if os.environ.get("DBT_PP_TEST"):
+                    raise exc
+            finally:
+                self.manifest._parsing_info = self.manifest._parsing_info or ParsingInfo()
+
+        return project_parser_files
 
     def get_file_reader(self):
         """
