@@ -9,7 +9,8 @@
 
 {%-   set column_name_to_data_types = {} -%}
 {%-   for column in columns_in_relation -%}
-{%-     do column_name_to_data_types.update({column.name: column.data_type}) -%}
+{#-- This needs to be a case-insensitive comparison --#}
+{%-     do column_name_to_data_types.update({column.name|lower: column.data_type}) -%}
 {%-   endfor -%}
 {%- endif -%}
 
@@ -67,7 +68,7 @@ union all
 {%- for column_name, column_value in row.items() -%}
 {% set row_update = {column_name: column_value} %}
 {%- if column_value is string -%}
-{%- set row_update = {column_name: safe_cast(dbt.string_literal(column_value), column_name_to_data_types[column_name]) } -%}
+{%- set row_update = {column_name: safe_cast(dbt.string_literal(dbt.escape_single_quotes(column_value)), column_name_to_data_types[column_name]) } -%}
 {%- elif column_value is none -%}
 {%- set row_update = {column_name: safe_cast('null', column_name_to_data_types[column_name]) } -%}
 {%- else -%}
