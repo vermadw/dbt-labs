@@ -465,7 +465,10 @@ class ManifestLoader:
 
         return self.manifest
 
-    def rebuild_manifest_pp(self, project_parser_files):
+    def rebuild_manifest_pp(
+        self, project_parser_files: Dict[str, Dict[str, List[str]]]
+    ) -> Dict[str, Dict[str, List[str]]]:
+        assert self.saved_manifest is not None
         self.partial_parser = PartialParsing(self.saved_manifest, self.manifest.files)
         self.skip_parsing = self.partial_parser.skip_parsing()
         if self.skip_parsing:
@@ -527,7 +530,7 @@ class ManifestLoader:
 
         return project_parser_files
 
-    def get_file_reader(self):
+    def get_file_reader(self) -> ReadFiles:
         """
         This updates the "files" dictionary in self.manifest, and creates
         the partial_parser_files dictionary (see read_files.py),
