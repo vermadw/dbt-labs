@@ -2,7 +2,12 @@ from dbt.adapters.base import Column
 
 
 class PostgresColumn(Column):
-    _DTYPE_ARRAY_TO_DATA_TYPE = {"stringarray": "text[]"}
+    _DTYPE_TO_DATA_TYPE = {
+        "stringarray": "text[]",
+        "integerarray": "int[]",
+        "datetime": "timestamp",
+        "datetimetz": "timestamptz",
+    }
 
     @property
     def data_type(self):
@@ -12,7 +17,7 @@ class PostgresColumn(Column):
         ):
             return self.dtype
 
-        if self.dtype.lower() in self._DTYPE_ARRAY_TO_DATA_TYPE:
-            return self._DTYPE_ARRAY_TO_DATA_TYPE[self.dtype.lower()]
+        if self.dtype.lower() in self._DTYPE_TO_DATA_TYPE:
+            return self._DTYPE_TO_DATA_TYPE[self.dtype.lower()]
 
         return super().data_type
