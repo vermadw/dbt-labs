@@ -548,10 +548,15 @@ class ManifestLoader:
         else:
             self.load_macros_and_tests(project_parser_files, orig_project_parser_files)
 
+        self.load_external_nodes()
+        self.check_for_model_deprecations()
+
+        return self.manifest
+
+    def load_external_nodes(self):
         # Inject any available external nodes, reprocess refs if changes to the manifest were made.
         self.manifest.build_parent_and_child_maps()
         external_nodes_modified = self.inject_external_nodes()
-
         if external_nodes_modified:
             self.manifest.rebuild_ref_lookup()
             self.process_refs(
@@ -559,14 +564,9 @@ class ManifestLoader:
                 self.root_project.dependencies,
             )
             # parent and child maps will be rebuilt by write_manifest
-
         if not self.skip_parsing or external_nodes_modified:
             # write out the fully parsed manifest
             self.write_manifest_for_partial_parse()
-
-        self.check_for_model_deprecations()
-
-        return self.manifest
 
     def check_for_model_deprecations(self):
         for node in self.manifest.nodes.values():
