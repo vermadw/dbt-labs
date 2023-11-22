@@ -6,7 +6,6 @@ name: Performance Check
 
 on:
   pull_request:
-    types: [opened, reopened, edited]
   workflow_dispatch:
 
 jobs:
