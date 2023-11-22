@@ -1,11 +1,12 @@
 # **what?**
-# This workflow uses a python script to check the performance of dbt against a
-# baseline on a set of benchmark projects.
+# This workflow uses a python script to check the performance of dbt against
+# baselines on a set of benchmark projects.
 
-name: perf-check
-description: "Checks the performance of dbt on benchmark projects."
+name: Performance Check
 
 on:
+  pull_request:
+    types: [opened, reopened, edited]
   workflow_dispatch:
 
 jobs:
