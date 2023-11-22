@@ -5,6 +5,9 @@
 name: perf-check
 description: "Checks the performance of dbt on benchmark projects."
 
+on:
+  workflow_dispatch:
+
 jobs:
   build-and-perf-check:
     name: Build dbt and check performance
