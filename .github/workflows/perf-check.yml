@@ -50,7 +50,7 @@ jobs:
 
       - name: Run performance script
         run: |
-          python ./scripts/perf-check.py
+          python ./scripts/perf-check.py benchmark
 
       - uses: actions/upload-artifact@v3
         with:
