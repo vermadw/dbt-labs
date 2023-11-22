@@ -64,13 +64,12 @@ def run_jobs(projects):
             print(f"running job {job_name}")
             cwd = project["path"] if "path" in project else project_name
             start = time.perf_counter()
-            res = subprocess.run(job["command"], cwd=cwd, capture_output=True)
+            res = subprocess.run(job["command"], cwd=cwd)
             end = time.perf_counter()
             if res.returncode != 0:
                 results[job_name] = {"succeeded": False}
             else:
                 results[job_name] = {"succeeded": True, "time": end - start}
-                pass
 
     return results
 
@@ -116,8 +115,8 @@ def baseline(projects):
     results = run_jobs(projects)
 
     print("Writing results to 'perf_check.json'.")
-    with open("perf_check.json", "w") as r:
-        json.dump(results, r, indent=4)
+    with open("perf_check.json", "w") as w:
+        json.dump(results, w, indent=4)
 
 
 if len(sys.argv) < 2:
