@@ -34,6 +34,7 @@ jobs:
 
       - name: Create profile
         run: |
+          mkdir $HOME/.dbt
           echo "default:"               > $HOME/.dbt/profiles.yml
           echo "  outputs:"             > $HOME/.dbt/profiles.yml
           echo "    dev:"               > $HOME/.dbt/profiles.yml
