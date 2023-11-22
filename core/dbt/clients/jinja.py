@@ -274,18 +274,14 @@ class MacroStack(threading.local):
             raise DbtInternalError(f"popped {got}, expected {name}")
 
 
-class MacroGenerator(BaseMacroGenerator):
+class UntrackedMacroGenerator(BaseMacroGenerator):
     def __init__(
         self,
         macro,
         context: Optional[Dict[str, Any]] = None,
-        node: Optional[Any] = None,
-        stack: Optional[MacroStack] = None,
     ) -> None:
         super().__init__(context)
         self.macro = macro
-        self.node = node
-        self.stack = stack
 
     def get_template(self):
         return template_cache.get_node_template(self.macro)
@@ -302,6 +298,23 @@ class MacroGenerator(BaseMacroGenerator):
         except CompilationError as e:
             e.stack.append(self.macro)
             raise e
+
+    # this makes MacroGenerator objects callable like functions
+    def __call__(self, *args, **kwargs):
+        return self.call_macro(*args, **kwargs)
+
+
+class MacroGenerator(UntrackedMacroGenerator):
+    def __init__(
+        self,
+        macro,
+        context: Optional[Dict[str, Any]] = None,
+        node: Optional[Any] = None,
+        stack: Optional[MacroStack] = None,
+    ) -> None:
+        super().__init__(macro, context)
+        self.node = node
+        self.stack = stack
 
     # This adds the macro's unique id to the node's 'depends_on'
     @contextmanager
