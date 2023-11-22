@@ -53,5 +53,5 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-        name: perf-check.json
-        path: ./perf-check.json
+          name: perf-check.json
+          path: ./perf-check.json
