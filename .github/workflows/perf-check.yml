@@ -46,7 +46,8 @@ jobs:
           echo "      threads: 4"       > $HOME/.dbt/profiles.yml
           echo "      type: postgres"   > $HOME/.dbt/profiles.yml
           echo "      user: peter.webb" > $HOME/.dbt/profiles.yml
-          echo "  target: default"      > $HOME/.dbt/profiles.yml
+          echo "  target: dev"          > $HOME/.dbt/profiles.yml
+          cat $HOME/.dbt/profiles.yml
 
       - name: Run performance script
         run: |
@@ -55,4 +56,3 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: perf-check.json
-          path: ./perf-check.json
