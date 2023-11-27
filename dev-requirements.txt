@@ -1,7 +1,6 @@
 black==23.3.0
 bumpversion
-# ddtrace==2.1.7
-git+https://github.com/DataDog/dd-trace-py.git@54419ef6a3523776d803d9f4cba2334dcceb9fbb
+ddtrace==2.2.1
 docutils
 flake8
 flaky
