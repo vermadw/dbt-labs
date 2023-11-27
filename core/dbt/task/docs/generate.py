@@ -7,7 +7,8 @@ import agate
 from dbt.common.dataclass_schema import ValidationError
 from dbt.clients.system import load_file_contents
 
-from .compile import CompileTask
+from dbt.task.docs import DOCS_INDEX_FILE_PATH
+from dbt.task.compile import CompileTask
 
 from dbt.adapters.factory import get_adapter
 from dbt.contracts.graph.nodes import ResultNode
@@ -28,7 +29,6 @@ from dbt.common.exceptions import DbtInternalError
 from dbt.exceptions import AmbiguousCatalogMatchError
 from dbt.graph import ResourceTypeSelector
 from dbt.node_types import NodeType
-from dbt.include.global_project import DOCS_INDEX_FILE_PATH
 from dbt.common.events.functions import fire_event
 from dbt.adapters.events.types import (
     WriteCatalogFailure,

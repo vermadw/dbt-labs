@@ -11,8 +11,8 @@ from dbt.adapters.contracts.connection import AdapterRequiredConfig, Credentials
 from dbt.common.events.functions import fire_event
 from dbt.adapters.events.types import AdapterImportError, PluginLoadError, AdapterRegistered
 from dbt.common.exceptions import DbtInternalError, DbtRuntimeError
-from dbt.include.global_project import PACKAGE_PATH as GLOBAL_PROJECT_PATH
-from dbt.include.global_project import PROJECT_NAME as GLOBAL_PROJECT_NAME
+from dbt.adapters.include.global_project import PACKAGE_PATH as GLOBAL_PROJECT_PATH
+from dbt.adapters.include.global_project import PROJECT_NAME as GLOBAL_PROJECT_NAME
 from dbt.semver import VersionSpecifier
 from dbt.mp_context import get_mp_context
 

@@ -11,7 +11,7 @@ from dbt.task.base import ConfiguredTask
 from dbt.task.build import BuildTask
 from dbt.task.clone import CloneTask
 from dbt.task.compile import CompileTask
-from dbt.task.generate import GenerateTask
+from dbt.task.docs.generate import GenerateTask
 from dbt.task.run import RunTask
 from dbt.task.run_operation import RunOperationTask
 from dbt.task.seed import SeedTask
