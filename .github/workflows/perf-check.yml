@@ -40,12 +40,12 @@ jobs:
           echo "    dev:"               >> $HOME/.dbt/profiles.yml
           echo "      dbname: dummy"    >> $HOME/.dbt/profiles.yml
           echo "      host: localhost"  >> $HOME/.dbt/profiles.yml
-          echo "      password: peter"  >> $HOME/.dbt/profiles.yml
+          echo "      password: paswd"  >> $HOME/.dbt/profiles.yml
           echo "      port: 5432"       >> $HOME/.dbt/profiles.yml
           echo "      schema: dummy"    >> $HOME/.dbt/profiles.yml
           echo "      threads: 4"       >> $HOME/.dbt/profiles.yml
           echo "      type: postgres"   >> $HOME/.dbt/profiles.yml
-          echo "      user: peter.webb" >> $HOME/.dbt/profiles.yml
+          echo "      user: dummy"      >> $HOME/.dbt/profiles.yml
           echo "  target: dev"          >> $HOME/.dbt/profiles.yml
           cat $HOME/.dbt/profiles.yml
 

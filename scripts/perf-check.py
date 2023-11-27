@@ -7,7 +7,7 @@ import time
 
 
 projects = {
-    # example of how to use project in separate public repo, not used yet
+    # example of how to use project in separate public repo, not used yet.
     # "jaffle_shop": {
     # 	"name": "jaffle_shop",
     # 	"git_url": "https://github.com/dbt-labs/jaffle_shop.git",
@@ -32,11 +32,11 @@ projects = {
 }
 
 
-def print_usage():
+def print_usage() -> None:
     print("invalid usage")
 
 
-def git_checkout(repo: str, path: pathlib.Path, commit: str = None):
+def git_checkout(repo: str, path: pathlib.Path, commit: str = None) -> None:
     if not os.path.exists(path):
         print(f"Didn't find path {path}. Cloing {repo} into {path}.")
         res = subprocess.run(["git", "clone", repo, path], capture_output=True)
@@ -50,7 +50,7 @@ def git_checkout(repo: str, path: pathlib.Path, commit: str = None):
         res.check_returncode()
 
 
-def prepare_projects(projects):
+def prepare_projects(projects) -> None:
     for project_name, project in projects.items():
         if "git_url" in project:
             git_checkout(project["git_url"], project_name)
@@ -74,7 +74,7 @@ def run_jobs(projects):
     return results
 
 
-def compare(baseline_file, result_file):
+def compare(baseline_file: str, result_file: str) -> None:
     with open(baseline_file, "r") as b:
         baseline = json.load(b)
 
@@ -110,7 +110,7 @@ def compare(baseline_file, result_file):
     Console().print(table)
 
 
-def baseline(projects):
+def baseline(projects) -> None:
     prepare_projects(projects)
     results = run_jobs(projects)
 
