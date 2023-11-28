@@ -40,8 +40,7 @@ class CompileRunner(BaseRunner):
         )
 
     def compile(self, manifest):
-        compiler = self.adapter.get_compiler()
-        return compiler.compile_node(self.node, manifest, {})
+        return self.compiler.compile_node(self.node, manifest, {})
 
 
 class CompileTask(GraphRunnableTask):
