@@ -38,10 +38,10 @@ from dbt.common.events.types import (
 )
 from dbt.exceptions import (
     DbtInternalError,
-    NotImplementedError,
     DbtRuntimeError,
     FailFastError,
 )
+from dbt.common.exceptions import NotImplementedError
 from dbt.flags import get_flags
 from dbt.graph import GraphQueue, NodeSelector, SelectionSpec, parse_difference, UniqueId
 from dbt.logger import (
@@ -371,7 +371,7 @@ class GraphRunnableTask(ConfiguredTask):
             print_run_result_error(failure.result)
             # ensure information about all nodes is propagated to run results when failing fast
             return self.node_results
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, SystemExit):
             run_result = self.get_result(
                 results=self.node_results,
                 elapsed_time=time.time() - self.started_at,

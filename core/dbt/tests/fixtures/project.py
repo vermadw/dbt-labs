@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import pytest  # type: ignore
 import random
 from argparse import Namespace
@@ -6,7 +7,7 @@ from datetime import datetime
 import warnings
 import yaml
 
-from dbt.exceptions import CompilationError, DbtDatabaseError
+from dbt.common.exceptions import CompilationError, DbtDatabaseError
 import dbt.flags as flags
 from dbt.config.runtime import RuntimeConfig
 from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters, get_adapter_by_type
@@ -265,7 +266,13 @@ def clean_up_logging():
 # into the project in the tests instead of putting them in the fixtures.
 @pytest.fixture(scope="class")
 def adapter(
-    unique_schema, project_root, profiles_root, profiles_yml, dbt_project_yml, clean_up_logging
+    logs_dir,
+    unique_schema,
+    project_root,
+    profiles_root,
+    profiles_yml,
+    dbt_project_yml,
+    clean_up_logging,
 ):
     # The profiles.yml and dbt_project.yml should already be written out
     args = Namespace(
@@ -374,7 +381,7 @@ def project_files(project_root, models, macros, snapshots, properties, seeds, te
 def logs_dir(request, prefix):
     dbt_log_dir = os.path.join(request.config.rootdir, "logs", prefix)
     os.environ["DBT_LOG_PATH"] = str(dbt_log_dir)
-    yield dbt_log_dir
+    yield str(Path(dbt_log_dir))
     del os.environ["DBT_LOG_PATH"]
 
 

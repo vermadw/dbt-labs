@@ -1,7 +1,9 @@
-from dbt import ui
-from dbt.node_types import NodeType
+from dbt.common import ui
+
 from typing import Optional, Union
 from datetime import datetime
+
+from dbt.common.events.interfaces import LoggableDbtObject
 
 
 def format_fancy_output_line(
@@ -35,16 +37,14 @@ def format_fancy_output_line(
     return output
 
 
-def _pluralize(string: Union[str, NodeType]) -> str:
-    try:
-        convert = NodeType(string)
-    except ValueError:
-        return f"{string}s"
+def _pluralize(string: Union[str, LoggableDbtObject]) -> str:
+    if isinstance(string, LoggableDbtObject):
+        return string.pluralize()
     else:
-        return convert.pluralize()
+        return f"{string}s"
 
 
-def pluralize(count, string: Union[str, NodeType]) -> str:
+def pluralize(count, string: Union[str, LoggableDbtObject]) -> str:
     pluralized: str = str(string)
     if count != 1:
         pluralized = _pluralize(string)

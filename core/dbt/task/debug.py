@@ -17,13 +17,14 @@ from dbt.common.events.types import (
 )
 import dbt.clients.system
 import dbt.exceptions
+import dbt.common.exceptions
 from dbt.adapters.factory import get_adapter, register_adapter
 from dbt.config import PartialProject, Project, Profile
 from dbt.config.renderer import DbtProjectYamlRenderer, ProfileRenderer
 from dbt.contracts.results import RunStatus
 from dbt.clients.yaml_helper import load_yaml_text
 from dbt.links import ProfileConfigDocs
-from dbt.ui import green, red
+from dbt.common.ui import green, red
 from dbt.common.events.format import pluralize
 from dbt.version import get_installed_version
 
@@ -81,7 +82,7 @@ class DebugTask(BaseTask):
         self.profile_path = os.path.join(self.profiles_dir, "profiles.yml")
         try:
             self.project_dir = get_nearest_project_dir(self.args.project_dir)
-        except dbt.exceptions.Exception:
+        except dbt.common.exceptions.DbtBaseException:
             # we probably couldn't find a project directory. Set project dir
             # to whatever was given, or default to the current directory.
             if args.project_dir:
@@ -126,7 +127,7 @@ class DebugTask(BaseTask):
         fire_event(DebugCmdOut(msg="Using dbt_project.yml file at {}".format(self.project_path)))
         if load_profile_status.run_status == RunStatus.Success:
             if self.profile is None:
-                raise dbt.exceptions.DbtInternalError(
+                raise dbt.common.exceptions.DbtInternalError(
                     "Profile should not be None if loading profile completed"
                 )
             else:
@@ -218,7 +219,7 @@ class DebugTask(BaseTask):
                     # https://github.com/dbt-labs/dbt-core/issues/6259
                     getattr(self.args, "threads", None),
                 )
-            except dbt.exceptions.DbtConfigError as exc:
+            except dbt.common.exceptions.DbtConfigError as exc:
                 profile_errors.append(str(exc))
             else:
                 if len(profile_names) == 1:
@@ -263,7 +264,7 @@ class DebugTask(BaseTask):
 
         try:
             return [Profile.pick_profile_name(args_profile, project_profile)], ""
-        except dbt.exceptions.DbtConfigError:
+        except dbt.common.exceptions.DbtConfigError:
             pass
         # try to guess
 
@@ -345,7 +346,7 @@ class DebugTask(BaseTask):
                 renderer,
                 verify_version=self.args.VERSION_CHECK,
             )
-        except dbt.exceptions.DbtConfigError as exc:
+        except dbt.common.exceptions.DbtConfigError as exc:
             return SubtaskStatus(
                 log_msg=red("ERROR invalid"),
                 run_status=RunStatus.Error,

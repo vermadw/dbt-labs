@@ -23,27 +23,34 @@ from typing import (
 from multiprocessing.context import SpawnContext
 
 from dbt.adapters.capability import Capability, CapabilityDict
-from dbt.contracts.graph.nodes import ColumnLevelConstraint, ConstraintType, ModelLevelConstraint
+from dbt.common.contracts.constraints import (
+    ColumnLevelConstraint,
+    ConstraintType,
+    ModelLevelConstraint,
+)
 
 import agate
 import pytz
 
-from dbt.exceptions import (
+from dbt.adapters.exceptions import (
+    SnapshotTargetIncompleteError,
+    SnapshotTargetNotSnapshotTableError,
+    NullRelationDropAttemptedError,
+    NullRelationCacheAttemptedError,
+    RelationReturnedMultipleResultsError,
+    UnexpectedNonTimestampError,
+    RenameToNoneAttemptedError,
+    QuoteConfigTypeError,
+)
+
+from dbt.common.exceptions import (
+    NotImplementedError,
     DbtInternalError,
     DbtRuntimeError,
     DbtValidationError,
+    UnexpectedNullError,
     MacroArgTypeError,
     MacroResultError,
-    NotImplementedError,
-    NullRelationCacheAttemptedError,
-    NullRelationDropAttemptedError,
-    QuoteConfigTypeError,
-    RelationReturnedMultipleResultsError,
-    RenameToNoneAttemptedError,
-    SnapshotTargetIncompleteError,
-    SnapshotTargetNotSnapshotTableError,
-    UnexpectedNonTimestampError,
-    UnexpectedNullError,
 )
 
 from dbt.adapters.protocol import AdapterConfig
@@ -52,12 +59,13 @@ from dbt.common.clients.agate_helper import (
     get_column_value_uncased,
     merge_tables,
     table_from_rows,
+    Integer,
 )
 from dbt.clients.jinja import MacroGenerator
 from dbt.contracts.graph.manifest import Manifest, MacroManifest
 from dbt.contracts.graph.nodes import ResultNode
 from dbt.common.events.functions import fire_event, warn_or_error
-from dbt.common.events.types import (
+from dbt.adapters.events.types import (
     CacheMiss,
     ListRelations,
     CodeExecution,
@@ -79,7 +87,8 @@ from dbt.adapters.base.relation import (
 from dbt.adapters.base import Column as BaseColumn
 from dbt.adapters.base import Credentials
 from dbt.adapters.cache import RelationsCache, _make_ref_key_dict
-from dbt import deprecations
+from dbt.adapters.events.types import CollectFreshnessReturnSignature
+
 
 GET_CATALOG_MACRO_NAME = "get_catalog"
 GET_CATALOG_RELATIONS_MACRO_NAME = "get_catalog_relations"
@@ -964,6 +973,17 @@ class BaseAdapter(metaclass=AdapterMeta):
         raise NotImplementedError("`convert_number_type` is not implemented for this adapter!")
 
     @classmethod
+    def convert_integer_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+        """Return the type in the database that best maps to the agate.Number
+        type for the given agate table and column index.
+
+        :param agate_table: The table
+        :param col_idx: The index into the agate table for the column.
+        :return: The name of the type in the database
+        """
+        return "integer"
+
+    @classmethod
     @abc.abstractmethod
     def convert_boolean_type(cls, agate_table: agate.Table, col_idx: int) -> str:
         """Return the type in the database that best maps to the agate.Boolean
@@ -1020,6 +1040,7 @@ class BaseAdapter(metaclass=AdapterMeta):
     def convert_agate_type(cls, agate_table: agate.Table, col_idx: int) -> Optional[str]:
         agate_type: Type = agate_table.column_types[col_idx]
         conversions: List[Tuple[Type, Callable[..., str]]] = [
+            (Integer, cls.convert_integer_type),
             (agate.Text, cls.convert_text_type),
             (agate.Number, cls.convert_number_type),
             (agate.Boolean, cls.convert_boolean_type),
@@ -1180,9 +1201,12 @@ class BaseAdapter(metaclass=AdapterMeta):
             }
 
             def in_map(row: agate.Row):
-                d = _expect_row_value("table_database", row).casefold()
-                s = _expect_row_value("table_schema", row).casefold()
-                i = _expect_row_value("table_name", row).casefold()
+                d = _expect_row_value("table_database", row)
+                s = _expect_row_value("table_schema", row)
+                i = _expect_row_value("table_name", row)
+                d = d.casefold() if d is not None else None
+                s = s.casefold() if s is not None else None
+                i = i.casefold() if i is not None else None
                 return (d, s, i) in relation_map
 
             catalogs = catalogs.where(in_map)
@@ -1257,7 +1281,7 @@ class BaseAdapter(metaclass=AdapterMeta):
         ]
         result = self.execute_macro(FRESHNESS_MACRO_NAME, kwargs=kwargs, manifest=manifest)
         if isinstance(result, agate.Table):
-            deprecations.warn("collect-freshness-return-signature")
+            warn_or_error(CollectFreshnessReturnSignature())
             adapter_response = None
             table = result
         else:

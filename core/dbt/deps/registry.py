@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 from dbt import semver
 from dbt.flags import get_flags
@@ -13,8 +13,8 @@ from dbt.exceptions import (
     DependencyError,
     PackageNotFoundError,
     PackageVersionNotFoundError,
-    VersionsNotCompatibleError,
 )
+from dbt.common.exceptions import VersionsNotCompatibleError
 
 
 class RegistryPackageMixin:
@@ -39,6 +39,12 @@ class RegistryPinnedPackage(RegistryPackageMixin, PinnedPackage):
     @property
     def name(self):
         return self.package
+
+    def to_dict(self) -> Dict[str, str]:
+        return {
+            "package": self.package,
+            "version": self.version,
+        }
 
     def source_type(self):
         return "hub"

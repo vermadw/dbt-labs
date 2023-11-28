@@ -15,15 +15,15 @@ from dbt.contracts.util import (
 )
 
 # trigger the PathEncoder
-import dbt.helper_types  # noqa:F401
-from dbt.exceptions import CompilationError, ParsingError, DbtInternalError
+import dbt.common.helper_types  # noqa:F401
+from dbt.exceptions import ParsingError
+from dbt.common.exceptions import DbtInternalError, CompilationError
 from dbt.common.dataclass_schema import (
     dbtClassMixin,
     StrEnum,
     ExtensibleDbtClassMixin,
     ValidationError,
 )
-from dbt_semantic_interfaces.type_enums.export_destination_type import ExportDestinationType
 
 from dataclasses import dataclass, field
 from datetime import timedelta
@@ -148,7 +148,7 @@ class UnparsedVersion(dbtClassMixin):
     constraints: List[Dict[str, Any]] = field(default_factory=list)
     docs: Docs = field(default_factory=Docs)
     tests: Optional[List[TestDef]] = None
-    columns: Sequence[Union[dbt.helper_types.IncludeExclude, UnparsedColumn]] = field(
+    columns: Sequence[Union[dbt.common.helper_types.IncludeExclude, UnparsedColumn]] = field(
         default_factory=list
     )
     deprecation_date: Optional[datetime.datetime] = None
@@ -160,7 +160,7 @@ class UnparsedVersion(dbtClassMixin):
             return str(self.v) < str(other.v)
 
     @property
-    def include_exclude(self) -> dbt.helper_types.IncludeExclude:
+    def include_exclude(self) -> dbt.common.helper_types.IncludeExclude:
         return self._include_exclude
 
     @property
@@ -173,10 +173,10 @@ class UnparsedVersion(dbtClassMixin):
 
     def __post_init__(self):
         has_include_exclude = False
-        self._include_exclude = dbt.helper_types.IncludeExclude(include="*")
+        self._include_exclude = dbt.common.helper_types.IncludeExclude(include="*")
         self._unparsed_columns = []
         for column in self.columns:
-            if isinstance(column, dbt.helper_types.IncludeExclude):
+            if isinstance(column, dbt.common.helper_types.IncludeExclude):
                 if not has_include_exclude:
                     self._include_exclude = column
                     has_include_exclude = True
@@ -734,20 +734,11 @@ class UnparsedQueryParams(dbtClassMixin):
 
 
 @dataclass
-class UnparsedExportConfig(dbtClassMixin):
-    """Nested configuration attributes for exports."""
-
-    export_as: ExportDestinationType
-    schema: Optional[str] = None
-    alias: Optional[str] = None
-
-
-@dataclass
 class UnparsedExport(dbtClassMixin):
     """Configuration for writing query results to a table."""
 
     name: str
-    config: UnparsedExportConfig
+    config: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

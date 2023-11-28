@@ -2,12 +2,12 @@ import agate
 from typing import Any, Optional, Tuple, Type, List
 
 from dbt.adapters.contracts.connection import Connection, AdapterResponse
-from dbt.exceptions import RelationTypeNullError
+from dbt.adapters.events.types import ColTypeChange, SchemaCreation, SchemaDrop
+from dbt.adapters.exceptions import RelationTypeNullError
 from dbt.adapters.base import BaseAdapter, available
 from dbt.adapters.cache import _make_ref_key_dict
 from dbt.adapters.sql import SQLConnectionManager
 from dbt.common.events.functions import fire_event
-from dbt.common.events.types import ColTypeChange, SchemaCreation, SchemaDrop
 
 
 from dbt.adapters.base.relation import BaseRelation
@@ -74,6 +74,10 @@ class SQLAdapter(BaseAdapter):
         # TODO CT-211
         decimals = agate_table.aggregate(agate.MaxPrecision(col_idx))  # type: ignore[attr-defined]
         return "float8" if decimals else "integer"
+
+    @classmethod
+    def convert_integer_type(cls, agate_table: agate.Table, col_idx: int) -> str:
+        return "integer"
 
     @classmethod
     def convert_boolean_type(cls, agate_table: agate.Table, col_idx: int) -> str:

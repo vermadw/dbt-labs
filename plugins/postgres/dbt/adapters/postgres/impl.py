@@ -9,13 +9,13 @@ from dbt.adapters.sql import SQLAdapter
 from dbt.adapters.postgres import PostgresConnectionManager
 from dbt.adapters.postgres.column import PostgresColumn
 from dbt.adapters.postgres import PostgresRelation
+from dbt.common.contracts.constraints import ConstraintType
 from dbt.common.dataclass_schema import dbtClassMixin, ValidationError
-from dbt.contracts.graph.nodes import ConstraintType
-from dbt.exceptions import (
+from dbt.common.exceptions import DbtRuntimeError
+from dbt.adapters.exceptions import (
     CrossDbReferenceProhibitedError,
     IndexConfigNotDictError,
     IndexConfigError,
-    DbtRuntimeError,
     UnexpectedDbReferenceError,
 )
 import dbt.utils

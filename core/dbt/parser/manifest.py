@@ -40,7 +40,7 @@ from dbt.constants import (
     PARTIAL_PARSE_FILE_NAME,
     SEMANTIC_MANIFEST_FILE_NAME,
 )
-from dbt.helper_types import PathSet
+from dbt.common.helper_types import PathSet
 from dbt.common.events.functions import fire_event, get_invocation_id, warn_or_error
 from dbt.common.events.types import (
     PartialParsingErrorProcessingFile,
@@ -54,9 +54,11 @@ from dbt.common.events.types import (
     NodeNotFoundOrDisabled,
     StateCheckVarsHash,
     Note,
-    DeprecatedModel,
     DeprecatedReference,
     UpcomingReferenceDeprecation,
+)
+from dbt.events.types import (
+    DeprecatedModel,
 )
 from dbt.logger import DbtProcessState
 from dbt.node_types import NodeType, AccessType
