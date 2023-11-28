@@ -37,8 +37,7 @@ class GenericSqlRunner(CompileRunner, Generic[SQLResult]):
         pass
 
     def compile(self, manifest):
-        compiler = self.adapter.get_compiler()
-        return compiler.compile_node(self.node, manifest, {}, write=False)
+        return self.compiler.compile_node(self.node, manifest, {}, write=False)
 
     @abstractmethod
     def execute(self, compiled_node, manifest) -> SQLResult:

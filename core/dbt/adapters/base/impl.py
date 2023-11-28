@@ -1370,11 +1370,6 @@ class BaseAdapter(metaclass=AdapterMeta):
         """
         pass
 
-    def get_compiler(self):
-        from dbt.compilation import Compiler
-
-        return Compiler(self.config)
-
     # Methods used in adapter tests
     def update_column_sql(
         self,

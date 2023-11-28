@@ -315,8 +315,10 @@ class RunTask(CompileTask):
         return False
 
     def get_hook_sql(self, adapter, hook, idx, num_hooks, extra_context) -> str:
-        compiler = adapter.get_compiler()
-        compiled = compiler.compile_node(hook, self.manifest, extra_context)
+        if self.manifest is None:
+            raise DbtInternalError("compile_node called before manifest was loaded")
+
+        compiled = self.compiler.compile_node(hook, self.manifest, extra_context)
         statement = compiled.compiled_code
         hook_index = hook.index or num_hooks
         hook_obj = get_hook(statement, index=hook_index)
