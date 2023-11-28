@@ -8,20 +8,16 @@ from typing import (
     Generic,
     TypeVar,
     Tuple,
-    Dict,
-    Any,
 )
 from typing_extensions import Protocol
 
 import agate
 
 from dbt.adapters.contracts.connection import Connection, AdapterRequiredConfig, AdapterResponse
-from dbt.contracts.graph.nodes import ResultNode, ManifestNode
+from dbt.contracts.graph.nodes import ResultNode
 from dbt.contracts.graph.model_config import BaseConfig
 from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.relation import Policy, HasQuoting
-
-from dbt.graph import Graph
 
 
 @dataclass
@@ -50,24 +46,10 @@ class RelationProtocol(Protocol):
         ...
 
 
-class CompilerProtocol(Protocol):
-    def compile(self, manifest: Manifest, write=True) -> Graph:
-        ...
-
-    def compile_node(
-        self,
-        node: ManifestNode,
-        manifest: Manifest,
-        extra_context: Optional[Dict[str, Any]] = None,
-    ) -> ManifestNode:
-        ...
-
-
 AdapterConfig_T = TypeVar("AdapterConfig_T", bound=AdapterConfig)
 ConnectionManager_T = TypeVar("ConnectionManager_T", bound=ConnectionManagerProtocol)
 Relation_T = TypeVar("Relation_T", bound=RelationProtocol)
 Column_T = TypeVar("Column_T", bound=ColumnProtocol)
-Compiler_T = TypeVar("Compiler_T", bound=CompilerProtocol)
 
 
 # TODO CT-211
@@ -78,7 +60,6 @@ class AdapterProtocol(  # type: ignore[misc]
         ConnectionManager_T,
         Relation_T,
         Column_T,
-        Compiler_T,
     ],
 ):
     # N.B. Technically these are ClassVars, but mypy doesn't support putting type vars in a
@@ -152,7 +133,4 @@ class AdapterProtocol(  # type: ignore[misc]
     def execute(
         self, sql: str, auto_begin: bool = False, fetch: bool = False
     ) -> Tuple[AdapterResponse, agate.Table]:
-        ...
-
-    def get_compiler(self) -> Compiler_T:
         ...

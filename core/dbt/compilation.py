@@ -1,4 +1,3 @@
-import argparse
 import json
 
 import networkx as nx  # type: ignore
@@ -34,7 +33,6 @@ from dbt.common.events.contextvars import get_node_info
 from dbt.node_types import NodeType, ModelLanguage
 from dbt.common.events.format import pluralize
 import dbt.tracking
-import dbt.task.list as list_task
 import sqlparse
 
 graph_file_name = "graph.gpickle"
@@ -485,11 +483,8 @@ class Compiler:
         if write:
             self.write_graph_file(linker, manifest)
 
-        # Do not print these for ListTask's
-        if not (
-            self.config.args.__class__ == argparse.Namespace
-            and self.config.args.cls == list_task.ListTask
-        ):
+        # Do not print these for list command
+        if self.config.args.which != "list":
             stats = _generate_stats(manifest)
             print_compile_stats(stats)
 
