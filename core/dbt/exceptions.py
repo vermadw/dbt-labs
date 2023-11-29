@@ -101,10 +101,6 @@ class IncompatibleSchemaError(DbtRuntimeError):
     MESSAGE = "Incompatible Schema"
 
 
-class JinjaRenderingError(CompilationError):
-    pass
-
-
 class AliasError(DbtValidationError):
     pass
 
@@ -232,21 +228,6 @@ class MaterializtionMacroNotUsedError(CompilationError):
         self.node = node
         self.msg = "Only materialization macros can be used with this function"
         super().__init__(msg=self.msg)
-
-
-class UndefinedCompilationError(CompilationError):
-    def __init__(self, name: str, node) -> None:
-        self.name = name
-        self.node = node
-        self.msg = f"{self.name} is undefined"
-        super().__init__(msg=self.msg)
-
-
-class CaughtMacroErrorWithNodeError(CompilationError):
-    def __init__(self, exc, node) -> None:
-        self.exc = exc
-        self.node = node
-        super().__init__(msg=str(exc))
 
 
 class MissingControlFlowStartTagError(CompilationError):
@@ -401,17 +382,6 @@ class GitCloningError(DbtInternalError):
 
 class GitCheckoutError(BadSpecError):
     pass
-
-
-class MaterializationArgError(CompilationError):
-    def __init__(self, name: str, argument: str) -> None:
-        self.name = name
-        self.argument = argument
-        super().__init__(msg=self.get_message())
-
-    def get_message(self) -> str:
-        msg = f"materialization '{self.name}' received unknown argument '{self.argument}'."
-        return msg
 
 
 class OperationError(CompilationError):

@@ -1,7 +1,7 @@
 from threading import local
 from typing import Optional, Callable, Dict, Any
 
-from dbt.clients.jinja import QueryStringGenerator
+from dbt.adapters.clients.jinja import QueryStringGenerator
 
 from dbt.context.manifest import generate_query_header_context
 from dbt.adapters.contracts.connection import AdapterRequiredConfig, QueryComment

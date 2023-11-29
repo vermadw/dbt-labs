@@ -12,9 +12,10 @@ from dbt.cli.resolvers import default_log_path, default_project_dir
 from dbt.cli.types import Command as CliCommand
 from dbt.common import ui
 from dbt.common.events import functions
+from dbt.common.exceptions import DbtInternalError
+from dbt.common.clients import jinja
 from dbt.config.profile import read_user_config
 from dbt.contracts.project import UserConfig
-from dbt.common.exceptions import DbtInternalError
 from dbt.deprecations import renamed_env_var
 from dbt.common.helper_types import WarnErrorOptions
 
@@ -305,10 +306,13 @@ class Flags:
             ui.USE_COLOR = getattr(self, "USE_COLORS")
 
         # Set globals for common.events.functions
-        #
         functions.WARN_ERROR = getattr(self, "WARN_ERROR", False)
         if getattr(self, "WARN_ERROR_OPTIONS", None) is not None:
             functions.WARN_ERROR_OPTIONS = getattr(self, "WARN_ERROR_OPTIONS")
+
+        # Set globals for common.jinja
+        if getattr(self, "MACRO_DEBUGGING", None) is not None:
+            jinja.MACRO_DEBUGGING = getattr(self, "MACRO_DEBUGGING")
 
 
 CommandParams = List[str]
