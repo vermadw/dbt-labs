@@ -40,9 +40,7 @@ class RunOperationTask(ConfiguredTask):
 
         with adapter.connection_named("macro_{}".format(macro_name)):
             adapter.clear_transaction()
-            res = adapter.execute_macro(
-                macro_name, project=package_name, kwargs=macro_kwargs, manifest=self.manifest
-            )
+            res = adapter.execute_macro(macro_name, project=package_name, kwargs=macro_kwargs)
 
         return res
 

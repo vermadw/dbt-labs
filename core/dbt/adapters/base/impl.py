@@ -1051,7 +1051,6 @@ class BaseAdapter(metaclass=AdapterMeta):
     def execute_macro(
         self,
         macro_name: str,
-        manifest: Optional[Manifest] = None,
         project: Optional[str] = None,
         context_override: Optional[Dict[str, Any]] = None,
         kwargs: Optional[Dict[str, Any]] = None,
@@ -1075,9 +1074,7 @@ class BaseAdapter(metaclass=AdapterMeta):
         if context_override is None:
             context_override = {}
 
-        if manifest is None:
-            # TODO CT-211
-            manifest = self._macro_manifest  # type: ignore[assignment]
+        manifest = self._macro_manifest  # type: ignore[assignment]
         # TODO CT-211
         macro = manifest.find_macro_by_name(  # type: ignore[union-attr]
             macro_name, self.config.project_name, project
@@ -1135,9 +1132,6 @@ class BaseAdapter(metaclass=AdapterMeta):
         table = self.execute_macro(
             GET_CATALOG_MACRO_NAME,
             kwargs=kwargs,
-            # pass in the full manifest so we get any local project
-            # overrides
-            manifest=manifest,
         )
 
         results = self._catalog_filter_table(table, manifest)  # type: ignore[arg-type]
@@ -1157,9 +1151,6 @@ class BaseAdapter(metaclass=AdapterMeta):
         table = self.execute_macro(
             GET_CATALOG_RELATIONS_MACRO_NAME,
             kwargs=kwargs,
-            # pass in the full manifest, so we get any local project
-            # overrides
-            manifest=manifest,
         )
 
         results = self._catalog_filter_table(table, manifest)  # type: ignore[arg-type]
@@ -1270,7 +1261,7 @@ class BaseAdapter(metaclass=AdapterMeta):
             AttrDict,  # current: contains AdapterResponse + agate.Table
             agate.Table,  # previous: just table
         ]
-        result = self.execute_macro(FRESHNESS_MACRO_NAME, kwargs=kwargs, manifest=manifest)
+        result = self.execute_macro(FRESHNESS_MACRO_NAME, kwargs=kwargs)
         if isinstance(result, agate.Table):
             deprecations.warn("collect-freshness-return-signature")
             adapter_response = None
@@ -1306,9 +1297,7 @@ class BaseAdapter(metaclass=AdapterMeta):
             "information_schema": source.information_schema_only(),
             "relations": [source],
         }
-        result = self.execute_macro(
-            GET_RELATION_LAST_MODIFIED_MACRO_NAME, kwargs=kwargs, manifest=manifest
-        )
+        result = self.execute_macro(GET_RELATION_LAST_MODIFIED_MACRO_NAME, kwargs=kwargs)
         adapter_response, table = result.response, result.table  # type: ignore[attr-defined]
 
         try:

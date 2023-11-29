@@ -27,7 +27,6 @@ class ShowRunner(CompileRunner):
         model_context = generate_runtime_model_context(compiled_node, self.config, manifest)
         compiled_node.compiled_code = self.adapter.execute_macro(
             macro_name="get_show_sql",
-            manifest=manifest,
             context_override=model_context,
             kwargs={
                 "compiled_code": model_context["compiled_code"],
