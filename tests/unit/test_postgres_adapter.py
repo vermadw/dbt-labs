@@ -429,9 +429,7 @@ class TestConnectingPostgresAdapter(unittest.TestCase):
         self.psycopg2.connect.return_value = self.handle
         self.adapter = PostgresAdapter(self.config, self.mp_context)
         self.adapter._macro_manifest_lazy = load_internal_manifest_macros(self.config)
-        self.adapter.connections.query_header = MacroQueryStringSetter(
-            self.config, self.adapter._macro_manifest_lazy
-        )
+        self.adapter.connections.query_header = MacroQueryStringSetter(self.config)
 
         self.qh_patch = mock.patch.object(self.adapter.connections.query_header, "add")
         self.mock_query_header_add = self.qh_patch.start()

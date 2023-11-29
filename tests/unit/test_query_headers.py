@@ -36,14 +36,14 @@ class TestQueryHeaders(TestCase):
 
     def test_comment_should_prepend_query_by_default(self):
         config = config_from_parts_or_dicts(self.project_cfg, self.profile_cfg)
-        query_header = MacroQueryStringSetter(config, mock.MagicMock(macros={}))
+        query_header = MacroQueryStringSetter(config)
         sql = query_header.add(self.query)
         self.assertTrue(re.match(f"^\/\*.*\*\/\n{self.query}$", sql))  # noqa: [W605]
 
     def test_append_comment(self):
         self.project_cfg.update({"query-comment": {"comment": "executed by dbt", "append": True}})
         config = config_from_parts_or_dicts(self.project_cfg, self.profile_cfg)
-        query_header = MacroQueryStringSetter(config, mock.MagicMock(macros={}))
+        query_header = MacroQueryStringSetter(config)
         sql = query_header.add(self.query)
         self.assertEqual(sql, f"{self.query[:-1]}\n/* executed by dbt */;")
 

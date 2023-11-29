@@ -3,10 +3,9 @@ from typing import Optional, Callable, Dict, Any
 
 from dbt.adapters.clients.jinja import QueryStringGenerator
 
-from dbt.context.manifest import generate_query_header_context
 from dbt.adapters.contracts.connection import AdapterRequiredConfig, QueryComment
 from dbt.contracts.graph.nodes import ResultNode
-from dbt.contracts.graph.manifest import Manifest
+from dbt.common.context import basic_functions
 from dbt.common.exceptions import DbtRuntimeError
 
 
@@ -56,10 +55,28 @@ class _QueryComment(local):
 QueryStringFunc = Callable[[str, Optional[NodeWrapper]], str]
 
 
-class MacroQueryStringSetter:
-    def __init__(self, config: AdapterRequiredConfig, manifest: Manifest) -> None:
-        self.manifest = manifest
+class DefaultQueryHeaderContext:
+    def __init__(self, config: AdapterRequiredConfig):
         self.config = config
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "target": self.config.to_target_dict(),
+            "tojson": basic_functions.tojson,
+            "return": basic_functions._return,
+            "dbt_version": "unknown",
+        }
+
+
+class MacroQueryStringSetter:
+    def __init__(
+        self, config: AdapterRequiredConfig, query_header_context: Optional[Dict[str, Any]] = None
+    ) -> None:
+        self.config = config
+        # Ensure query_header_context has at least DefaultQueryHeaderContext attributes
+        self._query_header_context: Dict[str, Any] = DefaultQueryHeaderContext(config).to_dict()
+        if query_header_context:
+            self._query_header_context.update(query_header_context)
 
         comment_macro = self._get_comment_macro()
         self.generator: QueryStringFunc = lambda name, model: ""
@@ -82,7 +99,7 @@ class MacroQueryStringSetter:
         return self.config.query_comment.comment
 
     def _get_context(self) -> Dict[str, Any]:
-        return generate_query_header_context(self.config, self.manifest)
+        return self._query_header_context
 
     def add(self, sql: str) -> str:
         return self.comment.add(sql)

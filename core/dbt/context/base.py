@@ -20,7 +20,7 @@ from dbt.exceptions import (
     SetStrictWrongTypeError,
     ZipStrictWrongTypeError,
 )
-from dbt.common.exceptions.macros import MacroReturn
+from dbt.common.context import basic_functions
 from dbt.common.events.functions import fire_event, get_invocation_id
 from dbt.common.events.types import JinjaLogInfo, JinjaLogDebug
 from dbt.common.events.contextvars import get_node_info
@@ -358,7 +358,7 @@ class BaseContext(metaclass=ContextMeta):
               {% endfor %}
 
         """
-        raise MacroReturn(data)
+        basic_functions._return(data)
 
     @contextmember()
     @staticmethod
@@ -399,10 +399,7 @@ class BaseContext(metaclass=ContextMeta):
             {% set my_json_string = tojson(my_dict) %}
             {% do log(my_json_string) %}
         """
-        try:
-            return json.dumps(value, sort_keys=sort_keys)
-        except ValueError:
-            return default
+        return basic_functions.tojson(value, default, sort_keys)
 
     @contextmember()
     @staticmethod
