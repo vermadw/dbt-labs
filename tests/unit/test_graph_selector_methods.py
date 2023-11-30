@@ -319,7 +319,7 @@ def make_generic_test(
         package_name=pkg,
         path=f"schema_test/{node_name}.sql",
         original_file_path=f"models/{path}",
-        resource_type=NodeType.Test,
+        resource_type=NodeType.DataTest,
         tags=tags,
         refs=ref_values,
         sources=[],
@@ -400,7 +400,7 @@ def make_singular_test(
         refs=ref_values,
         sources=source_values,
         depends_on=DependsOn(nodes=depends_on_nodes, macros=[]),
-        resource_type=NodeType.Test,
+        resource_type=NodeType.DataTest,
         checksum=FileHash.from_contents(""),
     )
 

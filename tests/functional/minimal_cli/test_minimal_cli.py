@@ -43,6 +43,7 @@ class TestMinimalCli(BaseConfigProject):
         runner.invoke(cli, ["deps"])
         result = runner.invoke(cli, ["build"])
         # 1 seed, 1 model, 2 tests
+        breakpoint()
         assert "PASS=4" in result.output
         # 2 tests
         assert "ERROR=2" in result.output

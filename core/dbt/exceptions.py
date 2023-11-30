@@ -2179,7 +2179,7 @@ class DuplicateResourceNameError(CompilationError):
         elif node_type == NodeType.Documentation:
             formatted_name = f'doc("{duped_name}")'
         # duplicate generic tests
-        elif node_type == NodeType.Test and hasattr(self.node_1, "test_metadata"):
+        elif node_type == NodeType.DataTest and hasattr(self.node_1, "test_metadata"):
             column_name = (
                 f'column "{self.node_1.column_name}" in ' if self.node_1.column_name else ""
             )

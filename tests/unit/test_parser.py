@@ -539,7 +539,7 @@ class SchemaParserModelsTest(SchemaParserTest):
         all_nodes = sorted(self.parser.manifest.nodes.values(), key=lambda n: n.unique_id)
         tests = []
         for node in all_nodes:
-            if node.resource_type != NodeType.Test:
+            if node.resource_type != NodeType.DataTest:
                 continue
             tests.append(node)
         self.assertEqual(tests[0].config.severity, "ERROR")
@@ -664,7 +664,7 @@ class SchemaParserVersionedModels(SchemaParserTest):
         self.assert_has_manifest_lengths(self.parser.manifest, nodes=5)
 
         all_nodes = sorted(self.parser.manifest.nodes.values(), key=lambda n: n.unique_id)
-        tests = [node for node in all_nodes if node.resource_type == NodeType.Test]
+        tests = [node for node in all_nodes if node.resource_type == NodeType.DataTest]
 
         # test on color column on my_model v1
         self.assertEqual(tests[0].config.severity, "WARN")
@@ -1571,7 +1571,7 @@ class SingularTestParserTest(BaseParserTest):
             name="test_1",
             database="test",
             schema="dbt_test__audit",
-            resource_type=NodeType.Test,
+            resource_type=NodeType.DataTest,
             unique_id="data_test.snowplow.test_1",
             fqn=["snowplow", "test_1"],
             package_name="snowplow",
@@ -1588,7 +1588,7 @@ class SingularTestParserTest(BaseParserTest):
         assertEqualNodes(node, expected)
         file_id = "snowplow://" + normalize("tests/test_1.sql")
         self.assertIn(file_id, self.parser.manifest.files)
-        self.assertEqual(self.parser.manifest.files[file_id].nodes, ["daat_test.snowplow.test_1"])
+        self.assertEqual(self.parser.manifest.files[file_id].nodes, ["data_test.snowplow.test_1"])
 
 
 class GenericTestParserTest(BaseParserTest):
@@ -1605,7 +1605,6 @@ class GenericTestParserTest(BaseParserTest):
         block = self.file_block_for(raw_code, "test_1.sql")
         self.parser.manifest.files[block.file.file_id] = block.file
         self.parser.parse_file(block)
-        breakpoint()
         node = list(self.parser.manifest.macros.values())[0]
         expected = Macro(
             name="test_not_null",

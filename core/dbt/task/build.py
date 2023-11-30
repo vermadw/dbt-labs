@@ -111,7 +111,7 @@ class BuildTask(RunTask):
 
         resource_types = self.resource_types
 
-        if resource_types == [NodeType.Test]:
+        if resource_types == [NodeType.DataTest]:
             return TestSelector(
                 graph=self.graph,
                 manifest=self.manifest,

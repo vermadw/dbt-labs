@@ -43,7 +43,7 @@ class GenericTestParser(BaseParser[GenericTestNode]):
                 t
                 for t in jinja.extract_toplevel_blocks(
                     base_node.raw_code,
-                    allowed_blocks={"data_test"},
+                    allowed_blocks={"data_test", "test"},
                     collect_raw_data=False,
                 )
                 if isinstance(t, jinja.BlockTag)
