@@ -18,7 +18,7 @@ from dbt.events.types import (
 )
 from dbt.events.helpers import get_json_string_utcnow
 from dbt.events.types import MainEncounteredError, MainStackTrace
-from dbt.execute import load_execution_record, write_execution_record, write_diffs
+from dbt.record import load_baseline_recording, write_recording, write_recording_diffs
 from dbt.exceptions import Exception as DbtException, DbtProjectError, FailFastError
 from dbt.parser.manifest import ManifestLoader, write_manifest
 from dbt.profiler import profiler
@@ -44,7 +44,7 @@ def preflight(func):
         set_flags(flags)
 
         if flags.COMPARE_RECORD:
-            load_execution_record()
+            load_baseline_recording()
 
         # Logging
         callbacks = ctx.obj.get("callbacks", [])
@@ -109,9 +109,9 @@ def postflight(func):
                 )
             )
             if ctx.obj["flags"].RECORD_EXECUTION:
-                write_execution_record()
+                write_recording()
             if ctx.obj["flags"].COMPARE_RECORD:
-                write_diffs()
+                write_recording_diffs()
 
         if not success:
             raise ResultExit(result)

@@ -14,7 +14,7 @@ from dbt.adapters.base import BaseRelation
 from dbt.adapters.factory import get_adapter
 from dbt.contracts.graph.manifest import WritableManifest
 from dbt.contracts.graph.nodes import ResultNode
-from dbt.execute import current_node
+from dbt.record import current_node
 from dbt.contracts.results import (
     NodeStatus,
     RunExecutionResult,

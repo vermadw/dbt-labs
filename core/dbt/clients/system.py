@@ -93,9 +93,12 @@ def find_matching(
 
 
 def load_file_contents(path: str, strip: bool = True) -> str:
+    print(f"REC: Loading {path}")
     path = convert_path(path)
     with open(path, "rb") as handle:
         to_return = handle.read().decode("utf-8")
+
+    print(f"REC: Len {len(to_return)}")
 
     if strip:
         to_return = to_return.strip()
@@ -163,6 +166,7 @@ def supports_symlinks() -> bool:
 
 
 def write_file(path: str, contents: str = "") -> bool:
+    print(f"REC: Write({len(contents)}) {path}")
     path = convert_path(path)
     try:
         make_directory(os.path.dirname(path))

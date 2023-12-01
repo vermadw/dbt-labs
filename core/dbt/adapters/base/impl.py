@@ -23,7 +23,7 @@ from typing import (
 from dbt.contracts.graph.nodes import ColumnLevelConstraint, ConstraintType, ModelLevelConstraint
 
 import agate
-from dbt.execute import add_execution, get_execution_result
+from dbt.record import get_recorder, get_comparer
 from dbt.flags import get_flags
 import pytz
 
@@ -290,13 +290,15 @@ class BaseAdapter(metaclass=AdapterMeta):
         :rtype: Tuple[AdapterResponse, agate.Table]
         """
         if get_flags().COMPARE_RECORD:
-            response, table = get_execution_result(sql)
+            query_record = get_comparer().expect(sql)
+            response = query_record.adapter_response
+            table = query_record.table
         else:
             response, table = self.connections.execute(
                 sql=sql, auto_begin=auto_begin, fetch=fetch, limit=limit
             )
             if get_flags().RECORD_EXECUTION:
-                add_execution(sql, response, table)
+                get_recorder().add_query_record(sql, response, table)
         return response, table
 
     def validate_sql(self, sql: str) -> AdapterResponse:
