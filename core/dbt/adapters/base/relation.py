@@ -1,6 +1,6 @@
 from collections.abc import Hashable
 from dataclasses import dataclass, field
-from typing import Optional, TypeVar, Any, Type, Dict, Iterator, Tuple, Set
+from typing import Optional, TypeVar, Any, Type, Dict, Iterator, Tuple, Set, Union, FrozenSet
 
 from dbt.contracts.graph.nodes import SourceDefinition, ManifestNode, ResultNode, ParsedNode
 from dbt.contracts.relation import (
@@ -23,6 +23,7 @@ import dbt.exceptions
 
 
 Self = TypeVar("Self", bound="BaseRelation")
+SerializableIterable = Union[Tuple, FrozenSet]
 
 
 @dataclass(frozen=True, eq=False, repr=False)
@@ -35,6 +36,19 @@ class BaseRelation(FakeAPIObject, Hashable):
     include_policy: Policy = field(default_factory=lambda: Policy())
     quote_policy: Policy = field(default_factory=lambda: Policy())
     dbt_created: bool = False
+    limit: Optional[int] = None
+
+    # register relation types that can be renamed for the purpose of replacing relations using stages and backups
+    # adding a relation type here also requires defining the associated rename macro
+    # e.g. adding RelationType.View in dbt-postgres requires that you define:
+    # include/postgres/macros/relations/view/rename.sql::postgres__get_rename_view_sql()
+    renameable_relations: SerializableIterable = ()
+
+    # register relation types that are atomically replaceable, e.g. they have "create or replace" syntax
+    # adding a relation type here also requires defining the associated replace macro
+    # e.g. adding RelationType.View in dbt-postgres requires that you define:
+    # include/postgres/macros/relations/view/replace.sql::postgres__get_replace_view_sql()
+    replaceable_relations: SerializableIterable = ()
 
     def _is_exactish_match(self, field: ComponentName, value: str) -> bool:
         if self.dbt_created and self.quote_policy.get_part(field) is False:
@@ -169,7 +183,6 @@ class BaseRelation(FakeAPIObject, Hashable):
         return self.include(identifier=False).replace_path(identifier=None)
 
     def _render_iterator(self) -> Iterator[Tuple[Optional[ComponentName], Optional[str]]]:
-
         for key in ComponentName:
             path_part: Optional[str] = None
             if self.include_policy.get_part(key):
@@ -181,6 +194,15 @@ class BaseRelation(FakeAPIObject, Hashable):
     def render(self) -> str:
         # if there is nothing set, this will return the empty string.
         return ".".join(part for _, part in self._render_iterator() if part is not None)
+
+    def render_limited(self) -> str:
+        rendered = self.render()
+        if self.limit is None:
+            return rendered
+        elif self.limit == 0:
+            return f"(select * from {rendered} where false limit 0) _dbt_limit_subq"
+        else:
+            return f"(select * from {rendered} limit {self.limit}) _dbt_limit_subq"
 
     def quoted(self, identifier):
         return "{quote_char}{identifier}{quote_char}".format(
@@ -215,13 +237,11 @@ class BaseRelation(FakeAPIObject, Hashable):
         cls: Type[Self],
         config: HasQuoting,
         node: ManifestNode,
+        limit: Optional[int],
     ) -> Self:
         # Note that ephemeral models are based on the name.
         identifier = cls.add_ephemeral_prefix(node.name)
-        return cls.create(
-            type=cls.CTE,
-            identifier=identifier,
-        ).quote(identifier=False)
+        return cls.create(type=cls.CTE, identifier=identifier, limit=limit).quote(identifier=False)
 
     @classmethod
     def create_from_node(
@@ -286,6 +306,14 @@ class BaseRelation(FakeAPIObject, Hashable):
         )
         return cls.from_dict(kwargs)
 
+    @property
+    def can_be_renamed(self) -> bool:
+        return self.type in self.renameable_relations
+
+    @property
+    def can_be_replaced(self) -> bool:
+        return self.type in self.replaceable_relations
+
     def __repr__(self) -> str:
         return "<{} {}>".format(self.__class__.__name__, self.render())
 
@@ -293,7 +321,7 @@ class BaseRelation(FakeAPIObject, Hashable):
         return hash(self.render())
 
     def __str__(self) -> str:
-        return self.render()
+        return self.render() if self.limit is None else self.render_limited()
 
     @property
     def database(self) -> Optional[str]:
@@ -439,11 +467,11 @@ class SchemaSearchMap(Dict[InformationSchema, Set[Optional[str]]]):
         self[key].add(schema)
 
     def search(self) -> Iterator[Tuple[InformationSchema, Optional[str]]]:
-        for information_schema_name, schemas in self.items():
+        for information_schema, schemas in self.items():
             for schema in schemas:
-                yield information_schema_name, schema
+                yield information_schema, schema
 
-    def flatten(self, allow_multiple_databases: bool = False):
+    def flatten(self, allow_multiple_databases: bool = False) -> "SchemaSearchMap":
         new = self.__class__()
 
         # make sure we don't have multiple databases if allow_multiple_databases is set to False

@@ -1,4 +1,5 @@
 import shutil
+from typing import Dict
 
 from dbt.clients import system
 from dbt.deps.base import PinnedPackage, UnpinnedPackage
@@ -29,6 +30,11 @@ class LocalPinnedPackage(LocalPackageMixin, PinnedPackage):
     def __init__(self, local: str) -> None:
         super().__init__(local)
 
+    def to_dict(self) -> Dict[str, str]:
+        return {
+            "local": self.local,
+        }
+
     def get_version(self):
         return None
 
@@ -51,19 +57,15 @@ class LocalPinnedPackage(LocalPackageMixin, PinnedPackage):
         src_path = self.resolve_path(project)
         dest_path = self.get_installation_path(project, renderer)
 
-        can_create_symlink = system.supports_symlinks()
-
         if system.path_exists(dest_path):
             if not system.path_is_symlink(dest_path):
                 system.rmdir(dest_path)
             else:
                 system.remove_file(dest_path)
-
-        if can_create_symlink:
+        try:
             fire_event(DepsCreatingLocalSymlink())
             system.make_symlink(src_path, dest_path)
-
-        else:
+        except OSError:
             fire_event(DepsSymlinkNotAvailable())
             shutil.copytree(src_path, dest_path)
 

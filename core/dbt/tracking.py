@@ -46,10 +46,11 @@ RESOURCE_COUNTS = "iglu:com.dbt/resource_counts/jsonschema/1-0-1"
 RPC_REQUEST_SPEC = "iglu:com.dbt/rpc_request/jsonschema/1-0-1"
 RUNNABLE_TIMING = "iglu:com.dbt/runnable/jsonschema/1-0-0"
 RUN_MODEL_SPEC = "iglu:com.dbt/run_model/jsonschema/1-0-3"
+PLUGIN_GET_NODES = "iglu:com.dbt/plugin_get_nodes/jsonschema/1-0-0"
 
 
 class TimeoutEmitter(Emitter):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             COLLECTOR_URL,
             protocol=COLLECTOR_PROTOCOL,
@@ -109,7 +110,7 @@ tracker = Tracker(
 
 
 class User:
-    def __init__(self, cookie_dir):
+    def __init__(self, cookie_dir) -> None:
         self.do_not_track = True
         self.cookie_dir = cookie_dir
 
@@ -409,6 +410,19 @@ def track_partial_parser(options):
     )
 
 
+def track_plugin_get_nodes(options):
+    context = [SelfDescribingJson(PLUGIN_GET_NODES, options)]
+    assert active_user is not None, "Cannot track plugin node info when active user is None"
+
+    track(
+        active_user,
+        category="dbt",
+        action="plugin_get_nodes",
+        label=get_invocation_id(),
+        context=context,
+    )
+
+
 def track_runnable_timing(options):
     context = [SelfDescribingJson(RUNNABLE_TIMING, options)]
     assert active_user is not None, "Cannot track runnable info when active user is None"
@@ -443,7 +457,7 @@ def do_not_track():
 
 
 class InvocationProcessor(logbook.Processor):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     def process(self, record):
