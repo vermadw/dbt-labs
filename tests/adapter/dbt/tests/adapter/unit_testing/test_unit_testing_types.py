@@ -84,7 +84,7 @@ class BaseUnitTestingTypes:
             assert len(results) == 1
 
             try:
-                run_dbt(["unit-test", "--select", "my_model"])
+                run_dbt(["test", "--select", "my_model"])
             except Exception:
                 raise AssertionError(f"unit test failed when testing model with {sql_value}")
 
