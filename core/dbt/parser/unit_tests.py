@@ -1,9 +1,11 @@
 from csv import DictReader
 from pathlib import Path
 from typing import List, Set, Dict, Any
+import os
 
 from dbt_extractor import py_extract_from_source, ExtractionError  # type: ignore
 
+from dbt import utils
 from dbt.config import RuntimeConfig
 from dbt.context.context_config import ContextConfig
 from dbt.context.providers import generate_parse_exposure, get_rendered
@@ -44,17 +46,15 @@ class UnitTestManifestLoader:
 
     def load(self) -> Manifest:
         for unique_id in self.selected:
-            unit_test_case = self.manifest.unit_tests[unique_id]
-            self.parse_unit_test_case(unit_test_case)
-
+            if unique_id in self.manifest.unit_tests:
+                unit_test_case = self.manifest.unit_tests[unique_id]
+                self.parse_unit_test_case(unit_test_case)
         return self.unit_test_manifest
 
     def parse_unit_test_case(self, test_case: UnitTestDefinition):
-        package_name = self.root_project.project_name
-
         # Create unit test node based on the node being tested
         tested_node = self.manifest.ref_lookup.perform_lookup(
-            f"model.{package_name}.{test_case.model}", self.manifest
+            f"model.{test_case.package_name}.{test_case.model}", self.manifest
         )
         assert isinstance(tested_node, ModelNode)
 
@@ -66,7 +66,7 @@ class UnitTestManifestLoader:
         unit_test_node = UnitTestNode(
             name=name,
             resource_type=NodeType.Unit,
-            package_name=package_name,
+            package_name=test_case.package_name,
             path=get_pseudo_test_path(name, test_case.original_file_path),
             original_file_path=test_case.original_file_path,
             unique_id=test_case.unique_id,
@@ -86,12 +86,11 @@ class UnitTestManifestLoader:
             overrides=test_case.overrides,
         )
 
-        # TODO: generalize this method
         ctx = generate_parse_exposure(
             unit_test_node,  # type: ignore
             self.root_project,
             self.manifest,
-            package_name,
+            test_case.package_name,
         )
         get_rendered(unit_test_node.raw_code, ctx, unit_test_node, capture_macros=True)
         # unit_test_node now has a populated refs/sources
@@ -120,7 +119,7 @@ class UnitTestManifestLoader:
             project_root = self.root_project.project_root
             common_fields = {
                 "resource_type": NodeType.Model,
-                "package_name": package_name,
+                "package_name": test_case.package_name,
                 "original_file_path": original_input_node.original_file_path,
                 "config": ModelConfig(materialized="ephemeral"),
                 "database": original_input_node.database,
@@ -133,11 +132,15 @@ class UnitTestManifestLoader:
                 ),
             }
 
-            if original_input_node.resource_type in (NodeType.Model, NodeType.Seed):
+            if original_input_node.resource_type in (
+                NodeType.Model,
+                NodeType.Seed,
+                NodeType.Snapshot,
+            ):
                 input_name = f"{unit_test_node.name}__{original_input_node.name}"
                 input_node = ModelNode(
                     **common_fields,
-                    unique_id=f"model.{package_name}.{input_name}",
+                    unique_id=f"model.{test_case.package_name}.{input_name}",
                     name=input_name,
                     path=original_input_node.path,
                 )
@@ -148,7 +151,7 @@ class UnitTestManifestLoader:
                 input_name = f"{unit_test_node.name}__{original_input_node.search_name}__{original_input_node.name}"
                 input_node = UnitTestSourceDefinition(
                     **common_fields,
-                    unique_id=f"model.{package_name}.{input_name}",
+                    unique_id=f"model.{test_case.package_name}.{input_name}",
                     name=original_input_node.name,  # must be the same name for source lookup to work
                     path=input_name + ".sql",  # for writing out compiled_code
                     source_name=original_input_node.source_name,  # needed for source lookup
@@ -222,44 +225,19 @@ class UnitTestParser(YamlReader):
         self.schema_parser = schema_parser
         self.yaml = yaml
 
-    def _load_rows_from_seed(self, ref_str: str) -> List[Dict[str, Any]]:
-        """Read rows from seed file on disk if not specified in YAML config. If seed file doesn't exist, return empty list."""
-        ref = py_extract_from_source("{{ " + ref_str + " }}")["refs"][0]
-
-        rows: List[Dict[str, Any]] = []
-
-        seed_name = ref["name"]
-        package_name = ref.get("package", self.project.project_name)
-
-        seed_node = self.manifest.ref_lookup.find(seed_name, package_name, None, self.manifest)
-
-        if not seed_node or seed_node.resource_type != NodeType.Seed:
-            # Seed not found in custom package specified
-            if package_name != self.project.project_name:
-                raise ParsingError(
-                    f"Unable to find seed '{package_name}.{seed_name}' for unit tests in '{package_name}' package"
-                )
-            else:
-                raise ParsingError(
-                    f"Unable to find seed '{package_name}.{seed_name}' for unit tests in directories: {self.project.seed_paths}"
-                )
-
-        seed_path = Path(seed_node.root_path) / seed_node.original_file_path
-        with open(seed_path, "r") as f:
-            for row in DictReader(f):
-                rows.append(row)
-
-        return rows
-
     def parse(self) -> ParseResult:
         for data in self.get_key_dicts():
             unit_test = self._get_unit_test(data)
-            model_name_split = unit_test.model.split()
             tested_model_node = self._find_tested_model_node(unit_test)
             unit_test_case_unique_id = (
                 f"{NodeType.Unit}.{self.project.project_name}.{unit_test.model}.{unit_test.name}"
             )
-            unit_test_fqn = [self.project.project_name] + model_name_split + [unit_test.name]
+            unit_test_fqn = self._build_fqn(
+                self.project.project_name,
+                self.yaml.path.original_file_path,
+                unit_test.model,
+                unit_test.name,
+            )
             unit_test_config = self._build_unit_test_config(unit_test_fqn, unit_test.config)
 
             # Check that format and type of rows matches for each given input
@@ -284,6 +262,7 @@ class UnitTestParser(YamlReader):
                 depends_on=DependsOn(nodes=[tested_model_node.unique_id]),
                 fqn=unit_test_fqn,
                 config=unit_test_config,
+                schema=tested_model_node.schema,
             )
             # for calculating state:modified
             unit_test_definition.build_unit_test_checksum(
@@ -329,3 +308,44 @@ class UnitTestParser(YamlReader):
         unit_test_config_dict = self.render_entry(unit_test_config_dict)
 
         return UnitTestConfig.from_dict(unit_test_config_dict)
+
+    def _build_fqn(self, package_name, original_file_path, model_name, test_name):
+        # This code comes from "get_fqn" and "get_fqn_prefix" in the base parser.
+        # We need to get the directories underneath the model-path.
+        path = Path(original_file_path)
+        relative_path = str(path.relative_to(*path.parts[:1]))
+        no_ext = os.path.splitext(relative_path)[0]
+        fqn = [package_name]
+        fqn.extend(utils.split_path(no_ext)[:-1])
+        fqn.append(model_name)
+        fqn.append(test_name)
+        return fqn
+
+    def _load_rows_from_seed(self, ref_str: str) -> List[Dict[str, Any]]:
+        """Read rows from seed file on disk if not specified in YAML config. If seed file doesn't exist, return empty list."""
+        ref = py_extract_from_source("{{ " + ref_str + " }}")["refs"][0]
+
+        rows: List[Dict[str, Any]] = []
+
+        seed_name = ref["name"]
+        package_name = ref.get("package", self.project.project_name)
+
+        seed_node = self.manifest.ref_lookup.find(seed_name, package_name, None, self.manifest)
+
+        if not seed_node or seed_node.resource_type != NodeType.Seed:
+            # Seed not found in custom package specified
+            if package_name != self.project.project_name:
+                raise ParsingError(
+                    f"Unable to find seed '{package_name}.{seed_name}' for unit tests in '{package_name}' package"
+                )
+            else:
+                raise ParsingError(
+                    f"Unable to find seed '{package_name}.{seed_name}' for unit tests in directories: {self.project.seed_paths}"
+                )
+
+        seed_path = Path(seed_node.root_path) / seed_node.original_file_path
+        with open(seed_path, "r") as f:
+            for row in DictReader(f):
+                rows.append(row)
+
+        return rows

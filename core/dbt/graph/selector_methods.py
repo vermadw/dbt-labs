@@ -552,20 +552,24 @@ class TestTypeSelectorMethod(SelectorMethod):
     __test__ = False
 
     def search(self, included_nodes: Set[UniqueId], selector: str) -> Iterator[UniqueId]:
-        search_type: Type
+        search_types: List[Any]
         # continue supporting 'schema' + 'data' for backwards compatibility
         if selector in ("generic", "schema"):
-            search_type = GenericTestNode
-        elif selector in ("singular", "data"):
-            search_type = SingularTestNode
+            search_types = [GenericTestNode]
+        elif selector in ("data"):
+            search_types = [GenericTestNode, SingularTestNode]
+        elif selector in ("singular"):
+            search_types = [SingularTestNode]
+        elif selector in ("unit"):
+            search_types = [UnitTestDefinition]
         else:
             raise DbtRuntimeError(
-                f'Invalid test type selector {selector}: expected "generic" or ' '"singular"'
+                f'Invalid test type selector {selector}: expected "generic", "singular", "unit", or "data"'
             )
 
-        for node, real_node in self.parsed_nodes(included_nodes):
-            if isinstance(real_node, search_type):
-                yield node
+        for unique_id, node in self.parsed_and_unit_nodes(included_nodes):
+            if isinstance(node, tuple(search_types)):
+                yield unique_id
 
 
 class StateSelectorMethod(SelectorMethod):
