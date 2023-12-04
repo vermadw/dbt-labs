@@ -2,11 +2,17 @@ from dbt.adapters.base import Column
 
 
 class PostgresColumn(Column):
-    _DTYPE_TO_DATA_TYPE = {
-        "stringarray": "text[]",
-        "integerarray": "int[]",
-        "datetime": "timestamp",
-        "datetimetz": "timestamptz",
+    TYPE_LABELS = {
+        "STRING": "TEXT",
+        "DATETIME": "TIMESTAMP",
+        "DATETIMETZ": "TIMESTAMPTZ",
+        "STRINGARRAY": "TEXT[]",
+        "INTEGERARRAY": "INT[]",
+        "DECIMALARRAY": "DECIMAL[]",
+        "BOOLEANARRAY": "BOOL[]",
+        "DATEARRAY": "DATE[]",
+        "DATETIMEARRAY": "TIMESTAMP[]",
+        "DATETIMETZARRAY": "TIMESTAMPTZ[]",
     }
 
     @property
@@ -16,8 +22,5 @@ class PostgresColumn(Column):
             self.dtype.lower() == "character varying" and self.char_size is None
         ):
             return self.dtype
-
-        if self.dtype.lower() in self._DTYPE_TO_DATA_TYPE:
-            return self._DTYPE_TO_DATA_TYPE[self.dtype.lower()]
 
         return super().data_type

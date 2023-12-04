@@ -10,7 +10,8 @@ select
 
 my_upstream_model_sql = """
 select
-  {sql_value} as tested_column
+  {sql_value} as tested_column,
+  {sql_value} as untested_column
 """
 
 test_my_model_yml = """
@@ -33,14 +34,22 @@ class BaseUnitTestingTypes:
         # sql_value, yaml_value
         return [
             ["1", "1"],
+            ["1.0", "1.0"],
             ["'1'", "1"],
+            ["'1'::numeric", "1"],
+            ["'string'", "string"],
             ["true", "true"],
             ["DATE '2020-01-02'", "2020-01-02"],
             ["TIMESTAMP '2013-11-03 00:00:00-0'", "2013-11-03 00:00:00-0"],
             ["TIMESTAMPTZ '2013-11-03 00:00:00-0'", "2013-11-03 00:00:00-0"],
-            ["ARRAY['a','b','c']", """'{"a", "b", "c"}'"""],
             ["ARRAY[1,2,3]", """'{1, 2, 3}'"""],
-            ["'1'::numeric", "1"],
+            ["ARRAY[1.0,2.0,3.0]", """'{1.0, 2.0, 3.0}'"""],
+            ["ARRAY[1::numeric,2::numeric,3::numeric]", """'{1.0, 2.0, 3.0}'"""],
+            ["ARRAY['a','b','c']", """'{"a", "b", "c"}'"""],
+            ["ARRAY[true,true,false]", """'{true, true, false}'"""],
+            ["ARRAY[DATE '2020-01-02']", """'{"2020-01-02"}'"""],
+            ["ARRAY[TIMESTAMP '2013-11-03 00:00:00-0']", """'{"2013-11-03 00:00:00-0"}'"""],
+            ["ARRAY[TIMESTAMPTZ '2013-11-03 00:00:00-0']", """'{"2013-11-03 00:00:00-0"}'"""],
             [
                 """'{"bar": "baz", "balance": 7.77, "active": false}'::json""",
                 """'{"bar": "baz", "balance": 7.77, "active": false}'""",
