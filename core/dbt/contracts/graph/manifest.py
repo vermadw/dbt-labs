@@ -69,7 +69,7 @@ from dbt.node_types import NodeType, AccessType
 from dbt.flags import get_flags
 from dbt.mp_context import get_mp_context
 from dbt import tracking
-import dbt.utils
+import dbt.common.utils
 
 
 NodeEdgeMap = Dict[str, List[str]]
@@ -891,7 +891,7 @@ class Manifest(MacroMethods, DataClassMessagePackMixin, dbtClassMixin):
         adapter_type: str,
         specificity: int,
     ) -> CandidateList:
-        full_name = dbt.utils.get_materialization_macro_name(
+        full_name = dbt.common.utils.get_materialization_macro_name(
             materialization_name=materialization_name,
             adapter_type=adapter_type,
             with_prefix=False,

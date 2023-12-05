@@ -61,7 +61,7 @@ from dbt.common.clients.agate_helper import (
     table_from_rows,
     Integer,
 )
-from dbt.clients.jinja import MacroGenerator
+from dbt.common.clients.jinja import CallableMacroGenerator
 from dbt.contracts.graph.manifest import Manifest, MacroManifest
 from dbt.contracts.graph.nodes import ResultNode
 from dbt.common.events.functions import fire_event, warn_or_error
@@ -1115,7 +1115,7 @@ class BaseAdapter(metaclass=AdapterMeta):
         )
         macro_context.update(context_override)
 
-        macro_function = MacroGenerator(macro, macro_context)
+        macro_function = CallableMacroGenerator(macro, macro_context)
 
         with self.connections.exception_handler(f"macro {macro_name}"):
             result = macro_function(**kwargs)
@@ -1489,7 +1489,7 @@ class BaseAdapter(metaclass=AdapterMeta):
 
         strategy = strategy.replace("+", "_")
         macro_name = f"get_incremental_{strategy}_sql"
-        # The model_context should have MacroGenerator callable objects for all macros
+        # The model_context should have callable objects for all macros
         if macro_name not in model_context:
             raise DbtRuntimeError(
                 'dbt could not find an incremental strategy macro with the name "{}" in {}'.format(
