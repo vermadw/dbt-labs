@@ -3,7 +3,8 @@ import re
 import os
 from datetime import date
 
-from dbt.clients.jinja import get_rendered, catch_jinja
+from dbt.clients.jinja import get_rendered
+from dbt.common.clients.jinja import catch_jinja
 from dbt.constants import SECRET_ENV_PREFIX, DEPENDENCIES_FILE_NAME
 from dbt.context.target import TargetContext
 from dbt.context.secret import SecretContext, SECRET_PLACEHOLDER

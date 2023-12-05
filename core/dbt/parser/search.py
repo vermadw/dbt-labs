@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import List, Callable, Iterable, Set, Union, Iterator, TypeVar, Generic, Optional
 from pathspec import PathSpec  # type: ignore
 
-from dbt.clients.jinja import extract_toplevel_blocks, BlockTag
+from dbt.common.clients.jinja import extract_toplevel_blocks, BlockTag
 from dbt.clients.system import find_matching
 from dbt.config import Project
 from dbt.contracts.files import FilePath, AnySourceFile

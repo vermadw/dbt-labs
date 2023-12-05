@@ -16,3 +16,11 @@ from dbt.common.utils.dict import (
 )
 
 from dbt.common.utils.executor import executor
+
+from dbt.common.utils.jinja import (
+    get_dbt_macro_name,
+    get_docs_macro_name,
+    get_materialization_macro_name,
+    get_test_macro_name,
+    MACRO_PREFIX,
+)

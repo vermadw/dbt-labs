@@ -1,5 +1,5 @@
 import jinja2
-from dbt.clients.jinja import get_environment
+from dbt.common.clients.jinja import get_environment
 from dbt.exceptions import MacroNamespaceNotStringError
 from dbt.common.exceptions.macros import MacroNameNotStringError
 

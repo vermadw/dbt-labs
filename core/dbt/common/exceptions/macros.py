@@ -24,10 +24,40 @@ class UndefinedMacroError(CompilationError):
         )
 
 
+class UndefinedCompilationError(CompilationError):
+    def __init__(self, name: str, node) -> None:
+        self.name = name
+        self.node = node
+        self.msg = f"{self.name} is undefined"
+        super().__init__(msg=self.msg)
+
+
 class CaughtMacroError(CompilationError):
     def __init__(self, exc) -> None:
         self.exc = exc
         super().__init__(msg=str(exc))
+
+
+class CaughtMacroErrorWithNodeError(CompilationError):
+    def __init__(self, exc, node) -> None:
+        self.exc = exc
+        self.node = node
+        super().__init__(msg=str(exc))
+
+
+class JinjaRenderingError(CompilationError):
+    pass
+
+
+class MaterializationArgError(CompilationError):
+    def __init__(self, name: str, argument: str) -> None:
+        self.name = name
+        self.argument = argument
+        super().__init__(msg=self.get_message())
+
+    def get_message(self) -> str:
+        msg = f"materialization '{self.name}' received unknown argument '{self.argument}'."
+        return msg
 
 
 class MacroNameNotStringError(CompilationError):
