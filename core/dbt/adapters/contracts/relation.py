@@ -22,6 +22,14 @@ class RelationType(StrEnum):
     Ephemeral = "ephemeral"
 
 
+class RelationConfig(Protocol):
+    name: str
+    database: str
+    schema: str
+    identifier: str
+    quoting_dict: Dict[str, bool]
+
+
 class ComponentName(StrEnum):
     Database = "database"
     Schema = "schema"
