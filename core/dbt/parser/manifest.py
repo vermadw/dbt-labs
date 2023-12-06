@@ -286,7 +286,7 @@ class ManifestLoader:
         # the config and adapter may be persistent.
         if reset:
             config.clear_dependencies()
-            adapter.clear_macro_manifest()
+            adapter.clear_macro_resolver()
         macro_hook = adapter.connections.set_query_header
 
         flags = get_flags()
@@ -1000,7 +1000,7 @@ class ManifestLoader:
 
     def save_macros_to_adapter(self, adapter):
         macro_manifest = MacroManifest(self.manifest.macros)
-        adapter._macro_manifest_lazy = macro_manifest
+        adapter.set_macro_resolver(macro_manifest)
         # This executes the callable macro_hook and sets the
         # query headers
         self.macro_hook(macro_manifest)
