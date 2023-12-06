@@ -203,10 +203,10 @@ class BaseRelation(FakeAPIObject, Hashable):
     @classmethod
     def create_ephemeral_from(
         cls: Type[Self],
-        node: RelationConfig,
+        relation_config: RelationConfig,
     ) -> Self:
         # Note that ephemeral models are based on the name.
-        identifier = cls.add_ephemeral_prefix(node.name)
+        identifier = cls.add_ephemeral_prefix(relation_config.name)
         return cls.create(
             type=cls.CTE,
             identifier=identifier,
@@ -216,15 +216,15 @@ class BaseRelation(FakeAPIObject, Hashable):
     def create_from(
         cls: Type[Self],
         quoting: HasQuoting,
-        config: RelationConfig,
+        relation_config: RelationConfig,
         **kwargs: Any,
     ) -> Self:
         quote_policy = kwargs.pop("quote_policy", {})
 
-        config_quoting = config.quoting_dict
+        config_quoting = relation_config.quoting_dict
         config_quoting.pop("column", None)
 
-        # precedence: kwargs quoting > config quoting > base quoting > default quoting
+        # precedence: kwargs quoting > relation config quoting > base quoting > default quoting
         quote_policy = deep_merge(
             cls.get_default_quote_policy().to_dict(omit_none=True),
             quoting.quoting,
@@ -233,9 +233,9 @@ class BaseRelation(FakeAPIObject, Hashable):
         )
 
         return cls.create(
-            database=config.database,
-            schema=config.schema,
-            identifier=config.identifier,
+            database=relation_config.database,
+            schema=relation_config.schema,
+            identifier=relation_config.identifier,
             quote_policy=quote_policy,
             **kwargs,
         )
