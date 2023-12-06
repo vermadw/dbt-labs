@@ -219,6 +219,13 @@ class HasRelationMetadata(dbtClassMixin, Replaceable):
             data["database"] = None
         return data
 
+    @property
+    def quoting_dict(self) -> Dict[str, bool]:
+        if hasattr(self, "quoting"):
+            return self.quoting.to_dict(omit_none=True)
+        else:
+            return {}
+
 
 @dataclass
 class MacroDependsOn(dbtClassMixin, Replaceable):

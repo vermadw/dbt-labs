@@ -423,7 +423,7 @@ class BaseAdapter(metaclass=AdapterMeta):
         """
         # the cache only cares about executable nodes
         return {
-            self.Relation.create_from(self.config, node).without_identifier()
+            self.Relation.create_from(self.config, node).without_identifier()  # type: ignore[arg-type]
             for node in manifest.nodes.values()
             if (node.is_relational and not node.is_ephemeral_model and not node.is_external_node)
         }
@@ -470,7 +470,7 @@ class BaseAdapter(metaclass=AdapterMeta):
             manifest.sources.values(),
         )
 
-        relations = [self.Relation.create_from(self.config, n) for n in nodes]
+        relations = [self.Relation.create_from(self.config, n) for n in nodes]  # type: ignore[arg-type]
         return relations
 
     def _relations_cache_for_schemas(
