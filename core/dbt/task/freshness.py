@@ -126,7 +126,7 @@ class FreshnessRunner(BaseRunner):
 
                 adapter_response, freshness = self.adapter.calculate_freshness_from_metadata(
                     relation,
-                    manifest=manifest,
+                    macro_resolver=manifest,
                 )
 
                 status = compiled_node.freshness.status(freshness["age"])

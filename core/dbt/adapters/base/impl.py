@@ -63,7 +63,6 @@ from dbt.common.clients.agate_helper import (
     Integer,
 )
 from dbt.common.clients.jinja import CallableMacroGenerator
-from dbt.contracts.graph.manifest import Manifest
 from dbt.common.events.functions import fire_event, warn_or_error
 from dbt.adapters.events.types import (
     CacheMiss,
@@ -1230,7 +1229,7 @@ class BaseAdapter(metaclass=AdapterMeta):
         source: BaseRelation,
         loaded_at_field: str,
         filter: Optional[str],
-        manifest: Optional[Manifest] = None,
+        macro_resolver: Optional[MacroResolverProtocol] = None,
     ) -> Tuple[Optional[AdapterResponse], FreshnessResponse]:
         """Calculate the freshness of sources in dbt, and return it"""
         kwargs: Dict[str, Any] = {
@@ -1246,7 +1245,9 @@ class BaseAdapter(metaclass=AdapterMeta):
             AttrDict,  # current: contains AdapterResponse + agate.Table
             agate.Table,  # previous: just table
         ]
-        result = self.execute_macro(FRESHNESS_MACRO_NAME, kwargs=kwargs, macro_resolver=manifest)
+        result = self.execute_macro(
+            FRESHNESS_MACRO_NAME, kwargs=kwargs, macro_resolver=macro_resolver
+        )
         if isinstance(result, agate.Table):
             warn_or_error(CollectFreshnessReturnSignature())
             adapter_response = None
@@ -1276,14 +1277,14 @@ class BaseAdapter(metaclass=AdapterMeta):
     def calculate_freshness_from_metadata(
         self,
         source: BaseRelation,
-        manifest: Optional[Manifest] = None,
+        macro_resolver: Optional[MacroResolverProtocol] = None,
     ) -> Tuple[Optional[AdapterResponse], FreshnessResponse]:
         kwargs: Dict[str, Any] = {
             "information_schema": source.information_schema_only(),
             "relations": [source],
         }
         result = self.execute_macro(
-            GET_RELATION_LAST_MODIFIED_MACRO_NAME, kwargs=kwargs, macro_resolver=manifest
+            GET_RELATION_LAST_MODIFIED_MACRO_NAME, kwargs=kwargs, macro_resolver=macro_resolver
         )
         adapter_response, table = result.response, result.table  # type: ignore[attr-defined]
 
