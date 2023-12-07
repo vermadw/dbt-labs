@@ -8,7 +8,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
     Iterator,
     List,
     Mapping,
@@ -19,6 +18,7 @@ from typing import (
     TypedDict,
     Union,
     FrozenSet,
+    Iterable,
 )
 from multiprocessing.context import SpawnContext
 
@@ -28,6 +28,7 @@ from dbt.common.contracts.constraints import (
     ConstraintType,
     ModelLevelConstraint,
 )
+from dbt.adapters.contracts.macros import MacroResolverProtocol
 
 import agate
 import pytz
@@ -62,7 +63,6 @@ from dbt.common.clients.agate_helper import (
     Integer,
 )
 from dbt.common.clients.jinja import CallableMacroGenerator
-from dbt.contracts.graph.manifest import Manifest, MacroManifest
 from dbt.common.events.functions import fire_event, warn_or_error
 from dbt.adapters.events.types import (
     CacheMiss,
@@ -257,7 +257,20 @@ class BaseAdapter(metaclass=AdapterMeta):
         self.config = config
         self.cache = RelationsCache(log_cache_events=config.log_cache_events)
         self.connections = self.ConnectionManager(config, mp_context)
-        self._macro_manifest_lazy: Optional[MacroManifest] = None
+        self._macro_resolver: Optional[MacroResolverProtocol] = None
+
+    ###
+    # Methods to set / access a macro resolver
+    ###
+    def set_macro_resolver(self, macro_resolver: MacroResolverProtocol) -> None:
+        self._macro_resolver = macro_resolver
+
+    def get_macro_resolver(self) -> Optional[MacroResolverProtocol]:
+        return self._macro_resolver
+
+    def clear_macro_resolver(self) -> None:
+        if self._macro_resolver is not None:
+            self._macro_resolver = None
 
     ###
     # Methods that pass through to the connection manager
@@ -370,39 +383,6 @@ class BaseAdapter(metaclass=AdapterMeta):
         """
         return cls.ConnectionManager.TYPE
 
-    @property
-    def _macro_manifest(self) -> MacroManifest:
-        if self._macro_manifest_lazy is None:
-            return self.load_macro_manifest()
-        return self._macro_manifest_lazy
-
-    def check_macro_manifest(self) -> Optional[MacroManifest]:
-        """Return the internal manifest (used for executing macros) if it's
-        been initialized, otherwise return None.
-        """
-        return self._macro_manifest_lazy
-
-    def load_macro_manifest(self, base_macros_only=False) -> MacroManifest:
-        # base_macros_only is for the test framework
-        if self._macro_manifest_lazy is None:
-            # avoid a circular import
-            from dbt.parser.manifest import ManifestLoader
-
-            manifest = ManifestLoader.load_macros(
-                self.config,
-                self.connections.set_query_header,
-                base_macros_only=base_macros_only,
-            )
-            # TODO CT-211
-            self._macro_manifest_lazy = manifest  # type: ignore[assignment]
-        # TODO CT-211
-        return self._macro_manifest_lazy  # type: ignore[return-value]
-
-    def clear_macro_manifest(self):
-        if self._macro_manifest_lazy is not None:
-            self._macro_manifest_lazy = None
-
-    ###
     # Caching methods
     ###
     def _schema_is_cached(self, database: Optional[str], schema: str) -> bool:
@@ -1052,11 +1032,10 @@ class BaseAdapter(metaclass=AdapterMeta):
     def execute_macro(
         self,
         macro_name: str,
-        manifest: Optional[Manifest] = None,
+        macro_resolver: Optional[MacroResolverProtocol] = None,
         project: Optional[str] = None,
         context_override: Optional[Dict[str, Any]] = None,
         kwargs: Optional[Dict[str, Any]] = None,
-        text_only_columns: Optional[Iterable[str]] = None,
     ) -> AttrDict:
         """Look macro_name up in the manifest and execute its results.
 
@@ -1076,13 +1055,11 @@ class BaseAdapter(metaclass=AdapterMeta):
         if context_override is None:
             context_override = {}
 
-        if manifest is None:
-            # TODO CT-211
-            manifest = self._macro_manifest  # type: ignore[assignment]
-        # TODO CT-211
-        macro = manifest.find_macro_by_name(  # type: ignore[union-attr]
-            macro_name, self.config.project_name, project
-        )
+        resolver = macro_resolver or self._macro_resolver
+        if resolver is None:
+            raise DbtInternalError("macro resolver was None when calling execute_macro!")
+
+        macro = resolver.find_macro_by_name(macro_name, self.config.project_name, project)
         if macro is None:
             if project is None:
                 package_name = "any package"
@@ -1102,7 +1079,7 @@ class BaseAdapter(metaclass=AdapterMeta):
             # TODO CT-211
             macro=macro,
             config=self.config,
-            manifest=manifest,  # type: ignore[arg-type]
+            manifest=resolver,  # type: ignore[arg-type]
             package_name=project,
         )
         macro_context.update(context_override)
@@ -1135,10 +1112,7 @@ class BaseAdapter(metaclass=AdapterMeta):
         used_schemas: FrozenSet[Tuple[str, str]],
     ) -> agate.Table:
         kwargs = {"information_schema": information_schema, "schemas": schemas}
-        table = self.execute_macro(
-            GET_CATALOG_MACRO_NAME,
-            kwargs=kwargs,
-        )
+        table = self.execute_macro(GET_CATALOG_MACRO_NAME, kwargs=kwargs)
 
         results = self._catalog_filter_table(table, used_schemas)  # type: ignore[arg-type]
         return results
@@ -1154,10 +1128,7 @@ class BaseAdapter(metaclass=AdapterMeta):
             "information_schema": information_schema,
             "relations": relations,
         }
-        table = self.execute_macro(
-            GET_CATALOG_RELATIONS_MACRO_NAME,
-            kwargs=kwargs,
-        )
+        table = self.execute_macro(GET_CATALOG_RELATIONS_MACRO_NAME, kwargs=kwargs)
 
         results = self._catalog_filter_table(table, used_schemas)  # type: ignore[arg-type]
         return results
@@ -1258,7 +1229,7 @@ class BaseAdapter(metaclass=AdapterMeta):
         source: BaseRelation,
         loaded_at_field: str,
         filter: Optional[str],
-        manifest: Optional[Manifest] = None,
+        macro_resolver: Optional[MacroResolverProtocol] = None,
     ) -> Tuple[Optional[AdapterResponse], FreshnessResponse]:
         """Calculate the freshness of sources in dbt, and return it"""
         kwargs: Dict[str, Any] = {
@@ -1274,7 +1245,9 @@ class BaseAdapter(metaclass=AdapterMeta):
             AttrDict,  # current: contains AdapterResponse + agate.Table
             agate.Table,  # previous: just table
         ]
-        result = self.execute_macro(FRESHNESS_MACRO_NAME, kwargs=kwargs, manifest=manifest)
+        result = self.execute_macro(
+            FRESHNESS_MACRO_NAME, kwargs=kwargs, macro_resolver=macro_resolver
+        )
         if isinstance(result, agate.Table):
             warn_or_error(CollectFreshnessReturnSignature())
             adapter_response = None
@@ -1304,14 +1277,14 @@ class BaseAdapter(metaclass=AdapterMeta):
     def calculate_freshness_from_metadata(
         self,
         source: BaseRelation,
-        manifest: Optional[Manifest] = None,
+        macro_resolver: Optional[MacroResolverProtocol] = None,
     ) -> Tuple[Optional[AdapterResponse], FreshnessResponse]:
         kwargs: Dict[str, Any] = {
             "information_schema": source.information_schema_only(),
             "relations": [source],
         }
         result = self.execute_macro(
-            GET_RELATION_LAST_MODIFIED_MACRO_NAME, kwargs=kwargs, manifest=manifest
+            GET_RELATION_LAST_MODIFIED_MACRO_NAME, kwargs=kwargs, macro_resolver=macro_resolver
         )
         adapter_response, table = result.response, result.table  # type: ignore[attr-defined]
 
