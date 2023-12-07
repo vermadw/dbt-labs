@@ -95,7 +95,7 @@ class TestRuntimeSourceResolver:
         resolver.config.args.EMPTY = empty
         resolver.config.quoting = {}
 
-        mock_source = mock.Mock(name="source")
+        mock_source = mock.Mock()
         mock_source.database = "test"
         mock_source.schema = "test"
         mock_source.identifier = "test"
