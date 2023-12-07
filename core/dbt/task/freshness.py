@@ -111,7 +111,7 @@ class FreshnessRunner(BaseRunner):
                     relation,
                     compiled_node.loaded_at_field,
                     compiled_node.freshness.filter,
-                    manifest=manifest,
+                    macro_resolver=manifest,
                 )
 
                 status = compiled_node.freshness.status(freshness["age"])
