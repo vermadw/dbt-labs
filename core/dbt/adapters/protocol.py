@@ -6,7 +6,7 @@ import agate
 
 from dbt.adapters.contracts.connection import Connection, AdapterRequiredConfig, AdapterResponse
 from dbt.adapters.contracts.relation import Policy, HasQuoting, RelationConfig
-from dbt.contracts.graph.model_config import BaseConfig
+from dbt.common.contracts.config.base import BaseConfig
 from dbt.contracts.graph.manifest import Manifest
 
 
