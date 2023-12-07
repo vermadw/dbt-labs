@@ -352,15 +352,15 @@ class TestPostgresAdapter(unittest.TestCase):
 
         mock_get_relations.return_value = relations
 
-        mock_manifest = mock.MagicMock()
-        mock_manifest.get_used_schemas.return_value = {("dbt", "foo"), ("dbt", "quux")}
+        relation_configs = []
+        used_schemas = {("dbt", "foo"), ("dbt", "quux")}
 
         if filtered:
             catalog, exceptions = self.adapter.get_filtered_catalog(
-                mock_manifest, set([relations[0], relations[3]])
+                relation_configs, used_schemas, set([relations[0], relations[3]])
             )
         else:
-            catalog, exceptions = self.adapter.get_catalog(mock_manifest)
+            catalog, exceptions = self.adapter.get_catalog(relation_configs, used_schemas)
 
         tupled_catalog = set(map(tuple, catalog))
         if filtered:
@@ -428,9 +428,9 @@ class TestConnectingPostgresAdapter(unittest.TestCase):
 
         self.psycopg2.connect.return_value = self.handle
         self.adapter = PostgresAdapter(self.config, self.mp_context)
-        self.adapter._macro_manifest_lazy = load_internal_manifest_macros(self.config)
+        self.adapter.set_macro_resolver(load_internal_manifest_macros(self.config))
         self.adapter.connections.query_header = MacroQueryStringSetter(
-            self.config, self.adapter._macro_manifest_lazy
+            self.config, self.adapter.get_macro_resolver()
         )
 
         self.qh_patch = mock.patch.object(self.adapter.connections.query_header, "add")
@@ -560,8 +560,7 @@ class TestConnectingPostgresAdapter(unittest.TestCase):
 
 class TestPostgresFilterCatalog(unittest.TestCase):
     def test__catalog_filter_table(self):
-        manifest = mock.MagicMock()
-        manifest.get_used_schemas.return_value = [["a", "B"], ["a", "1234"]]
+        used_schemas = [["a", "B"], ["a", "1234"]]
         column_names = ["table_name", "table_database", "table_schema", "something"]
         rows = [
             ["foo", "a", "b", "1234"],  # include
@@ -571,7 +570,7 @@ class TestPostgresFilterCatalog(unittest.TestCase):
         ]
         table = agate.Table(rows, column_names, agate_helper.DEFAULT_TYPE_TESTER)
 
-        result = PostgresAdapter._catalog_filter_table(table, manifest)
+        result = PostgresAdapter._catalog_filter_table(table, used_schemas)
         assert len(result) == 3
         for row in result.rows:
             assert isinstance(row["table_schema"], str)
