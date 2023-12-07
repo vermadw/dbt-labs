@@ -8,6 +8,7 @@ import hashlib
 from mashumaro.types import SerializableType
 from typing import Optional, Union, List, Dict, Any, Sequence, Tuple, Iterator, Literal
 
+from dbt import deprecations
 from dbt.dataclass_schema import dbtClassMixin, ExtensibleDbtClassMixin
 
 from dbt.clients.system import write_file
@@ -43,10 +44,7 @@ from dbt.contracts.graph.node_args import ModelNodeArgs
 from dbt.contracts.graph.semantic_layer_common import WhereFilterIntersection
 from dbt.contracts.util import Replaceable, AdditionalPropertiesMixin
 from dbt.events.functions import warn_or_error
-from dbt.exceptions import (
-    ParsingError,
-    ContractBreakingChangeError,
-)
+from dbt.exceptions import ParsingError, ContractBreakingChangeError, ValidationError
 from dbt.events.types import (
     SeedIncreased,
     SeedExceedsLimitSamePath,
@@ -1237,6 +1235,24 @@ class UnpatchedSourceDefinition(BaseNode):
     def get_source_representation(self):
         return f'source("{self.source.name}", "{self.table.name}")'
 
+    def validate_data_tests(self):
+        """
+        sources parse tests differently than models, so we need to do some validation
+        here where it's done in the PatchParser for other nodes
+        """
+        for column in self.columns:
+            if column.tests and column.data_tests:
+                raise ValidationError(
+                    "Invalid test config: cannot have both 'tests' and 'data_tests' defined"
+                )
+            if column.tests:
+                deprecations.warn(
+                    "project-test-config",
+                    deprecated_path="tests",
+                    exp_path="data_tests",
+                )
+                column.data_tests = column.tests
+
     @property
     def quote_columns(self) -> Optional[bool]:
         result = None
@@ -1251,14 +1267,23 @@ class UnpatchedSourceDefinition(BaseNode):
         return [] if self.table.columns is None else self.table.columns
 
     def get_tests(self) -> Iterator[Tuple[Dict[str, Any], Optional[UnparsedColumn]]]:
-        for test in self.tests:
-            yield normalize_test(test), None
+        self.validate_data_tests()
+        for data_test in self.data_tests:
+            yield normalize_test(data_test), None
 
         for column in self.columns:
-            if column.tests is not None:
-                for test in column.tests:
-                    yield normalize_test(test), column
+            if column.data_tests is not None:
+                for data_test in column.data_tests:
+                    yield normalize_test(data_test), column
 
+    @property
+    def data_tests(self) -> List[TestDef]:
+        if self.table.data_tests is None:
+            return []
+        else:
+            return self.table.data_tests
+
+    # deprecated
     @property
     def tests(self) -> List[TestDef]:
         if self.table.tests is None:
