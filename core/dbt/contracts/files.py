@@ -22,6 +22,7 @@ class ParseFileType(StrEnum):
     Documentation = "docs"
     Schema = "schema"
     Hook = "hook"  # not a real filetype, from dbt_project.yml
+    Fixture = "fixture"
 
 
 parse_file_type_to_parser = {
@@ -35,6 +36,7 @@ parse_file_type_to_parser = {
     ParseFileType.Documentation: "DocumentationParser",
     ParseFileType.Schema: "SchemaParser",
     ParseFileType.Hook: "HookParser",
+    ParseFileType.Fixture: "FixtureParser",
 }
 
 
@@ -152,7 +154,6 @@ class BaseSourceFile(dbtClassMixin, SerializableType):
     parse_file_type: Optional[ParseFileType] = None
     # we don't want to serialize this
     contents: Optional[str] = None
-    # the unique IDs contained in this file
 
     @property
     def file_id(self):
@@ -168,6 +169,8 @@ class BaseSourceFile(dbtClassMixin, SerializableType):
     def _deserialize(cls, dct: Dict[str, int]):
         if dct["parse_file_type"] == "schema":
             sf = SchemaSourceFile.from_dict(dct)
+        elif dct["parse_file_type"] == "fixture":
+            sf = FixtureSourceFile.from_dict(dct)
         else:
             sf = SourceFile.from_dict(dct)
         return sf
@@ -328,4 +331,14 @@ class SchemaSourceFile(BaseSourceFile):
                 del self.env_vars[yaml_key]
 
 
-AnySourceFile = Union[SchemaSourceFile, SourceFile]
+@dataclass
+class FixtureSourceFile(BaseSourceFile):
+    fixture: Optional[str] = None
+    unit_tests: List[str] = field(default_factory=list)
+
+    def add_unit_test(self, value):
+        if value not in self.unit_tests:
+            self.unit_tests.append(value)
+
+
+AnySourceFile = Union[SchemaSourceFile, SourceFile, FixtureSourceFile]
