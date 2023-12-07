@@ -28,7 +28,7 @@ from dbt.common.contracts.constraints import (
     ConstraintType,
     ModelLevelConstraint,
 )
-from dbt.adapters.contracts.macros import MacroResolverProtocol
+from dbt.adapters.contracts.macros import MacroClient
 
 import agate
 import pytz
@@ -62,7 +62,7 @@ from dbt.common.clients.agate_helper import (
     table_from_rows,
     Integer,
 )
-from dbt.common.clients.jinja import CallableMacroGenerator, MacroProtocol
+from dbt.common.clients.jinja import CallableMacroGenerator
 from dbt.common.events.functions import fire_event, warn_or_error
 from dbt.adapters.events.types import (
     CacheMiss,
@@ -80,7 +80,6 @@ from dbt.adapters.base.connections import (
     Connection,
     AdapterResponse,
     BaseConnectionManager,
-    AdapterRequiredConfig,
 )
 from dbt.adapters.base.meta import AdapterMeta, available
 from dbt.adapters.base.relation import (
@@ -262,35 +261,20 @@ class BaseAdapter(metaclass=AdapterMeta):
         self.config = config
         self.cache = RelationsCache(log_cache_events=config.log_cache_events)
         self.connections = self.ConnectionManager(config, mp_context)
-        self._macro_resolver: Optional[MacroResolverProtocol] = None
-        self._macro_context_generator: Optional[
-            Callable[
-                [MacroProtocol, AdapterRequiredConfig, MacroResolverProtocol, Optional[str]],
-                Dict[str, Any],
-            ]
-        ] = None
+        self._macro_client: Optional[MacroClient] = None
 
     ###
-    # Methods to set / access a macro resolver
+    # Methods to set / access a macro client
     ###
-    def set_macro_resolver(self, macro_resolver: MacroResolverProtocol) -> None:
-        self._macro_resolver = macro_resolver
+    def set_macro_client(self, macro_client: MacroClient) -> None:
+        self._macro_client = macro_client
 
-    def get_macro_resolver(self) -> Optional[MacroResolverProtocol]:
-        return self._macro_resolver
+    def get_macro_client(self) -> Optional[MacroClient]:
+        return self._macro_client
 
-    def clear_macro_resolver(self) -> None:
-        if self._macro_resolver is not None:
-            self._macro_resolver = None
-
-    def set_macro_context_generator(
-        self,
-        macro_context_generator: Callable[
-            [MacroProtocol, AdapterRequiredConfig, MacroResolverProtocol, Optional[str]],
-            Dict[str, Any],
-        ],
-    ) -> None:
-        self._macro_context_generator = macro_context_generator
+    def clear_macro_client(self) -> None:
+        if self._macro_client is not None:
+            self._macro_client = None
 
     ###
     # Methods that pass through to the connection manager
@@ -1052,7 +1036,7 @@ class BaseAdapter(metaclass=AdapterMeta):
     def execute_macro(
         self,
         macro_name: str,
-        macro_resolver: Optional[MacroResolverProtocol] = None,
+        macro_client: Optional[MacroClient] = None,
         project: Optional[str] = None,
         context_override: Optional[Dict[str, Any]] = None,
         kwargs: Optional[Dict[str, Any]] = None,
@@ -1075,14 +1059,11 @@ class BaseAdapter(metaclass=AdapterMeta):
         if context_override is None:
             context_override = {}
 
-        resolver = macro_resolver or self._macro_resolver
-        if resolver is None:
-            raise DbtInternalError("Macro resolver was None when calling execute_macro!")
+        client = self._macro_client or macro_client
+        if client is None:
+            raise DbtInternalError("Macro client was None when calling execute_macro!")
 
-        if self._macro_context_generator is None:
-            raise DbtInternalError("Macro context generator was None when calling execute_macro!")
-
-        macro = resolver.find_macro_by_name(macro_name, self.config.project_name, project)
+        macro = client.find_macro_by_name(macro_name, self.config.project_name, project)
         if macro is None:
             if project is None:
                 package_name = "any package"
@@ -1095,7 +1076,7 @@ class BaseAdapter(metaclass=AdapterMeta):
                 )
             )
 
-        macro_context = self._macro_context_generator(macro, self.config, resolver, project)
+        macro_context = client.generate_context_for_macro(self.config, macro, project)
         macro_context.update(context_override)
 
         macro_function = CallableMacroGenerator(macro, macro_context)
@@ -1243,7 +1224,7 @@ class BaseAdapter(metaclass=AdapterMeta):
         source: BaseRelation,
         loaded_at_field: str,
         filter: Optional[str],
-        macro_resolver: Optional[MacroResolverProtocol] = None,
+        macro_client: Optional[MacroClient] = None,
     ) -> Tuple[Optional[AdapterResponse], FreshnessResponse]:
         """Calculate the freshness of sources in dbt, and return it"""
         kwargs: Dict[str, Any] = {
@@ -1259,9 +1240,7 @@ class BaseAdapter(metaclass=AdapterMeta):
             AttrDict,  # current: contains AdapterResponse + agate.Table
             agate.Table,  # previous: just table
         ]
-        result = self.execute_macro(
-            FRESHNESS_MACRO_NAME, kwargs=kwargs, macro_resolver=macro_resolver
-        )
+        result = self.execute_macro(FRESHNESS_MACRO_NAME, kwargs=kwargs, macro_client=macro_client)
         if isinstance(result, agate.Table):
             warn_or_error(CollectFreshnessReturnSignature())
             adapter_response = None
@@ -1291,14 +1270,14 @@ class BaseAdapter(metaclass=AdapterMeta):
     def calculate_freshness_from_metadata(
         self,
         source: BaseRelation,
-        macro_resolver: Optional[MacroResolverProtocol] = None,
+        macro_client: Optional[MacroClient] = None,
     ) -> Tuple[Optional[AdapterResponse], FreshnessResponse]:
         kwargs: Dict[str, Any] = {
             "information_schema": source.information_schema_only(),
             "relations": [source],
         }
         result = self.execute_macro(
-            GET_RELATION_LAST_MODIFIED_MACRO_NAME, kwargs=kwargs, macro_resolver=macro_resolver
+            GET_RELATION_LAST_MODIFIED_MACRO_NAME, kwargs=kwargs, macro_client=macro_client
         )
         adapter_response, table = result.response, result.table  # type: ignore[attr-defined]
 

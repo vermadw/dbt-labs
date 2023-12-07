@@ -9,18 +9,15 @@ from typing import (
     TypeVar,
     Tuple,
     Any,
-    Callable,
-    Dict,
 )
 from typing_extensions import Protocol
 
 import agate
 
 from dbt.adapters.contracts.connection import Connection, AdapterRequiredConfig, AdapterResponse
-from dbt.adapters.contracts.macros import MacroResolverProtocol
+from dbt.adapters.contracts.macros import MacroClient
 from dbt.adapters.contracts.relation import Policy, HasQuoting, RelationConfig
 from dbt.common.contracts.config.base import BaseConfig
-from dbt.common.clients.jinja import MacroProtocol
 from dbt.contracts.graph.manifest import Manifest
 
 
@@ -80,22 +77,13 @@ class AdapterProtocol(  # type: ignore[misc]
     def __init__(self, config: AdapterRequiredConfig) -> None:
         ...
 
-    def set_macro_resolver(self, macro_resolver: MacroResolverProtocol) -> None:
+    def set_macro_client(self, macro_resolver: MacroClient) -> None:
         ...
 
-    def get_macro_resolver(self) -> Optional[MacroResolverProtocol]:
+    def get_macro_client(self) -> Optional[MacroClient]:
         ...
 
-    def clear_macro_resolver(self) -> None:
-        ...
-
-    def set_macro_context_generator(
-        self,
-        macro_context_generator: Callable[
-            [MacroProtocol, AdapterRequiredConfig, MacroResolverProtocol, Optional[str]],
-            Dict[str, Any],
-        ],
-    ) -> None:
+    def clear_macro_client(self) -> None:
         ...
 
     @classmethod

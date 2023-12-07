@@ -7,6 +7,7 @@ import agate
 
 import dbt.common.exceptions
 from dbt.adapters.factory import get_adapter
+from dbt.context.providers import ManifestMacroClient
 from dbt.contracts.files import FileHash
 from dbt.contracts.graph.nodes import HookNode
 from dbt.contracts.results import RunResultsArtifact, RunResult, RunStatus, TimingInfo
@@ -40,8 +41,12 @@ class RunOperationTask(ConfiguredTask):
 
         with adapter.connection_named("macro_{}".format(macro_name)):
             adapter.clear_transaction()
+            macro_client = ManifestMacroClient(self.manifest) if self.manifest else None
             res = adapter.execute_macro(
-                macro_name, project=package_name, kwargs=macro_kwargs, macro_resolver=self.manifest
+                macro_name,
+                project=package_name,
+                kwargs=macro_kwargs,
+                macro_client=macro_client,
             )
 
         return res

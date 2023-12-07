@@ -29,6 +29,7 @@ from dbt.context.macro_resolver import MacroResolver, TestMacroNamespace
 from dbt.context.macros import MacroNamespaceBuilder, MacroNamespace
 from dbt.context.manifest import ManifestContext
 from dbt.adapters.contracts.connection import AdapterResponse
+from dbt.adapters.contracts.macros import MacroClient
 from dbt.contracts.graph.manifest import Manifest, Disabled
 from dbt.contracts.graph.nodes import (
     Macro,
@@ -1528,6 +1529,21 @@ def generate_runtime_macro_context(
 ) -> Dict[str, Any]:
     ctx = MacroContext(macro, config, manifest, OperationProvider(), package_name)
     return ctx.to_dict()
+
+
+class ManifestMacroClient(MacroClient):
+    def __init__(self, manifest: Manifest) -> None:
+        self._manifest = manifest
+
+    def find_macro_by_name(
+        self, name: str, root_project_name: str, package: Optional[str]
+    ) -> Optional[MacroProtocol]:
+        return self._manifest.find_macro_by_name(name, root_project_name, package)
+
+    def generate_context_for_macro(
+        self, config: RuntimeConfig, macro: MacroProtocol, package: Optional[str]
+    ) -> Dict[str, Any]:
+        return generate_runtime_macro_context(macro, config, self._manifest, package)
 
 
 class ExposureRefResolver(BaseResolver):

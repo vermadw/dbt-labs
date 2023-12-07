@@ -2,7 +2,7 @@ import io
 import threading
 import time
 
-from dbt.context.providers import generate_runtime_model_context
+from dbt.context.providers import generate_runtime_model_context, ManifestMacroClient
 from dbt.contracts.graph.nodes import SeedNode
 from dbt.contracts.results import RunResult, RunStatus
 from dbt.common.events.base_types import EventLevel
@@ -27,7 +27,7 @@ class ShowRunner(CompileRunner):
         model_context = generate_runtime_model_context(compiled_node, self.config, manifest)
         compiled_node.compiled_code = self.adapter.execute_macro(
             macro_name="get_show_sql",
-            macro_resolver=manifest,
+            macro_client=ManifestMacroClient(manifest),
             context_override=model_context,
             kwargs={
                 "compiled_code": model_context["compiled_code"],

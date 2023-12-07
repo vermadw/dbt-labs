@@ -74,7 +74,7 @@ from dbt.config import Project, RuntimeConfig
 from dbt.context.docs import generate_runtime_docs_context
 from dbt.context.macro_resolver import MacroResolver, TestMacroNamespace
 from dbt.context.configured import generate_macro_context
-from dbt.context.providers import ParseProvider
+from dbt.context.providers import ParseProvider, ManifestMacroClient
 from dbt.contracts.files import FileHash, ParseFileType, SchemaSourceFile
 from dbt.parser.read_files import (
     ReadFilesFromFileSystem,
@@ -286,7 +286,7 @@ class ManifestLoader:
         # the config and adapter may be persistent.
         if reset:
             config.clear_dependencies()
-            adapter.clear_macro_resolver()
+            adapter.clear_macro_client()
         macro_hook = adapter.connections.set_query_header
 
         flags = get_flags()
@@ -999,11 +999,10 @@ class ManifestLoader:
         return state_check
 
     def save_macros_to_adapter(self, adapter):
-        macro_manifest = MacroManifest(self.manifest.macros)
-        adapter.set_macro_resolver(macro_manifest)
+        adapter.set_macro_client(ManifestMacroClient(self.manifest))
         # This executes the callable macro_hook and sets the
         # query headers
-        self.macro_hook(macro_manifest)
+        self.macro_hook(self.manifest)
 
     # This creates a MacroManifest which contains the macros in
     # the adapter. Only called by the load_macros call from the

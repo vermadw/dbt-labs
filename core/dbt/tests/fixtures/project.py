@@ -9,7 +9,7 @@ import yaml
 
 from dbt.parser.manifest import ManifestLoader
 from dbt.common.exceptions import CompilationError, DbtDatabaseError
-from dbt.context.providers import generate_runtime_macro_context
+from dbt.context.providers import ManifestMacroClient
 import dbt.flags as flags
 from dbt.config.runtime import RuntimeConfig
 from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters, get_adapter_by_type
@@ -297,8 +297,7 @@ def adapter(
         base_macros_only=True,
     )
 
-    adapter.set_macro_resolver(manifest)
-    adapter.set_macro_context_generator(generate_runtime_macro_context)
+    adapter.set_macro_client(ManifestMacroClient(manifest))
     yield adapter
     adapter.cleanup_connections()
     reset_adapters()
@@ -459,13 +458,13 @@ class TestProjInfo:
 
     # Drop the unique test schema, usually called in test cleanup
     def drop_test_schema(self):
-        if self.adapter.get_macro_resolver() is None:
+        if self.adapter.get_macro_client() is None:
             manifest = ManifestLoader.load_macros(
                 self.adapter.config,
                 self.adapter.connections.set_query_header,
                 base_macros_only=True,
             )
-            self.adapter.set_macro_resolver(manifest)
+            self.adapter.set_macro_client(ManifestMacroClient(manifest))
 
         with get_connection(self.adapter):
             for schema_name in self.created_schemas:

@@ -1,7 +1,7 @@
 import dbt.tracking
 from dbt.common.invocation import reset_invocation_id
 from dbt.version import installed as installed_version
-from dbt.adapters.factory import adapter_management, register_adapter, get_adapter
+from dbt.adapters.factory import adapter_management, register_adapter
 from dbt.flags import set_flags, get_flag_dict
 from dbt.cli.exceptions import (
     ExceptionExit,
@@ -10,7 +10,6 @@ from dbt.cli.exceptions import (
 from dbt.cli.flags import Flags
 from dbt.config import RuntimeConfig
 from dbt.config.runtime import load_project, load_profile, UnsetProfile
-from dbt.context.providers import generate_runtime_macro_context
 
 from dbt.common.events.base_types import EventLevel
 from dbt.common.events.functions import (
@@ -275,8 +274,6 @@ def manifest(*args0, write=True, write_perf_info=False):
 
             runtime_config = ctx.obj["runtime_config"]
             register_adapter(runtime_config)
-            adapter = get_adapter(runtime_config)
-            adapter.set_macro_context_generator(generate_runtime_macro_context)
 
             # a manifest has already been set on the context, so don't overwrite it
             if ctx.obj.get("manifest") is None:
