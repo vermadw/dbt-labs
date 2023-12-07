@@ -27,7 +27,7 @@ from dbt.common.contracts.constraints import (
     ConstraintType,
     ModelLevelConstraint,
 )
-from dbt.adapters.contracts.macros import MacroResolver
+from dbt.adapters.contracts.macros import MacroResolverProtocol
 
 import agate
 import pytz
@@ -254,15 +254,15 @@ class BaseAdapter(metaclass=AdapterMeta):
         self.config = config
         self.cache = RelationsCache(log_cache_events=config.log_cache_events)
         self.connections = self.ConnectionManager(config, mp_context)
-        self._macro_resolver: Optional[MacroResolver] = None
+        self._macro_resolver: Optional[MacroResolverProtocol] = None
 
     ###
     # Methods to set / access a macro resolver
     ###
-    def set_macro_resolver(self, macro_resolver: MacroResolver) -> None:
+    def set_macro_resolver(self, macro_resolver: MacroResolverProtocol) -> None:
         self._macro_resolver = macro_resolver
 
-    def get_macro_resolver(self) -> Optional[MacroResolver]:
+    def get_macro_resolver(self) -> Optional[MacroResolverProtocol]:
         return self._macro_resolver
 
     def clear_macro_resolver(self) -> None:
@@ -1034,7 +1034,7 @@ class BaseAdapter(metaclass=AdapterMeta):
     def execute_macro(
         self,
         macro_name: str,
-        macro_resolver: Optional[MacroResolver] = None,
+        macro_resolver: Optional[MacroResolverProtocol] = None,
         project: Optional[str] = None,
         context_override: Optional[Dict[str, Any]] = None,
         kwargs: Optional[Dict[str, Any]] = None,

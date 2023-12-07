@@ -5,7 +5,7 @@ from typing_extensions import Protocol
 import agate
 
 from dbt.adapters.contracts.connection import Connection, AdapterRequiredConfig, AdapterResponse
-from dbt.adapters.contracts.macros import MacroResolver
+from dbt.adapters.contracts.macros import MacroResolverProtocol
 from dbt.adapters.contracts.relation import Policy, HasQuoting, RelationConfig
 from dbt.common.contracts.config.base import BaseConfig
 from dbt.contracts.graph.manifest import Manifest
@@ -67,10 +67,10 @@ class AdapterProtocol(  # type: ignore[misc]
     def __init__(self, config: AdapterRequiredConfig) -> None:
         ...
 
-    def set_macro_resolver(self, macro_resolver: MacroResolver) -> None:
+    def set_macro_resolver(self, macro_resolver: MacroResolverProtocol) -> None:
         ...
 
-    def get_macro_resolver(self) -> Optional[MacroResolver]:
+    def get_macro_resolver(self) -> Optional[MacroResolverProtocol]:
         ...
 
     def clear_macro_resolver(self) -> None:

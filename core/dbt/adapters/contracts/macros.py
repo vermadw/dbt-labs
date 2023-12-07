@@ -4,7 +4,7 @@ from typing_extensions import Protocol
 from dbt.common.clients.jinja import MacroProtocol
 
 
-class MacroResolver(Protocol):
+class MacroResolverProtocol(Protocol):
     def find_macro_by_name(
         self, name: str, root_project_name: str, package: Optional[str]
     ) -> Optional[MacroProtocol]:
