@@ -62,7 +62,7 @@ from dbt.common.clients.agate_helper import (
     table_from_rows,
     Integer,
 )
-from dbt.common.clients.jinja import CallableMacroGenerator
+from dbt.common.clients.jinja import CallableMacroGenerator, MacroProtocol
 from dbt.common.events.functions import fire_event, warn_or_error
 from dbt.adapters.events.types import (
     CacheMiss,
@@ -76,7 +76,12 @@ from dbt.adapters.events.types import (
 from dbt.common.utils import filter_null_values, executor, cast_to_str, AttrDict
 
 from dbt.adapters.contracts.relation import RelationConfig
-from dbt.adapters.base.connections import Connection, AdapterResponse, BaseConnectionManager
+from dbt.adapters.base.connections import (
+    Connection,
+    AdapterResponse,
+    BaseConnectionManager,
+    AdapterRequiredConfig,
+)
 from dbt.adapters.base.meta import AdapterMeta, available
 from dbt.adapters.base.relation import (
     ComponentName,
@@ -258,6 +263,12 @@ class BaseAdapter(metaclass=AdapterMeta):
         self.cache = RelationsCache(log_cache_events=config.log_cache_events)
         self.connections = self.ConnectionManager(config, mp_context)
         self._macro_resolver: Optional[MacroResolverProtocol] = None
+        self._macro_context_generator: Optional[
+            Callable[
+                [MacroProtocol, AdapterRequiredConfig, MacroResolverProtocol, Optional[str]],
+                Dict[str, Any],
+            ]
+        ] = None
 
     ###
     # Methods to set / access a macro resolver
@@ -271,6 +282,15 @@ class BaseAdapter(metaclass=AdapterMeta):
     def clear_macro_resolver(self) -> None:
         if self._macro_resolver is not None:
             self._macro_resolver = None
+
+    def set_macro_context_generator(
+        self,
+        macro_context_generator: Callable[
+            [MacroProtocol, AdapterRequiredConfig, MacroResolverProtocol, Optional[str]],
+            Dict[str, Any],
+        ],
+    ) -> None:
+        self._macro_context_generator = macro_context_generator
 
     ###
     # Methods that pass through to the connection manager
@@ -1057,7 +1077,10 @@ class BaseAdapter(metaclass=AdapterMeta):
 
         resolver = macro_resolver or self._macro_resolver
         if resolver is None:
-            raise DbtInternalError("macro resolver was None when calling execute_macro!")
+            raise DbtInternalError("Macro resolver was None when calling execute_macro!")
+
+        if self._macro_context_generator is None:
+            raise DbtInternalError("Macro context generator was None when calling execute_macro!")
 
         macro = resolver.find_macro_by_name(macro_name, self.config.project_name, project)
         if macro is None:
@@ -1071,17 +1094,8 @@ class BaseAdapter(metaclass=AdapterMeta):
                     macro_name, package_name
                 )
             )
-        # This causes a reference cycle, as generate_runtime_macro_context()
-        # ends up calling get_adapter, so the import has to be here.
-        from dbt.context.providers import generate_runtime_macro_context
 
-        macro_context = generate_runtime_macro_context(
-            # TODO CT-211
-            macro=macro,
-            config=self.config,
-            manifest=resolver,  # type: ignore[arg-type]
-            package_name=project,
-        )
+        macro_context = self._macro_context_generator(macro, self.config, resolver, project)
         macro_context.update(context_override)
 
         macro_function = CallableMacroGenerator(macro, macro_context)

@@ -18,6 +18,7 @@ from dbt.contracts.graph.manifest import ManifestStateCheck
 from dbt.common.clients import agate_helper
 from dbt.exceptions import DbtConfigError
 from dbt.common.exceptions import DbtValidationError
+from dbt.context.providers import generate_runtime_macro_context
 from psycopg2 import extensions as psycopg2_extensions
 from psycopg2 import DatabaseError
 
@@ -429,6 +430,7 @@ class TestConnectingPostgresAdapter(unittest.TestCase):
         self.psycopg2.connect.return_value = self.handle
         self.adapter = PostgresAdapter(self.config, self.mp_context)
         self.adapter.set_macro_resolver(load_internal_manifest_macros(self.config))
+        self.adapter.set_macro_context_generator(generate_runtime_macro_context)
         self.adapter.connections.query_header = MacroQueryStringSetter(
             self.config, self.adapter.get_macro_resolver()
         )

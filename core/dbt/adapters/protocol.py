@@ -1,5 +1,17 @@
 from dataclasses import dataclass
-from typing import Type, Hashable, Optional, ContextManager, List, Generic, TypeVar, Tuple, Any
+from typing import (
+    Type,
+    Hashable,
+    Optional,
+    ContextManager,
+    List,
+    Generic,
+    TypeVar,
+    Tuple,
+    Any,
+    Callable,
+    Dict,
+)
 from typing_extensions import Protocol
 
 import agate
@@ -8,6 +20,7 @@ from dbt.adapters.contracts.connection import Connection, AdapterRequiredConfig,
 from dbt.adapters.contracts.macros import MacroResolverProtocol
 from dbt.adapters.contracts.relation import Policy, HasQuoting, RelationConfig
 from dbt.common.contracts.config.base import BaseConfig
+from dbt.common.clients.jinja import MacroProtocol
 from dbt.contracts.graph.manifest import Manifest
 
 
@@ -74,6 +87,15 @@ class AdapterProtocol(  # type: ignore[misc]
         ...
 
     def clear_macro_resolver(self) -> None:
+        ...
+
+    def set_macro_context_generator(
+        self,
+        macro_context_generator: Callable[
+            [MacroProtocol, AdapterRequiredConfig, MacroResolverProtocol, Optional[str]],
+            Dict[str, Any],
+        ],
+    ) -> None:
         ...
 
     @classmethod
