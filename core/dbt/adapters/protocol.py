@@ -77,7 +77,7 @@ class AdapterProtocol(  # type: ignore[misc]
     def __init__(self, config: AdapterRequiredConfig) -> None:
         ...
 
-    def set_macro_client(self, macro_resolver: MacroClient) -> None:
+    def set_macro_client(self, macro_client: MacroClient) -> None:
         ...
 
     def get_macro_client(self) -> Optional[MacroClient]:
