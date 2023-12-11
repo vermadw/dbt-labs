@@ -1,11 +1,11 @@
 import threading
-import traceback
 from contextlib import contextmanager
 from importlib import import_module
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Type
 
 from dbt.adapters.base.plugin import AdapterPlugin
+from dbt.adapters.load_adapter import get_adapter_by_name
 from dbt.adapters.protocol import AdapterConfig, AdapterProtocol, RelationProtocol
 from dbt.adapters.contracts.connection import AdapterRequiredConfig, Credentials
 from dbt.common.events.functions import fire_event
@@ -54,20 +54,7 @@ class AdapterContainer:
         # this doesn't need a lock: in the worst case we'll overwrite packages
         # and adapter_type entries with the same value, as they're all
         # singletons
-        try:
-            # mypy doesn't think modules have any attributes.
-            mod: Any = import_module("." + name, "dbt.adapters")
-        except ModuleNotFoundError as exc:
-            # if we failed to import the target module in particular, inform
-            # the user about it via a runtime error
-            if exc.name == "dbt.adapters." + name:
-                fire_event(AdapterImportError(exc=str(exc)))
-                raise DbtRuntimeError(f"Could not find adapter type {name}!")
-            # otherwise, the error had to have come from some underlying
-            # library. Log the stack trace.
-
-            fire_event(PluginLoadError(exc_info=traceback.format_exc()))
-            raise
+        mod: Any = get_adapter_by_name(name)
         plugin: AdapterPlugin = mod.Plugin
         plugin_type = plugin.adapter.type()
 
