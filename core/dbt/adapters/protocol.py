@@ -19,6 +19,7 @@ from dbt.adapters.contracts.connection import Connection, AdapterRequiredConfig,
 from dbt.adapters.contracts.macros import MacroResolverProtocol
 from dbt.adapters.contracts.relation import Policy, HasQuoting, RelationConfig
 from dbt.common.contracts.config.base import BaseConfig
+from dbt.common.clients.jinja import MacroProtocol
 
 
 @dataclass
@@ -55,6 +56,17 @@ Relation_T = TypeVar("Relation_T", bound=RelationProtocol)
 Column_T = TypeVar("Column_T", bound=ColumnProtocol)
 
 
+class MacroContextGeneratorCallable(Protocol):
+    def __call__(
+        self,
+        macro_protocol: MacroProtocol,
+        config: AdapterRequiredConfig,
+        macro_resolver: MacroResolverProtocol,
+        package_name: Optional[str],
+    ) -> Dict[str, Any]:
+        ...
+
+
 # TODO CT-211
 class AdapterProtocol(  # type: ignore[misc]
     Protocol,
@@ -84,6 +96,12 @@ class AdapterProtocol(  # type: ignore[misc]
         ...
 
     def clear_macro_resolver(self) -> None:
+        ...
+
+    def set_macro_context_generator(
+        self,
+        macro_context_generator: MacroContextGeneratorCallable,
+    ) -> None:
         ...
 
     @classmethod
