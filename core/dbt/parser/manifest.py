@@ -19,6 +19,7 @@ from typing import (
 from itertools import chain
 import time
 
+from dbt.context.manifest import generate_query_header_context
 from dbt.contracts.graph.semantic_manifest import SemanticManifest
 from dbt.common.events.base_types import EventLevel
 import json
@@ -286,7 +287,7 @@ class ManifestLoader:
         # the config and adapter may be persistent.
         if reset:
             config.clear_dependencies()
-            adapter.clear_macro_manifest()
+            adapter.clear_macro_resolver()
         macro_hook = adapter.connections.set_query_header
 
         flags = get_flags()
@@ -1000,10 +1001,12 @@ class ManifestLoader:
 
     def save_macros_to_adapter(self, adapter):
         macro_manifest = MacroManifest(self.manifest.macros)
-        adapter._macro_manifest_lazy = macro_manifest
+        adapter.set_macro_resolver(macro_manifest)
         # This executes the callable macro_hook and sets the
         # query headers
-        self.macro_hook(macro_manifest)
+        # This executes the callable macro_hook and sets the query headers
+        query_header_context = generate_query_header_context(adapter.config, macro_manifest)
+        self.macro_hook(query_header_context)
 
     # This creates a MacroManifest which contains the macros in
     # the adapter. Only called by the load_macros call from the
@@ -1529,6 +1532,34 @@ def _process_refs(
         node.depends_on.add_node(target_model_id)
 
 
+def _process_metric_depends_on(
+    manifest: Manifest,
+    current_project: str,
+    metric: Metric,
+) -> None:
+    """For a given metric, set the `depends_on` property"""
+
+    assert len(metric.type_params.input_measures) > 0
+    for input_measure in metric.type_params.input_measures:
+        target_semantic_model = manifest.resolve_semantic_model_for_measure(
+            target_measure_name=input_measure.name,
+            current_project=current_project,
+            node_package=metric.package_name,
+        )
+        if target_semantic_model is None:
+            raise dbt.exceptions.ParsingError(
+                f"A semantic model having a measure `{input_measure.name}` does not exist but was referenced.",
+                node=metric,
+            )
+        if target_semantic_model.config.enabled is False:
+            raise dbt.exceptions.ParsingError(
+                f"The measure `{input_measure.name}` is referenced on disabled semantic model `{target_semantic_model.name}`.",
+                node=metric,
+            )
+
+        metric.depends_on.add_node(target_semantic_model.unique_id)
+
+
 def _process_metric_node(
     manifest: Manifest,
     current_project: str,
@@ -1548,24 +1579,19 @@ def _process_metric_node(
             metric.type_params.measure is not None
         ), f"{metric} should have a measure defined, but it does not."
         metric.type_params.input_measures.append(metric.type_params.measure)
-        target_semantic_model = manifest.resolve_semantic_model_for_measure(
-            target_measure_name=metric.type_params.measure.name,
-            current_project=current_project,
-            node_package=metric.package_name,
+        _process_metric_depends_on(
+            manifest=manifest, current_project=current_project, metric=metric
         )
-        if target_semantic_model is None:
-            raise dbt.exceptions.ParsingError(
-                f"A semantic model having a measure `{metric.type_params.measure.name}` does not exist but was referenced.",
-                node=metric,
-            )
-        if target_semantic_model.config.enabled is False:
-            raise dbt.exceptions.ParsingError(
-                f"The measure `{metric.type_params.measure.name}` is referenced on disabled semantic model `{target_semantic_model.name}`.",
-                node=metric,
-            )
-
-        metric.depends_on.add_node(target_semantic_model.unique_id)
-
+    elif metric.type is MetricType.CONVERSION:
+        conversion_type_params = metric.type_params.conversion_type_params
+        assert (
+            conversion_type_params
+        ), f"{metric.name} is a conversion metric and must have conversion_type_params defined."
+        metric.type_params.input_measures.append(conversion_type_params.base_measure)
+        metric.type_params.input_measures.append(conversion_type_params.conversion_measure)
+        _process_metric_depends_on(
+            manifest=manifest, current_project=current_project, metric=metric
+        )
     elif metric.type is MetricType.DERIVED or metric.type is MetricType.RATIO:
         input_metrics = metric.input_metrics
         if metric.type is MetricType.RATIO:

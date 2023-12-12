@@ -1,13 +1,25 @@
 from dataclasses import dataclass
-from typing import Type, Hashable, Optional, ContextManager, List, Generic, TypeVar, Tuple, Any
+from typing import (
+    Type,
+    Hashable,
+    Optional,
+    ContextManager,
+    List,
+    Generic,
+    TypeVar,
+    Tuple,
+    Any,
+    Dict,
+)
 from typing_extensions import Protocol
 
 import agate
 
 from dbt.adapters.contracts.connection import Connection, AdapterRequiredConfig, AdapterResponse
+from dbt.adapters.contracts.macros import MacroResolverProtocol
 from dbt.adapters.contracts.relation import Policy, HasQuoting, RelationConfig
-from dbt.contracts.graph.model_config import BaseConfig
-from dbt.contracts.graph.manifest import Manifest
+from dbt.common.contracts.config.base import BaseConfig
+from dbt.common.clients.jinja import MacroProtocol
 
 
 @dataclass
@@ -44,6 +56,17 @@ Relation_T = TypeVar("Relation_T", bound=RelationProtocol)
 Column_T = TypeVar("Column_T", bound=ColumnProtocol)
 
 
+class MacroContextGeneratorCallable(Protocol):
+    def __call__(
+        self,
+        macro_protocol: MacroProtocol,
+        config: AdapterRequiredConfig,
+        macro_resolver: MacroResolverProtocol,
+        package_name: Optional[str],
+    ) -> Dict[str, Any]:
+        ...
+
+
 # TODO CT-211
 class AdapterProtocol(  # type: ignore[misc]
     Protocol,
@@ -66,11 +89,26 @@ class AdapterProtocol(  # type: ignore[misc]
     def __init__(self, config: AdapterRequiredConfig) -> None:
         ...
 
+    def set_macro_resolver(self, macro_resolver: MacroResolverProtocol) -> None:
+        ...
+
+    def get_macro_resolver(self) -> Optional[MacroResolverProtocol]:
+        ...
+
+    def clear_macro_resolver(self) -> None:
+        ...
+
+    def set_macro_context_generator(
+        self,
+        macro_context_generator: MacroContextGeneratorCallable,
+    ) -> None:
+        ...
+
     @classmethod
     def type(cls) -> str:
         pass
 
-    def set_query_header(self, manifest: Manifest) -> None:
+    def set_query_header(self, query_header_context: Dict[str, Any]) -> None:
         ...
 
     @staticmethod

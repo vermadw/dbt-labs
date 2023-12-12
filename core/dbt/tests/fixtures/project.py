@@ -7,7 +7,9 @@ from datetime import datetime
 import warnings
 import yaml
 
+from dbt.parser.manifest import ManifestLoader
 from dbt.common.exceptions import CompilationError, DbtDatabaseError
+from dbt.context.providers import generate_runtime_macro_context
 import dbt.flags as flags
 import dbt
 from dbt.config.runtime import RuntimeConfig
@@ -290,7 +292,14 @@ def adapter(
     adapter = get_adapter(runtime_config)
     # We only need the base macros, not macros from dependencies, and don't want
     # to run 'dbt deps' here.
-    adapter.load_macro_manifest(base_macros_only=True)
+    manifest = ManifestLoader.load_macros(
+        runtime_config,
+        adapter.connections.set_query_header,
+        base_macros_only=True,
+    )
+
+    adapter.set_macro_resolver(manifest)
+    adapter.set_macro_context_generator(generate_runtime_macro_context)
     yield adapter
     dbt.clients.adapter.client.cleanup_connections()
     reset_adapters()
@@ -451,6 +460,14 @@ class TestProjInfo:
 
     # Drop the unique test schema, usually called in test cleanup
     def drop_test_schema(self):
+        if self.adapter.get_macro_resolver() is None:
+            manifest = ManifestLoader.load_macros(
+                self.adapter.config,
+                self.adapter.connections.set_query_header,
+                base_macros_only=True,
+            )
+            self.adapter.set_macro_resolver(manifest)
+
         with get_connection(self.adapter):
             for schema_name in self.created_schemas:
                 relation = self.adapter.Relation.create(database=self.database, schema=schema_name)

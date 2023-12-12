@@ -2,6 +2,10 @@ import datetime
 import re
 
 from dbt import deprecations
+from dbt.common.contracts.config.properties import (
+    AdditionalPropertiesAllowed,
+    AdditionalPropertiesMixin,
+)
 from dbt.node_types import NodeType
 from dbt.contracts.graph.semantic_models import (
     Defaults,
@@ -9,7 +13,6 @@ from dbt.contracts.graph.semantic_models import (
     MeasureAggregationParameters,
 )
 from dbt.contracts.util import (
-    AdditionalPropertiesMixin,
     Mergeable,
     Replaceable,
 )
@@ -24,6 +27,8 @@ from dbt.common.dataclass_schema import (
     ExtensibleDbtClassMixin,
     ValidationError,
 )
+
+from dbt_semantic_interfaces.type_enums import ConversionCalculationType
 
 from dataclasses import dataclass, field
 from datetime import timedelta
@@ -308,11 +313,6 @@ class FreshnessThreshold(dbtClassMixin, Mergeable):
 
     def __bool__(self):
         return bool(self.warn_after) or bool(self.error_after)
-
-
-@dataclass
-class AdditionalPropertiesAllowed(AdditionalPropertiesMixin, ExtensibleDbtClassMixin):
-    _extra: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -603,6 +603,24 @@ class UnparsedMetricInput(dbtClassMixin):
 
 
 @dataclass
+class ConstantPropertyInput(dbtClassMixin):
+    base_property: str
+    conversion_property: str
+
+
+@dataclass
+class UnparsedConversionTypeParams(dbtClassMixin):
+    base_measure: Union[UnparsedMetricInputMeasure, str]
+    conversion_measure: Union[UnparsedMetricInputMeasure, str]
+    entity: str
+    calculation: str = (
+        ConversionCalculationType.CONVERSION_RATE.value
+    )  # ConversionCalculationType Enum
+    window: Optional[str] = None
+    constant_properties: Optional[List[ConstantPropertyInput]] = None
+
+
+@dataclass
 class UnparsedMetricTypeParams(dbtClassMixin):
     measure: Optional[Union[UnparsedMetricInputMeasure, str]] = None
     numerator: Optional[Union[UnparsedMetricInput, str]] = None
@@ -611,6 +629,7 @@ class UnparsedMetricTypeParams(dbtClassMixin):
     window: Optional[str] = None
     grain_to_date: Optional[str] = None  # str is really a TimeGranularity Enum
     metrics: Optional[List[Union[UnparsedMetricInput, str]]] = None
+    conversion_type_params: Optional[UnparsedConversionTypeParams] = None
 
 
 @dataclass
