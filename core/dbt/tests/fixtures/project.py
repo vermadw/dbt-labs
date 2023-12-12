@@ -9,8 +9,9 @@ import yaml
 
 from dbt.common.exceptions import CompilationError, DbtDatabaseError
 import dbt.flags as flags
+import dbt
 from dbt.config.runtime import RuntimeConfig
-from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters, get_adapter_by_type
+from dbt.clients.adapter import get_adapter, register_adapter, reset_adapters, get_adapter_by_type
 from dbt.common.events.event_manager_client import cleanup_event_logger
 from dbt.events.logging import setup_event_logger
 from dbt.tests.util import (
@@ -291,7 +292,7 @@ def adapter(
     # to run 'dbt deps' here.
     adapter.load_macro_manifest(base_macros_only=True)
     yield adapter
-    adapter.cleanup_connections()
+    dbt.clients.adapter.client.cleanup_connections()
     reset_adapters()
 
 

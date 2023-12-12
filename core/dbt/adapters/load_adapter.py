@@ -24,5 +24,3 @@ def get_adapter_by_name(name: str) -> ModuleType:
 
         fire_event(PluginLoadError(exc_info=traceback.format_exc()))
         raise
-
-def
