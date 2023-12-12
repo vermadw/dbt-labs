@@ -9,6 +9,7 @@ import yaml
 
 from dbt.parser.manifest import ManifestLoader
 from dbt.common.exceptions import CompilationError, DbtDatabaseError
+from dbt.context.providers import generate_runtime_macro_context
 import dbt.flags as flags
 from dbt.config.runtime import RuntimeConfig
 from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters, get_adapter_by_type
@@ -297,6 +298,7 @@ def adapter(
     )
 
     adapter.set_macro_resolver(manifest)
+    adapter.set_macro_context_generator(generate_runtime_macro_context)
     yield adapter
     adapter.cleanup_connections()
     reset_adapters()

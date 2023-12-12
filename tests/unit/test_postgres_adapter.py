@@ -8,17 +8,17 @@ from unittest import mock
 
 from dbt.adapters.base import BaseRelation
 from dbt.adapters.contracts.relation import Path
+from dbt.context.manifest import generate_query_header_context
 from dbt.task.debug import DebugTask
 
-from dbt.adapters.base.query_headers import MacroQueryStringSetter
 from dbt.adapters.postgres import PostgresAdapter
 from dbt.adapters.postgres import Plugin as PostgresPlugin
 from dbt.contracts.files import FileHash
 from dbt.contracts.graph.manifest import ManifestStateCheck
-from dbt.context.manifest import generate_query_header_context
 from dbt.common.clients import agate_helper
 from dbt.exceptions import DbtConfigError
 from dbt.common.exceptions import DbtValidationError
+from dbt.context.providers import generate_runtime_macro_context
 from psycopg2 import extensions as psycopg2_extensions
 from psycopg2 import DatabaseError
 
@@ -430,14 +430,10 @@ class TestConnectingPostgresAdapter(unittest.TestCase):
         self.psycopg2.connect.return_value = self.handle
         self.adapter = PostgresAdapter(self.config, self.mp_context)
         self.adapter.set_macro_resolver(load_internal_manifest_macros(self.config))
-
-        query_header_context = generate_query_header_context(
-            self.adapter.config, self.adapter.get_macro_resolver()
+        self.adapter.set_macro_context_generator(generate_runtime_macro_context)
+        self.adapter.connections.set_query_header(
+            generate_query_header_context(self.config, self.adapter.get_macro_resolver())
         )
-        self.adapter.connections.query_header = MacroQueryStringSetter(
-            self.config, query_header_context
-        )
-
         self.qh_patch = mock.patch.object(self.adapter.connections.query_header, "add")
         self.mock_query_header_add = self.qh_patch.start()
         self.mock_query_header_add.side_effect = lambda q: "/* dbt */\n{}".format(q)
