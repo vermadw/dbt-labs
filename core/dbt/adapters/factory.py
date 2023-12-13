@@ -1,3 +1,5 @@
+from multiprocessing.context import SpawnContext
+
 import threading
 import traceback
 from contextlib import contextmanager
@@ -14,7 +16,6 @@ from dbt.common.exceptions import DbtInternalError, DbtRuntimeError
 from dbt.adapters.include.global_project import PACKAGE_PATH as GLOBAL_PROJECT_PATH
 from dbt.adapters.include.global_project import PROJECT_NAME as GLOBAL_PROJECT_NAME
 from dbt.common.semver import VersionSpecifier
-from dbt.mp_context import get_mp_context
 
 Adapter = AdapterProtocol
 
@@ -88,7 +89,7 @@ class AdapterContainer:
 
         return plugin.credentials
 
-    def register_adapter(self, config: AdapterRequiredConfig) -> None:
+    def register_adapter(self, config: AdapterRequiredConfig, mp_context: SpawnContext) -> None:
         adapter_name = config.credentials.type
         adapter_type = self.get_adapter_class_by_name(adapter_name)
         adapter_version = import_module(f".{adapter_name}.__version__", "dbt.adapters").version
@@ -103,7 +104,7 @@ class AdapterContainer:
                 # this shouldn't really happen...
                 return
 
-            adapter: Adapter = adapter_type(config, get_mp_context())  # type: ignore
+            adapter: Adapter = adapter_type(config, mp_context)  # type: ignore
             self.adapters[adapter_name] = adapter
 
     def lookup_adapter(self, adapter_name: str) -> Adapter:
@@ -173,8 +174,8 @@ class AdapterContainer:
 FACTORY: AdapterContainer = AdapterContainer()
 
 
-def register_adapter(config: AdapterRequiredConfig) -> None:
-    FACTORY.register_adapter(config)
+def register_adapter(config: AdapterRequiredConfig, mp_context: SpawnContext) -> None:
+    FACTORY.register_adapter(config, mp_context)
 
 
 def get_adapter(config: AdapterRequiredConfig):
