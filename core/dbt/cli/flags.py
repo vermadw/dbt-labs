@@ -3,6 +3,7 @@ import sys
 from dataclasses import dataclass
 from importlib import import_module
 from multiprocessing import get_context
+from pathlib import Path
 from pprint import pformat as pf
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 
@@ -13,6 +14,7 @@ from dbt.cli.resolvers import default_log_path, default_project_dir
 from dbt.cli.types import Command as CliCommand
 from dbt.config.profile import read_user_config
 from dbt.contracts.project import UserConfig
+from dbt.contracts.state import PreviousState
 from dbt.exceptions import DbtInternalError
 from dbt.deprecations import renamed_env_var
 from dbt.helper_types import WarnErrorOptions
@@ -238,6 +240,25 @@ class Flags:
             project_dir = getattr(self, "PROJECT_DIR", default_project_dir())
             version_check = getattr(self, "VERSION_CHECK", True)
             object.__setattr__(self, "LOG_PATH", default_log_path(project_dir, version_check))
+
+        # Override certain values when performing a retry
+        if getattr(self, "WHICH", "") == "retry":
+            previous_state = PreviousState(
+                state_path=Path(ctx.params.get("state", ".")),
+                target_path=Path(
+                    getattr(self, "TARGET", "")
+                    or os.path.join(ctx.params["project_dir"], "target")
+                ),
+                project_root=Path(ctx.params.get("project_dir", ".")),
+            )
+
+            prev_vars = (
+                previous_state.results.args.get("vars", {}) if previous_state.results else None
+            )
+
+            if prev_vars:
+                curr_vars = getattr(self, "VARS", {})
+                object.__setattr__(self, "VARS", {**prev_vars, **curr_vars})
 
         # Support console DO NOT TRACK initiative.
         if os.getenv("DO_NOT_TRACK", "").lower() in ("1", "t", "true", "y", "yes"):

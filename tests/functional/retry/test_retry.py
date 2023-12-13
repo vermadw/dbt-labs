@@ -291,3 +291,17 @@ class TestRetryOverridePath:
         run_dbt(["run", "--project-dir", "proj_location_1"], expect_pass=False)
         move(proj_location_1, proj_location_2)
         run_dbt(["retry", "--project-dir", "proj_location_2"], expect_pass=False)
+
+
+class TestRetryFullRefresh:
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "sample_model.sql": "select {{ var('myvar_a') + var('myvar_b') }} as something",
+        }
+
+    def test_retry(self, project):
+        run_dbt(["run", "--vars", '{"myvar_a": "12", "myvar_b": "3 4"}'], expect_pass=False)
+        move("target", "state")
+        results = run_dbt(["retry", "--state", "state", "--vars", '{"myvar_b": "34"}'])
+        assert len(results) == 1
