@@ -293,15 +293,34 @@ class TestRetryOverridePath:
         run_dbt(["retry", "--project-dir", "proj_location_2"], expect_pass=False)
 
 
-class TestRetryFullRefresh:
+class TestRetryVars:
     @pytest.fixture(scope="class")
     def models(self):
         return {
-            "sample_model.sql": "select {{ var('myvar_a') + var('myvar_b') }} as something",
+            "sample_model.sql": "select {{ var('myvar_a') + var('myvar_b') }} as mycol",
         }
 
     def test_retry(self, project):
         run_dbt(["run", "--vars", '{"myvar_a": "12", "myvar_b": "3 4"}'], expect_pass=False)
         move("target", "state")
         results = run_dbt(["retry", "--state", "state", "--vars", '{"myvar_b": "34"}'])
+        assert len(results) == 1
+
+
+class TestRetryFullRefresh:
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "sample_model.sql": "{% if flags.FULL_REFRESH %} this is invalid sql {% else %} select 1 as mycol {% endif %}",
+        }
+
+    def test_retry(self, project):
+
+        # This run should fail with invalid sql...
+        run_dbt(["run", "--full-refresh"], expect_pass=False)
+
+        move("target", "state")
+
+        # ...and so should this one, since the effect of the full-refresh parameter should persist.
+        results = run_dbt(["retry", "--state", "state"], expect_pass=False)
         assert len(results) == 1

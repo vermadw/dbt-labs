@@ -241,7 +241,7 @@ class Flags:
             version_check = getattr(self, "VERSION_CHECK", True)
             object.__setattr__(self, "LOG_PATH", default_log_path(project_dir, version_check))
 
-        # Override certain values when performing a retry
+        # Re-apply the original vars when performing a retry
         if getattr(self, "WHICH", "") == "retry":
             previous_state = PreviousState(
                 state_path=Path(ctx.params.get("state", ".")),
@@ -259,6 +259,11 @@ class Flags:
             if prev_vars:
                 curr_vars = getattr(self, "VARS", {})
                 object.__setattr__(self, "VARS", {**prev_vars, **curr_vars})
+
+            if "full_refresh" in params_assigned_from_default and previous_state.results:
+                object.__setattr__(
+                    self, "FULL_REFRESH", previous_state.results.args.get("full_refresh", False)
+                )
 
         # Support console DO NOT TRACK initiative.
         if os.getenv("DO_NOT_TRACK", "").lower() in ("1", "t", "true", "y", "yes"):
