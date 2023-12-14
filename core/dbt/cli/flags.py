@@ -244,12 +244,14 @@ class Flags:
         # Re-apply the original vars when performing a retry
         if getattr(self, "WHICH", "") == "retry":
             previous_state = PreviousState(
-                state_path=Path(ctx.params.get("state", ".")),
+                state_path=Path(
+                    ctx.params.get("state", "") or getattr(self, "TARGET_PATH") or "."
+                ),
                 target_path=Path(
-                    getattr(self, "TARGET", "")
+                    getattr(self, "TARGET_PATH")
                     or os.path.join(ctx.params["project_dir"], "target")
                 ),
-                project_root=Path(ctx.params.get("project_dir", ".")),
+                project_root=Path(ctx.params.get("project_dir") or "."),
             )
 
             prev_vars = (
