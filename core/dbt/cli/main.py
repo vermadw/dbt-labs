@@ -639,7 +639,7 @@ def run(ctx, **kwargs):
 @requires.profile
 @requires.project
 @requires.runtime_config
-@requires.manifest
+# @requires.manifest
 def retry(ctx, **kwargs):
     """Retry the nodes that failed in the previous run."""
     task = RetryTask(

@@ -303,7 +303,9 @@ class TestRetryVars:
     def test_retry(self, project):
         run_dbt(["run", "--vars", '{"myvar_a": "12", "myvar_b": "3 4"}'], expect_pass=False)
         move("target", "state")
-        results = run_dbt(["retry", "--state", "state", "--vars", '{"myvar_b": "34"}'])
+        results = run_dbt(
+            ["retry", "--state", "state", "--vars", '{"myvar_a": "12", "myvar_b": "34"}']
+        )
         assert len(results) == 1
 
 
@@ -315,7 +317,6 @@ class TestRetryFullRefresh:
         }
 
     def test_retry(self, project):
-
         # This run should fail with invalid sql...
         run_dbt(["run", "--full-refresh"], expect_pass=False)
 

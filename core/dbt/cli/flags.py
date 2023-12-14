@@ -3,7 +3,6 @@ import sys
 from dataclasses import dataclass
 from importlib import import_module
 from multiprocessing import get_context
-from pathlib import Path
 from pprint import pformat as pf
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 
@@ -14,7 +13,6 @@ from dbt.cli.resolvers import default_log_path, default_project_dir
 from dbt.cli.types import Command as CliCommand
 from dbt.config.profile import read_user_config
 from dbt.contracts.project import UserConfig
-from dbt.contracts.state import PreviousState
 from dbt.exceptions import DbtInternalError
 from dbt.deprecations import renamed_env_var
 from dbt.helper_types import WarnErrorOptions
@@ -241,32 +239,6 @@ class Flags:
             version_check = getattr(self, "VERSION_CHECK", True)
             object.__setattr__(self, "LOG_PATH", default_log_path(project_dir, version_check))
 
-        # Re-apply the original vars when performing a retry
-        if getattr(self, "WHICH", "") == "retry":
-            previous_state = PreviousState(
-                state_path=Path(
-                    ctx.params.get("state", "") or getattr(self, "TARGET_PATH") or "."
-                ),
-                target_path=Path(
-                    getattr(self, "TARGET_PATH")
-                    or os.path.join(ctx.params["project_dir"], "target")
-                ),
-                project_root=Path(ctx.params.get("project_dir") or "."),
-            )
-
-            prev_vars = (
-                previous_state.results.args.get("vars", {}) if previous_state.results else None
-            )
-
-            if prev_vars:
-                curr_vars = getattr(self, "VARS", {})
-                object.__setattr__(self, "VARS", {**prev_vars, **curr_vars})
-
-            if "full_refresh" in params_assigned_from_default and previous_state.results:
-                object.__setattr__(
-                    self, "FULL_REFRESH", previous_state.results.args.get("full_refresh", False)
-                )
-
         # Support console DO NOT TRACK initiative.
         if os.getenv("DO_NOT_TRACK", "").lower() in ("1", "t", "true", "y", "yes"):
             object.__setattr__(self, "SEND_ANONYMOUS_USAGE_STATS", False)
@@ -343,7 +315,6 @@ def command_params(command: CliCommand, args_dict: Dict[str, Any]) -> CommandPar
     default_args = set([x.lower() for x in FLAGS_DEFAULTS.keys()])
 
     res = command.to_list()
-
     for k, v in args_dict.items():
         k = k.lower()
         # if a "which" value exists in the args dict, it should match the command provided
@@ -355,7 +326,9 @@ def command_params(command: CliCommand, args_dict: Dict[str, Any]) -> CommandPar
             continue
 
         # param was assigned from defaults and should not be included
-        if k not in (cmd_args | prnt_args) - default_args:
+        if k not in (cmd_args | prnt_args) or (
+            k in default_args and v == FLAGS_DEFAULTS[k.upper()]
+        ):
             continue
 
         # if the param is in parent args, it should come before the arg name
