@@ -126,7 +126,11 @@ class TestRetry:
         write_file(models__sample_model, "models", "sample_model.sql")
 
     def test_warn_error(self, project):
-        # Regular build
+
+        # Our test command should succeed when run normally...
+        results = run_dbt(["build", "--select", "second_model"])
+
+        # ...but it should fail when run with warn-error, due to a warning...
         results = run_dbt(["--warn-error", "build", "--select", "second_model"], expect_pass=False)
 
         expected_statuses = {
@@ -136,11 +140,8 @@ class TestRetry:
 
         assert {n.node.name: n.status for n in results.results} == expected_statuses
 
-        # Retry regular, should pass
-        run_dbt(["retry"])
-
-        # Retry with --warn-error, should fail
-        run_dbt(["--warn-error", "retry"], expect_pass=False)
+        # ...and it should fail again on retry because --warn-error is still in effect.
+        run_dbt(["retry"], expect_pass=False)
 
     def test_run_operation(self, project):
         results = run_dbt(
