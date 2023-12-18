@@ -256,13 +256,10 @@ class UnitTestParser(YamlReader):
     # This should create the UnparseUnitTest object.  Then it should be turned into and UnpatchedUnitTest
     def parse(self) -> ParseResult:
         for data in self.get_key_dicts():
-
-            breakpoint()
             is_override = "overrides" in data
             if is_override:
                 data["path"] = self.yaml.path.original_file_path
                 patch = self._target_from_dict(UnitTestPatch, data)
-                breakpoint()
                 assert isinstance(self.yaml.file, SchemaSourceFile)
                 source_file = self.yaml.file
                 # unit test patches must be unique
@@ -302,7 +299,7 @@ class UnitTestParser(YamlReader):
             model=unit_test.model,
             given=unit_test.given,
             expect=unit_test.expect,
-            version=unit_test.version,
+            versions=unit_test.versions,
             description=unit_test.description,
             overrides=unit_test.overrides,
             config=unit_test.config,
@@ -444,7 +441,6 @@ class UnitTestPatcher:
     # unit tests
     def construct_unit_tests(self) -> None:
         for unique_id, unpatched in self.manifest.unit_tests.items():
-            # breakpoint()
             # schema_file = self.manifest.files[unpatched.file_id]
             if isinstance(unpatched, UnitTestDefinition):
                 # In partial parsing, there will be UnitTestDefinition
@@ -489,10 +485,8 @@ class UnitTestPatcher:
     def parse_unit_test(self, unit_test: UnpatchedUnitTestDefinition) -> List[UnitTestDefinition]:
 
         version_list = self.get_unit_test_versions(
-            model_name=unit_test.model, version=unit_test.version
+            model_name=unit_test.model, versions=unit_test.versions
         )
-        # breakpoint()
-
         if not version_list:
             return [self.build_unit_test_definition(unit_test=unit_test, version=None)]
 
@@ -503,13 +497,10 @@ class UnitTestPatcher:
     def _find_tested_model_node(
         self, unit_test: UnpatchedUnitTestDefinition, model_version: Optional[NodeVersion]
     ) -> ModelNode:
-        # breakpoint()
         package_name = unit_test.package_name
         # TODO: does this work when `define_id` is used in the yaml?
         model_name_split = unit_test.model.split()
         model_name = model_name_split[0]
-        # breakpoint()
-
         tested_node = self.manifest.ref_lookup.find(
             model_name, package_name, model_version, self.manifest
         )
@@ -585,26 +576,26 @@ class UnitTestPatcher:
         return fqn
 
     def get_unit_test_versions(
-        self, model_name: str, version: Optional[UnitTestNodeVersion]
+        self, model_name: str, versions: Optional[UnitTestNodeVersion]
     ) -> List[Optional[NodeVersion]]:
         version_list = []
-        if version is None:
+        if versions is None:
             for node in self.manifest.nodes.values():
                 # only modelnodes have unit tests
                 if isinstance(node, ModelNode) and node.is_versioned:
                     if node.name == model_name:
                         version_list.append(node.version)
-        elif version.exclude is not None:
+        elif versions.exclude is not None:
             for node in self.manifest.nodes.values():
                 # only modelnodes have unit tests
                 if isinstance(node, ModelNode) and node.is_versioned:
                     if node.name == model_name:
                         # no version has been specified and this version is not explicitly excluded
-                        if node.version not in version.exclude:
+                        if node.version not in versions.exclude:
                             version_list.append(node.version)
         # versions were explicitly included
-        elif version.include is not None:
-            for i in version.include:
+        elif versions.include is not None:
+            for i in versions.include:
                 # todo: does this actually need reformatting?
                 version_list.append(i)
 
@@ -617,7 +608,6 @@ class UnitTestPatcher:
         if isinstance(unpatched, UnitTestDefinition):
             return None
         key = unpatched.name
-        breakpoint()
         patch: Optional[UnitTestPatch] = self.manifest.unit_test_patches.get(key)
         if patch is None:
             return None

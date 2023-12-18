@@ -489,7 +489,9 @@ class CompiledNode(ParsedNode):
     refs: List[RefArgs] = field(default_factory=list)
     sources: List[List[str]] = field(default_factory=list)
     metrics: List[List[str]] = field(default_factory=list)
+    # TODO: when we do it this way we lose the ability to cross ref the model name without knowing the version yet
     unit_tests: List[str] = field(default_factory=list)
+    # unit_tests: List[UnitTestModelVersion] = field(default_factory=list)  # dict of model unique_id to moedl version
     depends_on: DependsOn = field(default_factory=DependsOn)
     compiled_path: Optional[str] = None
     compiled: bool = False
@@ -1057,7 +1059,7 @@ class UnpatchedUnitTestDefinition(BaseNode):
     description: str = ""
     config: Dict[str, Any] = field(default_factory=dict)
     resource_type: Literal[NodeType.Unit]
-    version: Optional[UnitTestNodeVersion] = field(default_factory=UnitTestNodeVersion)
+    versions: Optional[UnitTestNodeVersion] = None
     overrides: Optional[UnitTestOverrides] = None
     patch_path: Optional[str] = None
 
