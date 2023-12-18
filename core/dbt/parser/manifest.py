@@ -1796,7 +1796,6 @@ def _process_unit_tests_for_node(manifest: Manifest, current_project: str, node:
         return
 
     target_unit_test: Optional[UnitTestDefinition] = None
-    breakpoint()
     for unit_test_name in node.unit_tests:
         # TODO: loop through tests and build all the versioned nodes...
         target_unit_test = manifest.resolve_unit_tests(

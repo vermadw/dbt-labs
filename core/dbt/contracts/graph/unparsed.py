@@ -133,6 +133,7 @@ class HasConfig:
 
 
 NodeVersion = Union[str, float]
+UnitTestModelVersion: Dict[str, List[NodeVersion]]
 
 
 @dataclass
@@ -826,7 +827,7 @@ class UnparsedUnitTest(dbtClassMixin):
     given: Sequence[UnitTestInputFixture]
     expect: UnitTestOutputFixture
     description: str = ""
-    version: Optional[UnitTestNodeVersion] = None
+    versions: Optional[UnitTestNodeVersion] = None
     overrides: Optional[UnitTestOverrides] = None
     config: Dict[str, Any] = field(default_factory=dict)
 
@@ -851,7 +852,7 @@ class UnitTestPatch(dbtClassMixin, Replaceable):
         metadata=dict(description="The path to the patch-defining yml file"),
     )
     config: Dict[str, Any] = field(default_factory=dict)
-    version: Optional[UnitTestNodeVersion] = field(default_factory=UnitTestNodeVersion)
+    versions: Optional[UnitTestNodeVersion] = None
     description: Optional[str] = None
     schema: Optional[str] = None
 
