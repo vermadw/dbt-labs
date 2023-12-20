@@ -48,8 +48,8 @@ class NodeSelector(MethodManager):
         include_empty_nodes: bool = False,
     ) -> None:
         super().__init__(manifest, previous_state)
-        self.full_graph = graph
-        self.include_empty_nodes = include_empty_nodes
+        self.full_graph: Graph = graph
+        self.include_empty_nodes: bool = include_empty_nodes
 
         # build a subgraph containing only non-empty, enabled nodes and enabled
         # sources.
@@ -258,6 +258,8 @@ class NodeSelector(MethodManager):
                     node = self.manifest.nodes[unique_id]
                 elif unique_id in self.manifest.unit_tests:
                     node = self.manifest.unit_tests[unique_id]  # type: ignore
+                # Test nodes that are not selected themselves, but whose parents are selected.
+                # (Does not include unit tests because they can only have one parent.)
                 if can_select_indirectly(node):
                     # should we add it in directly?
                     if indirect_selection == IndirectSelection.Eager or set(
@@ -325,8 +327,11 @@ class NodeSelector(MethodManager):
         """Returns a queue over nodes in the graph that tracks progress of
         dependecies.
         """
+        # Filtering hapens in get_selected
         selected_nodes = self.get_selected(spec)
+        # Save to global variable
         selected_resources.set_selected_resources(selected_nodes)
+        # Construct a new graph using the selected_nodes
         new_graph = self.full_graph.get_subset_graph(selected_nodes)
         # should we give a way here for consumers to mutate the graph?
         return GraphQueue(new_graph.graph, self.manifest, selected_nodes)

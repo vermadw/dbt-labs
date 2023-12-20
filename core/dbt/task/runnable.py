@@ -53,6 +53,7 @@ from dbt.logger import (
     ModelMetadata,
     NodeCount,
 )
+from dbt.node_types import NodeType
 from dbt.parser.manifest import write_manifest
 from dbt.task.base import ConfiguredTask, BaseRunner
 from .printer import (
@@ -222,8 +223,9 @@ class GraphRunnableTask(ConfiguredTask):
                         )
                     )
             # `_event_status` dict is only used for logging.  Make sure
-            # it gets deleted when we're done with it
-            runner.node.clear_event_status()
+            # it gets deleted when we're done with it, except for unit tests
+            if not runner.node.resource_type == NodeType.Unit:
+                runner.node.clear_event_status()
 
         fail_fast = get_flags().FAIL_FAST
 
@@ -275,16 +277,7 @@ class GraphRunnableTask(ConfiguredTask):
             self.job_queue.mark_done(result.node.unique_id)
 
         while not self.job_queue.empty():
-            node = self.job_queue.get()
-            self._raise_set_error()
-            runner = self.get_runner(node)
-            # we finally know what we're running! Make sure we haven't decided
-            # to skip it due to upstream failures
-            if runner.node.unique_id in self._skipped_children:
-                cause = self._skipped_children.pop(runner.node.unique_id)
-                runner.do_skip(cause=cause)
-            args = (runner,)
-            self._submit(pool, args, callback)
+            self.handle_job_queue(pool, callback)
 
         # block on completion
         if get_flags().FAIL_FAST:
@@ -301,6 +294,19 @@ class GraphRunnableTask(ConfiguredTask):
 
         return
 
+    # The build command overrides this
+    def handle_job_queue(self, pool, callback):
+        node = self.job_queue.get()
+        self._raise_set_error()
+        runner = self.get_runner(node)
+        # we finally know what we're running! Make sure we haven't decided
+        # to skip it due to upstream failures
+        if runner.node.unique_id in self._skipped_children:
+            cause = self._skipped_children.pop(runner.node.unique_id)
+            runner.do_skip(cause=cause)
+        args = [runner]
+        self._submit(pool, args, callback)
+
     def _handle_result(self, result: RunResult):
         """Mark the result as completed, insert the `CompileResultNode` into
         the manifest, and mark any descendants (potentially with a 'cause' if
@@ -315,6 +321,7 @@ class GraphRunnableTask(ConfiguredTask):
         if self.manifest is None:
             raise DbtInternalError("manifest was None in _handle_result")
 
+        # If result.status == NodeStatus.Error, plus Fail for build command
         if result.status in self.MARK_DEPENDENT_ERRORS_STATUSES:
             if is_ephemeral:
                 cause = result

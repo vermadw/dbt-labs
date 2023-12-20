@@ -135,7 +135,7 @@ class Linker:
     def __init__(self, data=None) -> None:
         if data is None:
             data = {}
-        self.graph = nx.DiGraph(**data)
+        self.graph: nx.DiGraph = nx.DiGraph(**data)
 
     def edges(self):
         return self.graph.edges()
@@ -243,6 +243,7 @@ class Linker:
                 # Get all tests that depend on any upstream nodes.
                 upstream_tests = []
                 for upstream_node in upstream_nodes:
+                    # This gets tests with unique_ids starting with "test."
                     upstream_tests += _get_tests_for_node(manifest, upstream_node)
 
                 for upstream_test in upstream_tests:
@@ -471,6 +472,7 @@ class Compiler:
         summaries["_invocation_id"] = get_invocation_id()
         summaries["linked"] = linker.get_graph_summary(manifest)
 
+        # This is only called for the "build" command
         if add_test_edges:
             manifest.build_parent_and_child_maps()
             linker.add_test_edges(manifest)
