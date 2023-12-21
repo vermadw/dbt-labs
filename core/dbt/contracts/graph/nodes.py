@@ -1076,7 +1076,6 @@ class GenericTestNode(TestShouldStoreFailures, CompiledNode, HasTestMetadata):
 
 @dataclass
 class UnpatchedUnitTestDefinition(BaseNode):
-    # unit_test: UnparsedUnitTest
     name: str
     model: str  # name of the model being unit tested
     given: Sequence[UnitTestInputFixture]
@@ -1121,7 +1120,7 @@ class UnitTestDefinition(NodeInfoMixin, GraphNode, UnitTestDefinitionMandatory):
     description: str = ""
     depends_on: DependsOn = field(default_factory=DependsOn)
     config: UnitTestConfig = field(default_factory=UnitTestConfig)
-    version: Optional[NodeVersion] = None
+    versions: List[NodeVersion] = field(default_factory=list)
     overrides: Optional[UnitTestOverrides] = None
     checksum: Optional[str] = None
     schema: Optional[str] = None
@@ -1150,8 +1149,7 @@ class UnitTestDefinition(NodeInfoMixin, GraphNode, UnitTestDefinitionMandatory):
         return [tags] if isinstance(tags, str) else tags
 
     def build_unit_test_checksum(self):
-        # everything except 'description'
-        data = f"{self.model}-{self.given}-{self.expect}-{self.overrides}"
+        data = f"{self.model}-{self.version}-{self.given}-{self.expect}-{self.overrides}"
 
         # include underlying fixture data
         for input in self.given:

@@ -665,6 +665,8 @@ class ManifestLoader:
 
         # Loop through parsers with loaded files.
         for parser_cls in parser_types:
+            # if parser_cls == ModelNode:
+            breakpoint()
             parser_name = parser_cls.__name__
             # No point in creating a parser if we don't have files for it
             if parser_name not in parser_files or not parser_files[parser_name]:
@@ -1237,8 +1239,8 @@ class ManifestLoader:
                 continue
             _process_sources_for_exposure(self.manifest, current_project, exposure)
 
-    # Loops through all nodes and exposures, for each element in
-    # 'sources' array finds the source node and updates the
+    # Loops through all nodes, for each element in
+    # 'unit_test' array finds the node and updates the
     # 'depends_on.nodes' array with the unique id
     def process_unit_tests(self, current_project: str):
         for node in self.manifest.nodes.values():
@@ -1808,8 +1810,6 @@ def _process_unit_tests_for_node(manifest: Manifest, current_project: str, node:
             # this folows the same pattern as refs
             node.config.enabled = False
             continue
-        # TODO: below will changed based on if versions are involved or not.
-        # target_unit_test_id = target_unit_test.unique_id
 
         node.depends_on.add_node(target_unit_test.unique_id)
 

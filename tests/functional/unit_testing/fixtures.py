@@ -598,3 +598,120 @@ unit_tests:
       format: csv
       fixture: test_my_model_basic_fixture
 """
+
+# -- unit testing versioned models
+my_model_v1_sql = """
+SELECT
+a,
+b,
+a+b as c,
+concat(string_a, string_b) as string_c,
+not_testing, date_a
+FROM {{ ref('my_model_a')}} my_model_a
+JOIN {{ ref('my_model_b' )}} my_model_b
+ON my_model_a.id = my_model_b.id
+"""
+
+my_model_v2_sql = """
+SELECT
+a,
+a+b as c,
+concat(string_a, string_b) as string_c,
+not_testing, date_a
+FROM {{ ref('my_model_a')}} my_model_a
+JOIN {{ ref('my_model_b' )}} my_model_b
+ON my_model_a.id = my_model_b.id
+"""
+
+my_model_v3_sql = """
+SELECT
+a+b as c,
+concat(string_a, string_b) as string_c,
+not_testing, date_a
+FROM {{ ref('my_model_a')}} my_model_a
+JOIN {{ ref('my_model_b' )}} my_model_b
+ON my_model_a.id = my_model_b.id
+"""
+
+test_my_model_versioned_unit_tests_yml = """
+models:
+  - name: my_model
+    columns:
+      - name: a
+      - name: b
+      - name: c
+      - name: string_c
+      - name: not_testing
+      - name: date_a
+
+  - name: my_model
+    latest_version: 1
+    access: public
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: a
+        data_type: integer
+      - name: b
+        data_type: integer
+      - name: c
+        data_type: integer
+      - name: string_c
+        data_type: string
+      - name: not_testing
+        data_type: integer
+      - name: date_a
+        data_type: string
+    versions:
+      - v: 1
+      - v: 2
+        columns:
+          # This means: use the 'columns' list from above, but exclude b
+          - include: "all"
+            exclude:
+            - b
+      - v: 3
+        # combine two columns into 1
+        columns:
+          - include: all
+            exclude:
+            - a
+            - b
+"""
+
+
+test_my_model_exclude_versions_yml = """
+unit_tests:
+  - name: test_my_model
+    model: my_model
+    versions:
+      exclude:
+        - 2
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        fixture: test_my_model_a_numeric_fixture
+      - input: ref('my_model_b')
+        format: csv
+        fixture: test_my_model_fixture
+    expect:
+      format: csv
+      fixture: test_my_model_basic_fixture
+"""
+
+test_my_model_all_versions_yml = """
+unit_tests:
+  - name: test_my_model
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        fixture: test_my_model_a_numeric_fixture
+      - input: ref('my_model_b')
+        format: csv
+        fixture: test_my_model_fixture
+    expect:
+      format: csv
+      fixture: test_my_model_basic_fixture
+"""

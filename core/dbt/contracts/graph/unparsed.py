@@ -845,13 +845,11 @@ class UnitTestPatch(dbtClassMixin, Replaceable):
     model: str
     given: Sequence[UnitTestInputFixture]
     expect: UnitTestOutputFixture
-    overrides: str = field(
-        metadata=dict(description="The package of the unit test to override"),
-    )
     path: Path = field(
         metadata=dict(description="The path to the patch-defining yml file"),
     )
     config: Dict[str, Any] = field(default_factory=dict)
+    overrides: Optional[UnitTestOverrides] = None
     versions: Optional[UnitTestNodeVersion] = None
     description: Optional[str] = None
     schema: Optional[str] = None

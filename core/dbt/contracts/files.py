@@ -219,6 +219,7 @@ class SourceFile(BaseSourceFile):
         )
         return self
 
+
 @dataclass
 class SchemaSourceFile(BaseSourceFile):
     dfy: Dict[str, Any] = field(default_factory=dict)
@@ -262,7 +263,7 @@ class SchemaSourceFile(BaseSourceFile):
     @property
     def source_patches(self):
         return self.sop
-    
+
     @property
     def unit_test_patches(self):
         return self.utp

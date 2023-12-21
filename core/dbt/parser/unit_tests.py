@@ -262,8 +262,8 @@ class UnitTestParser(YamlReader):
                 patch = self._target_from_dict(UnitTestPatch, data)
                 assert isinstance(self.yaml.file, SchemaSourceFile)
                 source_file = self.yaml.file
-                # unit test patches must be unique
-                key = (patch.overrides, patch.name)
+                # TODO: hacky
+                key = (str(patch.overrides), patch.name)
                 if key in self.manifest.unit_test_patches:
                     raise DuplicatePatchNameError(
                         NodeType.Unit, patch, self.manifest.unit_test_patches[key]
@@ -445,7 +445,7 @@ class UnitTestPatcher:
             if isinstance(unpatched, UnitTestDefinition):
                 # In partial parsing, there will be UnitTestDefinition
                 # which must be retained.
-                self.unit_tests[unpatched.unique_id] = unpatched
+                self.unit_tests[unique_id] = unpatched
                 continue
             # returns None if there is no patch
             patch = self.get_patch_for(unpatched)
@@ -453,10 +453,16 @@ class UnitTestPatcher:
             # returns unpatched if there is no patch
             patched = self.patch_unit_test(unpatched, patch)
 
-            # Convert UnpatchedUnitTestDefinition to a list of UnitTestDefinition base don model versions
-            parsed_unit_tests = self.parse_unit_test(patched)
-            for unit_test in parsed_unit_tests:
-                self.unit_tests[unit_test.unique_id] = unit_test
+            # Convert UnpatchedUnitTestDefinition to a list of UnitTestDefinition based on model versions
+            version_list = self.get_unit_test_versions(
+                model_name=patched.model, versions=patched.versions
+            )
+            parsed_unit_test = self.build_unit_test_definition(
+                unit_test=patched, versions=version_list
+            )
+            self.unit_tests[parsed_unit_test.unique_id] = self.build_unit_test_definition(
+                unit_test=patched, versions=version_list
+            )
 
     def patch_unit_test(
         self,
@@ -479,40 +485,35 @@ class UnitTestPatcher:
         unit_test = UnparsedUnitTest.from_dict(unit_test_dct)
         return unpatched.replace(unit_test=unit_test, patch_path=patch_path)
 
-    # This converts an UnpatchedUnitTestDefinition to a UnitTestDefinition
-    # It returns a list of UnitTestDefinitions because a single UnpatchedUnitTestDefinition may be
-    # multiple unit tests if the model is versioned.
-    def parse_unit_test(self, unit_test: UnpatchedUnitTestDefinition) -> List[UnitTestDefinition]:
-
-        version_list = self.get_unit_test_versions(
-            model_name=unit_test.model, versions=unit_test.versions
-        )
-        if not version_list:
-            return [self.build_unit_test_definition(unit_test=unit_test, version=None)]
-
-        return [
-            self.build_unit_test_definition(unit_test=unit_test, version=v) for v in version_list
-        ]
-
     def _find_tested_model_node(
-        self, unit_test: UnpatchedUnitTestDefinition, model_version: Optional[NodeVersion]
-    ) -> ModelNode:
+        self, unit_test: UnpatchedUnitTestDefinition, versions: List[NodeVersion]
+    ) -> List[ModelNode]:  # TODO: also source node?
         package_name = unit_test.package_name
         # TODO: does this work when `define_id` is used in the yaml?
         model_name_split = unit_test.model.split()
         model_name = model_name_split[0]
-        tested_node = self.manifest.ref_lookup.find(
-            model_name, package_name, model_version, self.manifest
-        )
-        if not tested_node:
+        tested_nodes = []
+        if not versions:
+            tested_nodes = [
+                self.manifest.ref_lookup.find(
+                    key=model_name, package=package_name, version=None, manifest=self.manifest
+                )
+            ]
+        for version in versions:
+            tested_nodes.append(
+                self.manifest.ref_lookup.find(
+                    key=model_name, package=package_name, version=version, manifest=self.manifest
+                )
+            )
+        if not tested_nodes:
             raise ParsingError(
                 f"Unable to find model '{package_name}.{unit_test.model}' for unit tests in {unit_test.original_file_path}"
             )
 
-        return tested_node
+        return tested_nodes
 
     def build_unit_test_definition(
-        self, unit_test: UnpatchedUnitTestDefinition, version: Optional[NodeVersion]
+        self, unit_test: UnpatchedUnitTestDefinition, versions: List[NodeVersion]
     ) -> UnitTestDefinition:
 
         config = self._generate_unit_test_config(
@@ -527,36 +528,38 @@ class UnitTestPatcher:
                 f"Calculated a {type(config)} for a unit test, but expected a UnitTestConfig"
             )
 
-        tested_model_node = self._find_tested_model_node(unit_test, model_version=version)
-        unit_test_name = f"{unit_test.name}.v{version}" if version else unit_test.name
+        tested_model_nodes = self._find_tested_model_node(unit_test, versions=versions)
+        tested_model_unique_ids = [node.unique_id for node in tested_model_nodes]
+        schema = tested_model_nodes[0].schema
         unit_test_case_unique_id = (
-            f"{NodeType.Unit}.{unit_test.package_name}.{unit_test.model}.{unit_test_name}"
+            f"{NodeType.Unit}.{unit_test.package_name}.{unit_test.model}.{unit_test.name}"
         )
-        unit_test_model_name = f"{unit_test.model}.v{version}" if version else unit_test.model
+        # unit_test_model_name = f"{unit_test.model}.v{version}" if version else unit_test.model
+        unit_test_model_name = unit_test.model
         unit_test_fqn = self._build_fqn(
             unit_test.package_name,
             unit_test.original_file_path,
             unit_test_model_name,
-            unit_test_name,
+            unit_test.name,
         )
 
         parsed_unit_test = UnitTestDefinition(
-            name=unit_test_name,
+            name=unit_test.name,
             model=unit_test_model_name,
             resource_type=NodeType.Unit,
             package_name=unit_test.package_name,
             path=unit_test.path,
             original_file_path=unit_test.original_file_path,
             unique_id=unit_test_case_unique_id,
-            version=version,
+            versions=versions,
             given=unit_test.given,
             expect=unit_test.expect,
             description=unit_test.description,
             overrides=unit_test.overrides,
-            depends_on=DependsOn(nodes=[tested_model_node.unique_id]),
+            depends_on=DependsOn(nodes=tested_model_unique_ids),
             fqn=unit_test_fqn,
             config=unit_test_config,
-            schema=tested_model_node.schema,
+            schema=schema,
         )
 
         # relation name is added after instantiation because the adapter does
@@ -581,21 +584,21 @@ class UnitTestPatcher:
         version_list = []
         if versions is None:
             for node in self.manifest.nodes.values():
-                # only modelnodes have unit tests
+                # only model nodes have unit tests
                 if isinstance(node, ModelNode) and node.is_versioned:
                     if node.name == model_name:
                         version_list.append(node.version)
         elif versions.exclude is not None:
             for node in self.manifest.nodes.values():
-                # only modelnodes have unit tests
+                # only model nodes have unit tests
                 if isinstance(node, ModelNode) and node.is_versioned:
                     if node.name == model_name:
                         # no version has been specified and this version is not explicitly excluded
                         if node.version not in versions.exclude:
                             version_list.append(node.version)
         # versions were explicitly included
-        elif versions.include is not None:
-            for i in versions.include:
+        else:
+            for i in versions.include:  # type: ignore[union-attr]
                 # todo: does this actually need reformatting?
                 version_list.append(i)
 
