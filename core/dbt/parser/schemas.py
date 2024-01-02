@@ -6,7 +6,8 @@ from typing import Any, Callable, Dict, Generic, Iterable, List, Optional, Type,
 from dataclasses import dataclass, field
 
 from dbt import deprecations
-from dbt.dataclass_schema import ValidationError, dbtClassMixin
+from dbt.common.contracts.constraints import ConstraintType, ModelLevelConstraint
+from dbt.common.dataclass_schema import ValidationError, dbtClassMixin
 
 from dbt.clients.yaml_helper import load_yaml_text
 from dbt.parser.schema_renderer import SchemaYamlRenderer
@@ -18,9 +19,7 @@ from dbt.contracts.graph.nodes import (
     ParsedNodePatch,
     ParsedMacroPatch,
     UnpatchedSourceDefinition,
-    ConstraintType,
     ModelNode,
-    ModelLevelConstraint,
 )
 from dbt.contracts.graph.unparsed import (
     HasColumnDocs,
@@ -39,14 +38,14 @@ from dbt.exceptions import (
     JSONValidationError,
     DbtInternalError,
     ParsingError,
-    DbtValidationError,
     YamlLoadError,
     YamlParseDictError,
     YamlParseListError,
     InvalidAccessTypeError,
 )
-from dbt.events.functions import warn_or_error
-from dbt.events.types import (
+from dbt.common.exceptions import DbtValidationError
+from dbt.common.events.functions import warn_or_error
+from dbt.common.events.types import (
     MacroNotFoundForPatch,
     NoNodeForYamlKey,
     ValidationWarning,
@@ -64,7 +63,8 @@ from dbt.parser.common import (
     ParserRef,
     trimmed,
 )
-from dbt.utils import coerce_dict_str, deep_merge
+from dbt.utils import coerce_dict_str
+from dbt.common.utils import deep_merge
 
 
 schema_file_keys = (

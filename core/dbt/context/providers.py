@@ -16,8 +16,9 @@ from typing import (
 from typing_extensions import Protocol
 
 from dbt.adapters.base.column import Column
+from dbt.common.clients.jinja import MacroProtocol
 from dbt.adapters.factory import get_adapter, get_adapter_package_names, get_adapter_type_names
-from dbt.clients import agate_helper
+from dbt.common.clients import agate_helper
 from dbt.clients.jinja import get_rendered, MacroGenerator, MacroStack, UnitTestMacroGenerator
 from dbt.config import RuntimeConfig, Project
 from dbt.constants import SECRET_ENV_PREFIX, DEFAULT_ENV_PLACEHOLDER
@@ -28,7 +29,7 @@ from dbt.context.exceptions_jinja import wrapped_exports
 from dbt.context.macro_resolver import MacroResolver, TestMacroNamespace
 from dbt.context.macros import MacroNamespaceBuilder, MacroNamespace
 from dbt.context.manifest import ManifestContext
-from dbt.contracts.connection import AdapterResponse
+from dbt.adapters.contracts.connection import AdapterResponse
 from dbt.contracts.graph.manifest import Manifest, Disabled
 from dbt.contracts.graph.nodes import (
     Macro,
@@ -44,13 +45,19 @@ from dbt.contracts.graph.nodes import (
 )
 from dbt.contracts.graph.metrics import MetricReference, ResolvedMetricReference
 from dbt.contracts.graph.unparsed import NodeVersion
-from dbt.events.functions import get_metadata_vars
+from dbt.common.events.functions import get_metadata_vars
+from dbt.common.exceptions import (
+    DbtInternalError,
+    DbtRuntimeError,
+    DbtValidationError,
+    MacrosSourcesUnWriteableError,
+)
+from dbt.adapters.exceptions import MissingConfigError
 from dbt.exceptions import (
     CompilationError,
     ConflictingConfigKeysError,
     SecretEnvVarLocationError,
     EnvVarMissingError,
-    DbtInternalError,
     InlineModelConfigError,
     NumberSourceArgsError,
     PersistDocsValueTypeError,
@@ -58,24 +65,20 @@ from dbt.exceptions import (
     LoadAgateTableValueError,
     MacroDispatchArgError,
     MacroResultAlreadyLoadedError,
-    MacrosSourcesUnWriteableError,
     MetricArgsError,
-    MissingConfigError,
     OperationsCannotRefEphemeralNodesError,
     PackageNotInDepsError,
     ParsingError,
     RefBadContextError,
     RefArgsError,
-    DbtRuntimeError,
     TargetNotFoundError,
-    DbtValidationError,
     DbtReferenceError,
 )
 from dbt.config import IsFQNResource
 from dbt.node_types import NodeType, ModelLanguage
 
-from dbt.utils import merge, AttrDict, MultiDict, args_to_dict, cast_to_str
-
+from dbt.utils import MultiDict, args_to_dict
+from dbt.common.utils import merge, AttrDict, cast_to_str
 from dbt import selected_resources
 
 import agate
@@ -92,11 +95,6 @@ class RelationProxy:
 
     def __getattr__(self, key):
         return getattr(self._relation_type, key)
-
-    def create_from_source(self, *args, **kwargs):
-        # bypass our create when creating from source so as not to mess up
-        # the source quoting
-        return self._relation_type.create_from_source(*args, **kwargs)
 
     def create(self, *args, **kwargs):
         kwargs["quote_policy"] = merge(self._quoting_config, kwargs.pop("quote_policy", {}))
@@ -537,9 +535,7 @@ class RuntimeRefResolver(BaseRefResolver):
     def create_relation(self, target_model: ManifestNode) -> RelationProxy:
         if target_model.is_ephemeral_model:
             self.model.set_cte(target_model.unique_id, None)
-            return self.Relation.create_ephemeral_from_node(
-                self.config, target_model, limit=self.resolve_limit
-            )
+            return self.Relation.create_ephemeral_from(target_model, limit=self.resolve_limit)
         else:
             return self.Relation.create_from(self.config, target_model, limit=self.resolve_limit)
 
@@ -609,7 +605,7 @@ class RuntimeSourceResolver(BaseSourceResolver):
                 target_kind="source",
                 disabled=(isinstance(target_source, Disabled)),
             )
-        return self.Relation.create_from_source(target_source, limit=self.resolve_limit)
+        return self.Relation.create_from(self.config, target_source, limit=self.resolve_limit)
 
 
 class RuntimeUnitTestSourceResolver(BaseSourceResolver):
@@ -632,7 +628,7 @@ class RuntimeUnitTestSourceResolver(BaseSourceResolver):
         # we just need to set_cte, but skipping it confuses typing. We *do* need
         # the relation in the "this" property.
         self.model.set_cte(target_source.unique_id, None)
-        return self.Relation.create_ephemeral_from_node(self.config, target_source)
+        return self.Relation.create_ephemeral_from(target_source)
 
 
 # metric` implementations
@@ -1430,7 +1426,7 @@ class MacroContext(ProviderContext):
 
     def __init__(
         self,
-        model: Macro,
+        model: MacroProtocol,
         config: RuntimeConfig,
         manifest: Manifest,
         provider: Provider,
@@ -1545,7 +1541,7 @@ class ModelContext(ProviderContext):
         object for that stateful other
         """
         if getattr(self.model, "defer_relation", None):
-            return self.db_wrapper.Relation.create_from_node(
+            return self.db_wrapper.Relation.create_from(
                 self.config, self.model.defer_relation  # type: ignore
             )
         else:
@@ -1614,7 +1610,7 @@ def generate_runtime_model_context(
 
 
 def generate_runtime_macro_context(
-    macro: Macro,
+    macro: MacroProtocol,
     config: RuntimeConfig,
     manifest: Manifest,
     package_name: Optional[str],
