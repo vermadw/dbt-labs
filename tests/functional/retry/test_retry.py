@@ -320,9 +320,6 @@ class TestRetryFullRefresh:
     def test_retry(self, project):
         # This run should fail with invalid sql...
         run_dbt(["run", "--full-refresh"], expect_pass=False)
-
-        move("target", "state")
-
         # ...and so should this one, since the effect of the full-refresh parameter should persist.
-        results = run_dbt(["retry", "--state", "state"], expect_pass=False)
+        results = run_dbt(["retry"], expect_pass=False)
         assert len(results) == 1
