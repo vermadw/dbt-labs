@@ -35,6 +35,8 @@ IGNORE_PARENT_FLAGS = {
     "warn_error",
 }
 
+ALLOW_OVERRIDE_FLAGS = {"vars"}
+
 TASK_DICT = {
     "build": BuildTask,
     "compile": CompileTask,
@@ -96,7 +98,10 @@ class RetryTask(ConfiguredTask):
             k: v
             for k, v in args.__dict__.items()
             if k in IGNORE_PARENT_FLAGS
-            or click_context.get_parameter_source(k) == ParameterSource.COMMANDLINE
+            or (
+                click_context.get_parameter_source(k) == ParameterSource.COMMANDLINE
+                and k in ALLOW_OVERRIDE_FLAGS
+            )
         }
         combined_args = {**previous_args, **current_args}
         retry_flags = Flags.from_dict(cli_command, combined_args)  # type: ignore
