@@ -1,4 +1,3 @@
-import argparse
 import json
 
 import networkx as nx  # type: ignore
@@ -8,10 +7,11 @@ import pickle
 from collections import defaultdict
 from typing import List, Dict, Any, Tuple, Optional
 
+from dbt.common.invocation import get_invocation_id
 from dbt.flags import get_flags
 from dbt.adapters.factory import get_adapter
 from dbt.clients import jinja
-from dbt.clients.system import make_directory
+from dbt.common.clients.system import make_directory
 from dbt.context.providers import (
     generate_runtime_model_context,
     generate_runtime_unit_test_context,
@@ -33,13 +33,12 @@ from dbt.exceptions import (
     DbtRuntimeError,
 )
 from dbt.graph import Graph
-from dbt.events.functions import fire_event, get_invocation_id
-from dbt.events.types import FoundStats, Note, WritingInjectedSQLForNode
-from dbt.events.contextvars import get_node_info
+from dbt.common.events.functions import fire_event
+from dbt.common.events.types import FoundStats, Note, WritingInjectedSQLForNode
+from dbt.common.events.contextvars import get_node_info
 from dbt.node_types import NodeType, ModelLanguage
-from dbt.events.format import pluralize
+from dbt.common.events.format import pluralize
 import dbt.tracking
-import dbt.task.list as list_task
 import sqlparse
 
 graph_file_name = "graph.gpickle"
@@ -135,7 +134,7 @@ class Linker:
     def __init__(self, data=None) -> None:
         if data is None:
             data = {}
-        self.graph = nx.DiGraph(**data)
+        self.graph: nx.DiGraph = nx.DiGraph(**data)
 
     def edges(self):
         return self.graph.edges()
@@ -243,6 +242,7 @@ class Linker:
                 # Get all tests that depend on any upstream nodes.
                 upstream_tests = []
                 for upstream_node in upstream_nodes:
+                    # This gets tests with unique_ids starting with "test."
                     upstream_tests += _get_tests_for_node(manifest, upstream_node)
 
                 for upstream_test in upstream_tests:
@@ -471,6 +471,7 @@ class Compiler:
         summaries["_invocation_id"] = get_invocation_id()
         summaries["linked"] = linker.get_graph_summary(manifest)
 
+        # This is only called for the "build" command
         if add_test_edges:
             manifest.build_parent_and_child_maps()
             linker.add_test_edges(manifest)
@@ -496,11 +497,8 @@ class Compiler:
         if write:
             self.write_graph_file(linker, manifest)
 
-        # Do not print these for ListTask's
-        if not (
-            self.config.args.__class__ == argparse.Namespace
-            and self.config.args.cls == list_task.ListTask
-        ):
+        # Do not print these for list command
+        if self.config.args.which != "list":
             stats = _generate_stats(manifest)
             print_compile_stats(stats)
 

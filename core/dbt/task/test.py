@@ -5,37 +5,37 @@ import daff
 import re
 from dataclasses import dataclass
 from dbt.utils import _coerce_decimal
-from dbt.events.format import pluralize
-from dbt.dataclass_schema import dbtClassMixin
+from dbt.common.events.format import pluralize
+from dbt.common.dataclass_schema import dbtClassMixin
 import threading
 from typing import Dict, Any, Optional, Union, List
 
 from .compile import CompileRunner
 from .run import RunTask
 
-from dbt.contracts.graph.nodes import TestNode, UnitTestDefinition
+from dbt.contracts.graph.nodes import TestNode, UnitTestDefinition, UnitTestNode
 from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.results import TestStatus, PrimitiveDict, RunResult
 from dbt.context.providers import generate_runtime_model_context
 from dbt.clients.jinja import MacroGenerator
-from dbt.clients.agate_helper import list_rows_from_table, json_rows_from_table
-from dbt.events.functions import fire_event
-from dbt.events.types import (
+from dbt.common.clients.agate_helper import list_rows_from_table, json_rows_from_table
+from dbt.common.events.functions import fire_event
+from dbt.common.events.types import (
     LogTestResult,
     LogStartLine,
 )
 from dbt.exceptions import (
     DbtInternalError,
     BooleanError,
-    MissingMaterializationError,
 )
+from ..adapters.exceptions import MissingMaterializationError
 from dbt.graph import (
     ResourceTypeSelector,
 )
 from dbt.node_types import NodeType
 from dbt.parser.unit_tests import UnitTestManifestLoader
 from dbt.flags import get_flags
-from dbt.ui import green, red
+from dbt.common.ui import green, red
 
 
 @dataclass
@@ -177,10 +177,10 @@ class TestRunner(CompileRunner):
 
         # The unit test node and definition have the same unique_id
         unit_test_node = unit_test_manifest.nodes[unit_test_def.unique_id]
+        assert isinstance(unit_test_node, UnitTestNode)
 
         # Compile the node
-        compiler = self.adapter.get_compiler()
-        unit_test_node = compiler.compile_node(unit_test_node, unit_test_manifest, {})
+        unit_test_node = self.compiler.compile_node(unit_test_node, unit_test_manifest, {})
 
         # generate_runtime_unit_test_context not strictly needed - this is to run the 'unit'
         # materialization, not compile the node.compiled_code

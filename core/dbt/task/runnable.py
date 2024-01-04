@@ -7,6 +7,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from pathlib import Path
 from typing import AbstractSet, Optional, Dict, List, Set, Tuple, Iterable
 
+import dbt.common.utils.formatting
 import dbt.exceptions
 import dbt.tracking
 import dbt.utils
@@ -23,9 +24,9 @@ from dbt.contracts.results import (
     BaseResult,
 )
 from dbt.contracts.state import PreviousState
-from dbt.events.contextvars import log_contextvars, task_contextvars
-from dbt.events.functions import fire_event, warn_or_error
-from dbt.events.types import (
+from dbt.common.events.contextvars import log_contextvars, task_contextvars
+from dbt.common.events.functions import fire_event, warn_or_error
+from dbt.common.events.types import (
     Formatting,
     LogCancelLine,
     DefaultSelector,
@@ -38,10 +39,10 @@ from dbt.events.types import (
 )
 from dbt.exceptions import (
     DbtInternalError,
-    NotImplementedError,
     DbtRuntimeError,
     FailFastError,
 )
+from dbt.common.exceptions import NotImplementedError
 from dbt.flags import get_flags
 from dbt.graph import GraphQueue, NodeSelector, SelectionSpec, parse_difference, UniqueId
 from dbt.logger import (
@@ -53,6 +54,7 @@ from dbt.logger import (
     ModelMetadata,
     NodeCount,
 )
+from dbt.node_types import NodeType
 from dbt.parser.manifest import write_manifest
 from dbt.task.base import ConfiguredTask, BaseRunner
 from .printer import (
@@ -222,8 +224,9 @@ class GraphRunnableTask(ConfiguredTask):
                         )
                     )
             # `_event_status` dict is only used for logging.  Make sure
-            # it gets deleted when we're done with it
-            runner.node.clear_event_status()
+            # it gets deleted when we're done with it, except for unit tests
+            if not runner.node.resource_type == NodeType.Unit:
+                runner.node.clear_event_status()
 
         fail_fast = get_flags().FAIL_FAST
 
@@ -275,16 +278,7 @@ class GraphRunnableTask(ConfiguredTask):
             self.job_queue.mark_done(result.node.unique_id)
 
         while not self.job_queue.empty():
-            node = self.job_queue.get()
-            self._raise_set_error()
-            runner = self.get_runner(node)
-            # we finally know what we're running! Make sure we haven't decided
-            # to skip it due to upstream failures
-            if runner.node.unique_id in self._skipped_children:
-                cause = self._skipped_children.pop(runner.node.unique_id)
-                runner.do_skip(cause=cause)
-            args = (runner,)
-            self._submit(pool, args, callback)
+            self.handle_job_queue(pool, callback)
 
         # block on completion
         if get_flags().FAIL_FAST:
@@ -301,6 +295,19 @@ class GraphRunnableTask(ConfiguredTask):
 
         return
 
+    # The build command overrides this
+    def handle_job_queue(self, pool, callback):
+        node = self.job_queue.get()
+        self._raise_set_error()
+        runner = self.get_runner(node)
+        # we finally know what we're running! Make sure we haven't decided
+        # to skip it due to upstream failures
+        if runner.node.unique_id in self._skipped_children:
+            cause = self._skipped_children.pop(runner.node.unique_id)
+            runner.do_skip(cause=cause)
+        args = [runner]
+        self._submit(pool, args, callback)
+
     def _handle_result(self, result: RunResult):
         """Mark the result as completed, insert the `CompileResultNode` into
         the manifest, and mark any descendants (potentially with a 'cause' if
@@ -315,6 +322,7 @@ class GraphRunnableTask(ConfiguredTask):
         if self.manifest is None:
             raise DbtInternalError("manifest was None in _handle_result")
 
+        # If result.status == NodeStatus.Error, plus Fail for build command
         if result.status in self.MARK_DEPENDENT_ERRORS_STATUSES:
             if is_ephemeral:
                 cause = result
@@ -411,11 +419,21 @@ class GraphRunnableTask(ConfiguredTask):
         if not self.args.populate_cache:
             return
 
+        if self.manifest is None:
+            raise DbtInternalError("manifest was None in populate_adapter_cache")
+
         start_populate_cache = time.perf_counter()
+        # the cache only cares about executable nodes
+        cachable_nodes = [
+            node
+            for node in self.manifest.nodes.values()
+            if (node.is_relational and not node.is_ephemeral_model and not node.is_external_node)
+        ]
+
         if get_flags().CACHE_SELECTED_ONLY is True:
-            adapter.set_relations_cache(self.manifest, required_schemas=required_schemas)
+            adapter.set_relations_cache(cachable_nodes, required_schemas=required_schemas)
         else:
-            adapter.set_relations_cache(self.manifest)
+            adapter.set_relations_cache(cachable_nodes)
         cache_populate_time = time.perf_counter() - start_populate_cache
         if dbt.tracking.active_user is not None:
             dbt.tracking.track_runnable_timing(
@@ -544,7 +562,7 @@ class GraphRunnableTask(ConfiguredTask):
         def list_schemas(db_only: BaseRelation) -> List[Tuple[Optional[str], str]]:
             # the database can be None on some warehouses that don't support it
             database_quoted: Optional[str]
-            db_lowercase = dbt.utils.lowercase(db_only.database)
+            db_lowercase = dbt.common.utils.formatting.lowercase(db_only.database)
             if db_only.database is None:
                 database_quoted = None
             else:
@@ -566,7 +584,7 @@ class GraphRunnableTask(ConfiguredTask):
         list_futures = []
         create_futures = []
 
-        with dbt.utils.executor(self.config) as tpe:
+        with dbt.common.utils.executor(self.config) as tpe:
             for req in required_databases:
                 if req.database is None:
                     name = "list_schemas"
@@ -584,7 +602,7 @@ class GraphRunnableTask(ConfiguredTask):
                     # skip this
                     continue
                 db: Optional[str] = info.database
-                db_lower: Optional[str] = dbt.utils.lowercase(db)
+                db_lower: Optional[str] = dbt.common.utils.formatting.lowercase(db)
                 schema: str = info.schema
 
                 db_schema = (db_lower, schema.lower())
