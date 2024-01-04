@@ -26,12 +26,12 @@ if os.name != "nt":
 FLAGS_DEFAULTS = {
     "INDIRECT_SELECTION": "eager",
     "TARGET_PATH": None,
+    "WARN_ERROR": None,
     # Cli args without user_config or env var option.
     "FULL_REFRESH": False,
     "STRICT_MODE": False,
     "STORE_FAILURES": False,
     "INTROSPECT": True,
-    "WARN_ERROR": False,
 }
 
 DEPRECATED_PARAMS = {
@@ -81,7 +81,6 @@ class Flags:
     def __init__(
         self, ctx: Optional[Context] = None, user_config: Optional[UserConfig] = None
     ) -> None:
-
         # Set the default flags.
         for key, value in FLAGS_DEFAULTS.items():
             object.__setattr__(self, key, value)
@@ -123,7 +122,6 @@ class Flags:
                 # respected over DBT_PRINT or --print.
                 new_name: Union[str, None] = None
                 if param_name in DEPRECATED_PARAMS:
-
                     # Deprecated env vars can only be set via env var.
                     # We use the deprecated option in click to serialize the value
                     # from the env var string.
