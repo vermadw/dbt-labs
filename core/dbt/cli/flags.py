@@ -31,6 +31,7 @@ FLAGS_DEFAULTS = {
     "STRICT_MODE": False,
     "STORE_FAILURES": False,
     "INTROSPECT": True,
+    "WARN_ERROR": False,
 }
 
 DEPRECATED_PARAMS = {

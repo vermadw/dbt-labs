@@ -1,4 +1,6 @@
 from pathlib import Path
+from click import get_current_context
+from click.core import ParameterSource
 
 from dbt.cli.flags import Flags
 from dbt.flags import set_flags, get_flags
@@ -21,7 +23,7 @@ from dbt.task.test import TestTask
 from dbt.parser.manifest import parse_manifest
 
 RETRYABLE_STATUSES = {NodeStatus.Error, NodeStatus.Fail, NodeStatus.Skipped, NodeStatus.RuntimeErr}
-OVERRIDE_PARENT_FLAGS = {
+IGNORE_PARENT_FLAGS = {
     "log_path",
     "output_path",
     "profiles_dir",
@@ -30,7 +32,7 @@ OVERRIDE_PARENT_FLAGS = {
     "defer_state",
     "deprecated_state",
     "target_path",
-    "vars",
+    "warn_error",
 }
 
 TASK_DICT = {
@@ -87,9 +89,15 @@ class RetryTask(ConfiguredTask):
             if k in self.previous_args and v(self.previous_args[k]):
                 del self.previous_args[k]
         previous_args = {
-            k: v for k, v in self.previous_args.items() if k not in OVERRIDE_PARENT_FLAGS
+            k: v for k, v in self.previous_args.items() if k not in IGNORE_PARENT_FLAGS
         }
-        current_args = {k: v for k, v in args.__dict__.items() if k in OVERRIDE_PARENT_FLAGS}
+        click_context = get_current_context()
+        current_args = {
+            k: v
+            for k, v in args.__dict__.items()
+            if k in IGNORE_PARENT_FLAGS
+            or click_context.get_parameter_source(k) == ParameterSource.COMMANDLINE
+        }
         combined_args = {**previous_args, **current_args}
         retry_flags = Flags.from_dict(cli_command, combined_args)  # type: ignore
         set_flags(retry_flags)
@@ -99,7 +107,6 @@ class RetryTask(ConfiguredTask):
         manifest = parse_manifest(retry_config, False, True, retry_flags.write_json)  # type: ignore
         super().__init__(args, retry_config, manifest)
         self.task_class = TASK_DICT.get(self.previous_command_name)  # type: ignore
-        self.retry_flags = retry_flags
 
     def run(self):
         unique_ids = set(

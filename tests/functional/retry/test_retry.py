@@ -126,7 +126,6 @@ class TestRetry:
         write_file(models__sample_model, "models", "sample_model.sql")
 
     def test_warn_error(self, project):
-
         # Our test command should succeed when run normally...
         results = run_dbt(["build", "--select", "second_model"])
 
@@ -140,8 +139,11 @@ class TestRetry:
 
         assert {n.node.name: n.status for n in results.results} == expected_statuses
 
-        # ...and it should fail again on retry because --warn-error is still in effect.
-        run_dbt(["retry"], expect_pass=False)
+        # Retry regular, should pass
+        run_dbt(["retry"])
+
+        # Retry with --warn-error, should fail
+        run_dbt(["--warn-error", "retry"], expect_pass=False)
 
     def test_run_operation(self, project):
         results = run_dbt(
@@ -298,15 +300,17 @@ class TestRetryVars:
     @pytest.fixture(scope="class")
     def models(self):
         return {
-            "sample_model.sql": "select {{ var('myvar_a') + var('myvar_b') }} as mycol",
+            "sample_model.sql": "select {{ var('myvar_a', '1') + var('myvar_b', '2') }} as mycol",
         }
 
     def test_retry(self, project):
+        # pass because default vars works
+        run_dbt(["run"])
         run_dbt(["run", "--vars", '{"myvar_a": "12", "myvar_b": "3 4"}'], expect_pass=False)
-        move("target", "state")
-        results = run_dbt(
-            ["retry", "--state", "state", "--vars", '{"myvar_a": "12", "myvar_b": "34"}']
-        )
+        # fail because vars are invalid, this shows that the last passed vars are being used
+        # instead of using the default vars
+        run_dbt(["retry"], expect_pass=False)
+        results = run_dbt(["retry", "--vars", '{"myvar_a": "12", "myvar_b": "34"}'])
         assert len(results) == 1
 
 
