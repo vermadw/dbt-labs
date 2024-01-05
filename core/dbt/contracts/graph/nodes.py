@@ -489,9 +489,7 @@ class CompiledNode(ParsedNode):
     refs: List[RefArgs] = field(default_factory=list)
     sources: List[List[str]] = field(default_factory=list)
     metrics: List[List[str]] = field(default_factory=list)
-    # TODO: when we do it this way we lose the ability to cross ref the model name without knowing the version yet
     unit_tests: List[str] = field(default_factory=list)
-    # unit_tests: List[UnitTestModelVersion] = field(default_factory=list)  # dict of model unique_id to moedl version
     depends_on: DependsOn = field(default_factory=DependsOn)
     compiled_path: Optional[str] = None
     compiled: bool = False
@@ -1123,6 +1121,7 @@ class UnitTestDefinition(NodeInfoMixin, GraphNode, UnitTestDefinitionMandatory):
         return [tags] if isinstance(tags, str) else tags
 
     def build_unit_test_checksum(self):
+        # everything except 'description'
         data = f"{self.model}-{self.version}-{self.given}-{self.expect}-{self.overrides}"
 
         # include underlying fixture data

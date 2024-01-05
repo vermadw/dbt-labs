@@ -520,7 +520,6 @@ class ManifestLoader:
             # patch_unit_tests converts the UnparsedUnitTestDefinitions in the
             # manifest.unit_tests to UnitTestDefinitions via 'patch_unit_test'
             # in UnitTestPatcher
-            # TODO: is this needed
             start_patch = time.perf_counter()
             unit_test_patcher = UnitTestPatcher(self.root_project, self.manifest)
             unit_test_patcher.construct_unit_tests()
@@ -544,7 +543,6 @@ class ManifestLoader:
             # determine whether they need processing.
             start_process = time.perf_counter()
             self.process_sources(self.root_project.project_name)
-            # TODO: does this need to be done?.... I think it's done when we loop through versions
             self.process_unit_tests(self.root_project.project_name)
             self.process_refs(self.root_project.project_name, self.root_project.dependencies)
             self.process_docs(self.root_project)
@@ -682,7 +680,7 @@ class ManifestLoader:
             for file_id in parser_files[parser_name]:
                 block = FileBlock(self.manifest.files[file_id])
                 if isinstance(parser, SchemaParser):
-                    assert isinstance(block.file, (SchemaSourceFile))
+                    assert isinstance(block.file, SchemaSourceFile)
                     if self.partially_parsing:
                         dct = block.file.pp_dict
                     else:

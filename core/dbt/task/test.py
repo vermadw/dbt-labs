@@ -172,6 +172,7 @@ class TestRunner(CompileRunner):
     def execute_unit_test(
         self, unit_test_def: UnitTestDefinition, manifest: Manifest
     ) -> UnitTestResultData:
+        # TODO: this should return a list?
 
         unit_test_manifest = self.build_unit_test_manifest_from_test(unit_test_def, manifest)
 
@@ -235,8 +236,12 @@ class TestRunner(CompileRunner):
 
     def execute(self, test: Union[TestNode, UnitTestDefinition], manifest: Manifest):
         if isinstance(test, UnitTestDefinition):
-            unit_test_result = self.execute_unit_test(test, manifest)
-            return self.build_unit_test_run_result(test, unit_test_result)
+            unit_test_result = self.execute_unit_test(
+                test, manifest
+            )  # This will return a list of UnitTestResultData
+            return self.build_unit_test_run_result(
+                test, unit_test_result
+            )  # TODO: this should return a list of RunResult...
         else:
             # Note: manifest here is a normal manifest
             test_result = self.execute_data_test(test, manifest)

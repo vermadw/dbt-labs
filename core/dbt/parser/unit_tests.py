@@ -16,7 +16,7 @@ from dbt.context.context_config import (
     UnrenderedConfigGenerator,
 )
 from dbt.context.providers import generate_parse_exposure, get_rendered
-from dbt.contracts.files import FileHash, SchemaSourceFile
+from dbt.contracts.files import FileHash
 from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.graph.model_config import UnitTestNodeConfig, ModelConfig, UnitTestConfig
 from dbt.contracts.graph.nodes import (
@@ -39,7 +39,6 @@ from dbt.exceptions import (
     ParsingError,
     InvalidUnitTestGivenInput,
     DbtInternalError,
-    DuplicatePatchNameError,
 )
 from dbt.graph import UniqueId
 from dbt.node_types import NodeType
@@ -82,12 +81,12 @@ class UnitTestManifestLoader:
         # Create UnitTestNode based on model being tested. Since selection has
         # already been done, we don't have to care about fields that are necessary
         # for selection.
-        # Note: no depends_on, that's added later using input nodes
         name = f"{test_case.model}__{test_case.name}"
         unit_test_node = UnitTestNode(
             name=name,
             resource_type=NodeType.Unit,
             package_name=test_case.package_name,
+            depends_on=test_case.depends_on,
             path=get_pseudo_test_path(name, test_case.original_file_path),
             original_file_path=test_case.original_file_path,
             unique_id=test_case.unique_id,
@@ -256,23 +255,8 @@ class UnitTestParser(YamlReader):
     # This should create the UnparseUnitTest object.  Then it should be turned into and UnpatchedUnitTest
     def parse(self) -> ParseResult:
         for data in self.get_key_dicts():
-            is_override = "overrides" in data
-            if is_override:
-                data["path"] = self.yaml.path.original_file_path
-                patch = self._target_from_dict(UnitTestPatch, data)
-                assert isinstance(self.yaml.file, SchemaSourceFile)
-                source_file = self.yaml.file
-                # TODO: hacky
-                key = (str(patch.overrides), patch.name)
-                if key in self.manifest.unit_test_patches:
-                    raise DuplicatePatchNameError(
-                        NodeType.Unit, patch, self.manifest.unit_test_patches[key]
-                    )
-                self.manifest.unit_test_patches[key] = patch
-                source_file.unit_test_patches.append(key)
-            else:
-                unit_test = self._target_from_dict(UnparsedUnitTest, data)
-                self.add_unit_test_definition(unit_test)
+            unit_test = self._target_from_dict(UnparsedUnitTest, data)
+            self.add_unit_test_definition(unit_test)
 
         return ParseResult()
 
@@ -423,7 +407,8 @@ class UnitTestParser(YamlReader):
         return rows
 
 
-# TODO: add more context for why we patch unit tests
+# unit tests are patched because we need to support model versions but we can't know
+# what versions of a model exist until after we parse the schma files for the models
 class UnitTestPatcher:
     def __init__(
         self,
@@ -441,7 +426,6 @@ class UnitTestPatcher:
     # unit tests
     def construct_unit_tests(self) -> None:
         for unique_id, unpatched in self.manifest.unit_tests.items():
-            # schema_file = self.manifest.files[unpatched.file_id]
             if isinstance(unpatched, UnitTestDefinition):
                 # In partial parsing, there will be UnitTestDefinition
                 # which must be retained.
