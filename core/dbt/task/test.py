@@ -236,12 +236,13 @@ class TestRunner(CompileRunner):
 
     def execute(self, test: Union[TestNode, UnitTestDefinition], manifest: Manifest):
         if isinstance(test, UnitTestDefinition):
-            unit_test_result = self.execute_unit_test(
-                test, manifest
-            )  # This will return a list of UnitTestResultData
-            return self.build_unit_test_run_result(
-                test, unit_test_result
-            )  # TODO: this should return a list of RunResult...
+            # TODO: There is one unit test node but it may be linked to multiple versions of
+            # the model denoted in the depends_on.  If we process each separatly here we end up with
+            # multiple RunResults for the same unit test node but we only handle a single run result
+            # upstream.  Should I override the run method to handle a list of RunResults? Seems risky.
+            unit_test_result = self.execute_unit_test(test, manifest)
+            # TODO: if above handles multiple unit tests then this should as well.
+            return self.build_unit_test_run_result(test, unit_test_result)
         else:
             # Note: manifest here is a normal manifest
             test_result = self.execute_data_test(test, manifest)
