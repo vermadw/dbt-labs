@@ -668,8 +668,6 @@ class ManifestLoader:
 
         # Loop through parsers with loaded files.
         for parser_cls in parser_types:
-            # if parser_cls == ModelNode:
-            breakpoint()
             parser_name = parser_cls.__name__
             # No point in creating a parser if we don't have files for it
             if parser_name not in parser_files or not parser_files[parser_name]:

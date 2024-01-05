@@ -34,7 +34,7 @@ from dbt.contracts.graph.unparsed import (
     UnitTestPatch,
     NodeVersion,
 )
-from dbt.dataclass_schema import dbtClassMixin
+from dbt.common.dataclass_schema import dbtClassMixin
 from dbt.exceptions import (
     ParsingError,
     InvalidUnitTestGivenInput,

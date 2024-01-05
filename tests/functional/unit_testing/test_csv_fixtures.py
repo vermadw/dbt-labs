@@ -39,6 +39,7 @@ class TestUnitTestsWithInlineCSV:
 
         # Select by model name
         results = run_dbt(["test", "--select", "my_model"], expect_pass=False)
+        breakpoint()
         assert len(results) == 5
 
         # Check error with invalid format key

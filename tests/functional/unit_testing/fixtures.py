@@ -476,6 +476,10 @@ test_my_model_concat_fixture_csv = """string_c
 ab
 """
 
+test_my_model_versioned_fixture_csv = """a,b,c
+1,2,3
+"""
+
 # -- mixed inline and file csv
 test_my_model_mixed_csv_yml = """
 unit_tests:
@@ -615,9 +619,10 @@ ON my_model_a.id = my_model_b.id
 my_model_v2_sql = """
 SELECT
 a,
+b,
 a+b as c,
 concat(string_a, string_b) as string_c,
-not_testing, date_a
+date_a
 FROM {{ ref('my_model_a')}} my_model_a
 JOIN {{ ref('my_model_b' )}} my_model_b
 ON my_model_a.id = my_model_b.id
@@ -625,15 +630,16 @@ ON my_model_a.id = my_model_b.id
 
 my_model_v3_sql = """
 SELECT
+a,
+b,
 a+b as c,
-concat(string_a, string_b) as string_c,
-not_testing, date_a
+concat(string_a, string_b) as string_c
 FROM {{ ref('my_model_a')}} my_model_a
 JOIN {{ ref('my_model_b' )}} my_model_b
 ON my_model_a.id = my_model_b.id
 """
 
-test_my_model_versioned_unit_tests_yml = """
+my_model_versioned_yml = """
 models:
   - name: my_model
     columns:
@@ -662,24 +668,48 @@ models:
       - name: not_testing
         data_type: integer
       - name: date_a
-        data_type: string
+        data_type: date
     versions:
       - v: 1
       - v: 2
         columns:
-          # This means: use the 'columns' list from above, but exclude b
+          # This means: use the 'columns' list from above, but exclude not_testing
           - include: "all"
             exclude:
-            - b
+            - not_testing
       - v: 3
-        # combine two columns into 1
+        # now exclude another column
         columns:
           - include: all
             exclude:
-            - a
-            - b
+            - not_testing
+            - date_a
 """
 
+test_my_model_all_versions_yml = """
+unit_tests:
+  - name: test_my_model
+    model: my_model
+    given:
+      - input: ref('my_model_a')
+        format: csv
+        rows: |
+          id,a
+          1,1
+          2,3
+      - input: ref('my_model_b')
+        format: csv
+        rows: |
+          id,b
+          1,2
+          2,2
+    expect:
+      format: csv
+      rows: |
+          a,b,c
+          1,2,3
+          3,2,5
+"""
 
 test_my_model_exclude_versions_yml = """
 unit_tests:
@@ -691,27 +721,48 @@ unit_tests:
     given:
       - input: ref('my_model_a')
         format: csv
-        fixture: test_my_model_a_numeric_fixture
+        rows: |
+          id,a
+          1,1
+          2,3
       - input: ref('my_model_b')
         format: csv
-        fixture: test_my_model_fixture
+        rows: |
+          id,b
+          1,2
+          2,2
     expect:
       format: csv
-      fixture: test_my_model_basic_fixture
+      rows: |
+          a,b,c
+          1,2,3
+          3,2,5
 """
 
-test_my_model_all_versions_yml = """
+test_my_model_include_versions_yml = """
 unit_tests:
   - name: test_my_model
     model: my_model
+    versions:
+      include:
+        - 2
     given:
       - input: ref('my_model_a')
         format: csv
-        fixture: test_my_model_a_numeric_fixture
+        rows: |
+          id,a
+          1,1
+          2,3
       - input: ref('my_model_b')
         format: csv
-        fixture: test_my_model_fixture
+        rows: |
+          id,b
+          1,2
+          2,2
     expect:
       format: csv
-      fixture: test_my_model_basic_fixture
+      rows: |
+          a,b,c
+          1,2,3
+          3,2,5
 """
