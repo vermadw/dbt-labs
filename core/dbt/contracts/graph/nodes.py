@@ -1122,7 +1122,7 @@ class UnitTestDefinition(NodeInfoMixin, GraphNode, UnitTestDefinitionMandatory):
 
     def build_unit_test_checksum(self):
         # everything except 'description'
-        data = f"{self.model}-{self.version}-{self.given}-{self.expect}-{self.overrides}"
+        data = f"{self.model}-{self.versions}-{self.given}-{self.expect}-{self.overrides}"
 
         # include underlying fixture data
         for input in self.given:

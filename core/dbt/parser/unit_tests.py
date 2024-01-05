@@ -546,6 +546,9 @@ class UnitTestPatcher:
             schema=schema,
         )
 
+        # for calculating state:modified
+        parsed_unit_test.build_unit_test_checksum()
+
         # relation name is added after instantiation because the adapter does
         # not provide the relation name for a UnpatchedSourceDefinition object
         return parsed_unit_test
