@@ -35,7 +35,7 @@ IGNORE_PARENT_FLAGS = {
     "warn_error",
 }
 
-ALLOW_OVERRIDE_FLAGS = {"vars"}
+ALLOW_CLI_OVERRIDE_FLAGS = {"vars"}
 
 TASK_DICT = {
     "build": BuildTask,
@@ -100,7 +100,7 @@ class RetryTask(ConfiguredTask):
             if k in IGNORE_PARENT_FLAGS
             or (
                 click_context.get_parameter_source(k) == ParameterSource.COMMANDLINE
-                and k in ALLOW_OVERRIDE_FLAGS
+                and k in ALLOW_CLI_OVERRIDE_FLAGS
             )
         }
         combined_args = {**previous_args, **current_args}
