@@ -1,5 +1,5 @@
 import dbt.tracking
-from dbt.common.invocation import reset_invocation_id
+from dbt_common.invocation import reset_invocation_id
 from dbt.mp_context import get_mp_context
 from dbt.version import installed as installed_version
 from dbt.adapters.factory import adapter_management, register_adapter, get_adapter
@@ -13,8 +13,8 @@ from dbt.config import RuntimeConfig
 from dbt.config.runtime import load_project, load_profile, UnsetProfile
 from dbt.context.providers import generate_runtime_macro_context
 
-from dbt.common.events.base_types import EventLevel
-from dbt.common.events.functions import (
+from dbt_common.events.base_types import EventLevel
+from dbt_common.events.functions import (
     fire_event,
     LOG_VERSION,
 )
@@ -24,14 +24,14 @@ from dbt.events.types import (
     MainReportArgs,
     MainTrackingUserState,
 )
-from dbt.common.events.helpers import get_json_string_utcnow
+from dbt_common.events.helpers import get_json_string_utcnow
 from dbt.events.types import CommandCompleted, MainEncounteredError, MainStackTrace, ResourceReport
-from dbt.common.exceptions import DbtBaseException as DbtException
+from dbt_common.exceptions import DbtBaseException as DbtException
 from dbt.exceptions import DbtProjectError, FailFastError
 from dbt.parser.manifest import ManifestLoader, write_manifest
 from dbt.profiler import profiler
 from dbt.tracking import active_user, initialize_from_flags, track_run
-from dbt.common.utils import cast_dict_to_dict_of_strings
+from dbt_common.utils import cast_dict_to_dict_of_strings
 from dbt.plugins import set_up_plugin_manager, get_plugin_manager
 
 from click import Context

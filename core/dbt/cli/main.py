@@ -21,7 +21,7 @@ from dbt.contracts.results import (
     CatalogArtifact,
     RunExecutionResult,
 )
-from dbt.common.events.base_types import EventMsg
+from dbt_common.events.base_types import EventMsg
 from dbt.task.build import BuildTask
 from dbt.task.clean import CleanTask
 from dbt.task.clone import CloneTask

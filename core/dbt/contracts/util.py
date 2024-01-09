@@ -2,7 +2,7 @@ import dataclasses
 from datetime import datetime
 from typing import List, Tuple, ClassVar, Type, TypeVar, Dict, Any, Optional
 
-from dbt.common.clients.system import write_json, read_json
+from dbt_common.clients.system import write_json, read_json
 from dbt.exceptions import (
     DbtInternalError,
     DbtRuntimeError,
@@ -10,12 +10,12 @@ from dbt.exceptions import (
 )
 from dbt.version import __version__
 
-from dbt.common.contracts.util import Replaceable
-from dbt.common.events.functions import get_metadata_vars
-from dbt.common.invocation import get_invocation_id
-from dbt.common.dataclass_schema import dbtClassMixin
+from dbt_common.contracts.util import Replaceable
+from dbt_common.events.functions import get_metadata_vars
+from dbt_common.invocation import get_invocation_id
+from dbt_common.dataclass_schema import dbtClassMixin
 
-from dbt.common.dataclass_schema import (
+from dbt_common.dataclass_schema import (
     ValidatedStringMixin,
     ValidationError,
 )

@@ -10,15 +10,15 @@ from dbt.contracts.util import (
     schema_version,
     get_artifact_schema_version,
 )
-from dbt.common.exceptions import DbtInternalError
-from dbt.common.events.functions import fire_event
+from dbt_common.exceptions import DbtInternalError
+from dbt_common.events.functions import fire_event
 from dbt.events.types import TimingInfoCollected
-from dbt.common.events.contextvars import get_node_info
-from dbt.common.events.helpers import datetime_to_json_string
+from dbt_common.events.contextvars import get_node_info
+from dbt_common.events.helpers import datetime_to_json_string
 from dbt.logger import TimingProcessor
-from dbt.common.utils.formatting import lowercase
-from dbt.common.utils import cast_to_str, cast_to_int
-from dbt.common.dataclass_schema import dbtClassMixin, StrEnum
+from dbt_common.utils.formatting import lowercase
+from dbt_common.utils import cast_to_str, cast_to_int
+from dbt_common.dataclass_schema import dbtClassMixin, StrEnum
 
 import agate
 
@@ -37,7 +37,7 @@ from typing import (
     Tuple,
 )
 
-from dbt.common.clients.system import write_json
+from dbt_common.clients.system import write_json
 
 
 @dataclass
