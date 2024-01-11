@@ -301,9 +301,8 @@ class FreshnessThreshold(dbtClassMixin, Mergeable):
     error_after: Optional[Time] = field(default_factory=Time)
     filter: Optional[str] = None
 
-    # Returns a "dbt.contracts.results.FreshnessStatus". # type: ignore does not bypass the mypy check on the next line for some reason.
-    def status(self, age: float):
-        from dbt.contracts.results import FreshnessStatus
+    def status(self, age: float) -> "dbt.artifacts.results.FreshnessStatus":  # type: ignore # noqa F821
+        from dbt.artifacts.results import FreshnessStatus
 
         if self.error_after and self.error_after.exceeded(age):
             return FreshnessStatus.Error
