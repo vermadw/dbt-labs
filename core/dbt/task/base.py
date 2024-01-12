@@ -16,34 +16,31 @@ from dbt.config import RuntimeConfig, Project
 from dbt.config.profile import read_profile
 from dbt.constants import DBT_PROJECT_FILE_NAME
 from dbt.contracts.graph.manifest import Manifest
-from dbt.contracts.results import (
-    NodeStatus,
-    RunResult,
-    collect_timing_info,
-    RunStatus,
-    RunningStatus,
-    TimingInfo,
-)
+from dbt.artifacts.results import TimingInfo, collect_timing_info
+from dbt.artifacts.results import NodeStatus, RunningStatus, RunStatus
+from dbt.artifacts.run import RunResult
 from dbt.common.events.contextvars import get_node_info
 from dbt.common.events.functions import fire_event
-from dbt.common.events.types import (
-    LogDbtProjectError,
-    LogDbtProfileError,
+from dbt.events.types import (
+    SkippingDetails,
+    NodeCompiling,
+    NodeExecuting,
     CatchableExceptionOnRun,
     InternalErrorOnRun,
     GenericExceptionOnRun,
     NodeConnectionReleaseError,
     LogDebugStackTrace,
-    SkippingDetails,
     LogSkipBecauseError,
-    NodeCompiling,
-    NodeExecuting,
 )
 from dbt.common.exceptions import (
     DbtRuntimeError,
     DbtInternalError,
     CompilationError,
     NotImplementedError,
+)
+from dbt.events.types import (
+    LogDbtProjectError,
+    LogDbtProfileError,
 )
 from dbt.flags import get_flags
 from dbt.graph import Graph

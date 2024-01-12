@@ -19,7 +19,8 @@ from dbt.clients.jinja import MacroGenerator
 from dbt.context.providers import generate_runtime_model_context
 from dbt.contracts.graph.model_config import Hook
 from dbt.contracts.graph.nodes import HookNode, ResultNode
-from dbt.contracts.results import NodeStatus, RunResult, RunStatus, RunningStatus, BaseResult
+from dbt.artifacts.results import NodeStatus, RunStatus, RunningStatus, BaseResult
+from dbt.artifacts.run import RunResult
 from dbt.exceptions import (
     CompilationError,
     DbtInternalError,
@@ -33,14 +34,14 @@ from dbt.adapters.events.types import (
     FinishedRunningStats,
 )
 from dbt.common.events.functions import fire_event, get_invocation_id
-from dbt.common.events.types import (
-    Formatting,
+from dbt.common.events.types import Formatting
+from dbt.common.events.base_types import EventLevel
+from dbt.events.types import (
     LogModelResult,
     LogStartLine,
     LogHookEndLine,
     LogHookStartLine,
 )
-from dbt.common.events.base_types import EventLevel
 from dbt.logger import (
     TextOnly,
     HookMetadata,

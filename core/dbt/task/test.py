@@ -15,12 +15,14 @@ from .run import RunTask
 
 from dbt.contracts.graph.nodes import TestNode, UnitTestDefinition, UnitTestNode
 from dbt.contracts.graph.manifest import Manifest
-from dbt.contracts.results import TestStatus, PrimitiveDict, RunResult
+from dbt.artifacts.results import TestStatus
+from dbt.artifacts.run import RunResult
+from dbt.artifacts.catalog import PrimitiveDict
 from dbt.context.providers import generate_runtime_model_context
 from dbt.clients.jinja import MacroGenerator
 from dbt.common.clients.agate_helper import list_rows_from_table, json_rows_from_table
 from dbt.common.events.functions import fire_event
-from dbt.common.events.types import (
+from dbt.events.types import (
     LogTestResult,
     LogStartLine,
 )
@@ -290,7 +292,7 @@ class TestRunner(CompileRunner):
             failures = 1
 
         return RunResult(
-            node=test,
+            node=test,  # type: ignore
             status=status,
             timing=[],
             thread_id=thread_id,
