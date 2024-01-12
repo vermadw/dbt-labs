@@ -9,7 +9,7 @@ from .printer import (
 )
 from .run import RunTask
 
-from dbt.contracts.results import (
+from dbt.artifacts.freshness import (
     FreshnessResult,
     PartialSourceFreshnessResult,
     SourceFreshnessResult,
