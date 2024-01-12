@@ -2,7 +2,7 @@ import functools
 from typing import NoReturn
 
 from dbt.common.events.functions import warn_or_error
-from dbt.common.events.types import JinjaLogWarning
+from dbt.events.types import JinjaLogWarning
 
 from dbt.common.exceptions import (
     DbtRuntimeError,
@@ -31,7 +31,7 @@ from dbt.exceptions import (
     scrub_secrets,
     env_secrets,
 )
-from dbt.common.exceptions.cache import CacheInconsistencyError
+from dbt.adapters.exceptions.cache import CacheInconsistencyError
 
 
 def warn(msg, node=None):

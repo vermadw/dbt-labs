@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List, Tuple
 
 from dbt.common.events.functions import fire_event
-from dbt.common.events.types import (
+from dbt.events.types import (
     OpenCommand,
     DebugCmdOut,
     DebugCmdResult,
@@ -21,7 +21,7 @@ import dbt.common.exceptions
 from dbt.adapters.factory import get_adapter, register_adapter
 from dbt.config import PartialProject, Project, Profile
 from dbt.config.renderer import DbtProjectYamlRenderer, ProfileRenderer
-from dbt.contracts.results import RunStatus
+from dbt.artifacts.results import RunStatus
 from dbt.clients.yaml_helper import load_yaml_text
 from dbt.links import ProfileConfigDocs
 from dbt.common.ui import green, red
@@ -399,7 +399,7 @@ class DebugTask(BaseTask):
     def test_git(self) -> SubtaskStatus:
         try:
             dbt.common.clients.system.run_cmd(os.getcwd(), ["git", "--help"])
-        except dbt.exceptions.ExecutableError as exc:
+        except dbt.common.exceptions.ExecutableError as exc:
             return SubtaskStatus(
                 log_msg=red("ERROR"),
                 run_status=RunStatus.Error,

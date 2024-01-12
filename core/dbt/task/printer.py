@@ -4,8 +4,8 @@ from dbt.logger import (
     TextOnly,
 )
 from dbt.common.events.functions import fire_event
-from dbt.common.events.types import (
-    Formatting,
+from dbt.common.events.types import Formatting
+from dbt.events.types import (
     RunResultWarning,
     RunResultWarningMessage,
     RunResultFailure,
@@ -20,7 +20,7 @@ from dbt.common.events.types import (
 from dbt.tracking import InvocationProcessor
 from dbt.common.events.format import pluralize
 
-from dbt.contracts.results import NodeStatus
+from dbt.artifacts.results import NodeStatus
 from dbt.node_types import NodeType
 
 

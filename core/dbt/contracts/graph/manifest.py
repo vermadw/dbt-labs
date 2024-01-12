@@ -54,13 +54,13 @@ from dbt.contracts.files import (
     AnySourceFile,
     FixtureSourceFile,
 )
-from dbt.contracts.util import (
+from dbt.artifacts.base import (
     BaseArtifactMetadata,
-    SourceKey,
     ArtifactMixin,
     schema_version,
     get_artifact_schema_version,
 )
+from dbt.contracts.util import SourceKey
 from dbt.common.dataclass_schema import dbtClassMixin
 
 from dbt.exceptions import (
@@ -71,8 +71,8 @@ from dbt.exceptions import (
 from dbt.adapters.exceptions import DuplicateMacroInPackageError, DuplicateMaterializationNameError
 from dbt.common.helper_types import PathSet
 from dbt.common.events.functions import fire_event
-from dbt.common.events.types import MergedFromState, UnpinnedRefNewVersionAvailable
 from dbt.common.events.contextvars import get_node_info
+from dbt.events.types import MergedFromState, UnpinnedRefNewVersionAvailable
 from dbt.node_types import NodeType, AccessType
 from dbt.flags import get_flags
 from dbt.mp_context import get_mp_context

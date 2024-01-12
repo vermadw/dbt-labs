@@ -6,15 +6,15 @@ from .snapshot import SnapshotRunner as snapshot_model_runner
 from .seed import SeedRunner as seed_runner
 from .test import TestRunner as test_runner
 
-from dbt.contracts.results import NodeStatus
+from dbt.artifacts.results import NodeStatus, RunStatus
+from dbt.artifacts.run import RunResult
 from dbt.common.exceptions import DbtInternalError
 from dbt.graph import ResourceTypeSelector, GraphQueue, Graph
 from dbt.node_types import NodeType
 from dbt.task.test import TestSelector
 from dbt.task.base import BaseRunner
-from dbt.contracts.results import RunResult, RunStatus
 from dbt.common.events.functions import fire_event
-from dbt.common.events.types import LogStartLine, LogModelResult
+from dbt.events.types import LogStartLine, LogModelResult
 from dbt.common.events.base_types import EventLevel
 
 

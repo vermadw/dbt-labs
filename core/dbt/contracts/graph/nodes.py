@@ -51,7 +51,7 @@ from dbt.contracts.util import Replaceable
 from dbt.common.contracts.config.properties import AdditionalPropertiesMixin
 from dbt.common.events.functions import warn_or_error
 from dbt.exceptions import ParsingError, ContractBreakingChangeError, ValidationError
-from dbt.common.events.types import (
+from dbt.events.types import (
     SeedIncreased,
     SeedExceedsLimitSamePath,
     SeedExceedsLimitAndPathChanged,
