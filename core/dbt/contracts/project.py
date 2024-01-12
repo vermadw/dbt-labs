@@ -307,7 +307,7 @@ class ProjectFlags(ExtensibleDbtClassMixin, Replaceable):
     write_json: Optional[bool] = None
 
     @property
-    def project_level_flags(self) -> Dict[str, Any]:
+    def project_only_flags(self) -> Dict[str, Any]:
         return {"source_freshness_run_project_hooks": self.source_freshness_run_project_hooks}
 
 

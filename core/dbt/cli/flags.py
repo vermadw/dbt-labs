@@ -237,7 +237,7 @@ class Flags:
             for (
                 project_level_flag_name,
                 project_level_flag_value,
-            ) in project_flags.project_level_flags.items():
+            ) in project_flags.project_only_flags.items():
                 object.__setattr__(self, project_level_flag_name.upper(), project_level_flag_value)
 
         # Set hard coded flags.
