@@ -577,7 +577,7 @@ class RuntimeUnitTestRefResolver(RuntimeRefResolver):
         target_package: Optional[str] = None,
         target_version: Optional[NodeVersion] = None,
     ) -> RelationProxy:
-        return super().resolve(target_name, target_package, target_version)
+        return super().resolve(target_name, self.model.package_name, target_version)
 
 
 # `source` implementations
