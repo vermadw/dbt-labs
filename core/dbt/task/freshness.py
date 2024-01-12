@@ -1,7 +1,7 @@
 import os
 import threading
 import time
-from typing import Optional
+from typing import Optional, List
 
 from .base import BaseRunner
 from .printer import (
@@ -24,11 +24,11 @@ from dbt.events.types import (
     LogFreshnessResult,
 )
 from dbt.contracts.results import RunStatus
-from dbt.node_types import NodeType
+from dbt.node_types import NodeType, RunHookType
 
 from dbt.adapters.capability import Capability
 from dbt.adapters.contracts.connection import AdapterResponse
-from dbt.contracts.graph.nodes import SourceDefinition
+from dbt.contracts.graph.nodes import SourceDefinition, HookNode
 from dbt.common.events.base_types import EventLevel
 from dbt.graph import ResourceTypeSelector
 
@@ -213,3 +213,9 @@ class FreshnessTask(RunTask):
                 print_run_result_error(result)
 
         fire_event(FreshnessCheckComplete())
+
+    def get_hooks_by_type(self, hook_type: RunHookType) -> List[HookNode]:
+        if self.args.source_freshness_run_project_hooks:
+            return super().get_hooks_by_type(hook_type)
+        else:
+            return []
