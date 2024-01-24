@@ -273,6 +273,7 @@ class DebugTask(BaseTask):
         # try to guess
 
         profiles = []
+        summary_message = f" profile path <{self.profile_path}> not found\n"
         if self.raw_profile_data:
             profiles = [k for k in self.raw_profile_data if k != "config"]
             if project_profile is None:
