@@ -231,6 +231,9 @@ class DebugTask(BaseTask):
                     self.target_name = self._choose_target_name(profile_name)
                     self.profile = profile
 
+        if len(profile_names) == 0:
+            profile_errors.append(summary_message)
+
         if profile_errors:
             details = "\n\n".join(profile_errors)
             return SubtaskStatus(
