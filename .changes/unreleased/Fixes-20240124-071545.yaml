@@ -1,5 +1,5 @@
 kind: Fixes
-body: Fix edge case where `summary_message` is not assigned
+body: Fix edge case where `summary_message` is not assigned in `dbt debug`
 time: 2024-01-24T07:15:45.054862-07:00
 custom:
   Author: dbeatty10
