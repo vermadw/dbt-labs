@@ -471,7 +471,7 @@ def build_node_edges(nodes: List[ManifestNode]):
     # pre-populate the forward edge dict for simplicity
     forward_edges: Dict[str, List[str]] = {n.unique_id: [] for n in nodes}
     for node in nodes:
-        backward_edges[node.unique_id] = node.depends_on_nodes[:]
+        backward_edges[node.unique_id] = list(node.depends_on_nodes.copy())
         for unique_id in backward_edges[node.unique_id]:
             if unique_id in forward_edges.keys():
                 forward_edges[unique_id].append(node.unique_id)
