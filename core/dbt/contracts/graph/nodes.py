@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 import hashlib
 
 from mashumaro.types import SerializableType
-from typing import Optional, Union, List, Dict, Any, Sequence, Tuple, Iterator, Literal
+from typing import Optional, Union, List, Dict, Any, Sequence, Tuple, Iterator, Literal, Set
 
 from dbt import deprecations
 from dbt_common.contracts.constraints import (
@@ -264,11 +264,7 @@ class DeferRelation(HasRelationMetadata):
 
 @dataclass
 class DependsOn(MacroDependsOn):
-    nodes: List[str] = field(default_factory=list)
-
-    def add_node(self, value: str):
-        if value not in self.nodes:
-            self.nodes.append(value)
+    nodes: Set[str] = field(default_factory=set)
 
 
 @dataclass
