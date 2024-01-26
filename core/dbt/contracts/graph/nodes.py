@@ -244,12 +244,7 @@ class HasRelationMetadata(dbtClassMixin, Replaceable):
 class MacroDependsOn(dbtClassMixin, Replaceable):
     """Used only in the Macro class"""
 
-    macros: List[str] = field(default_factory=list)
-
-    # 'in' on lists is O(n) so this is O(n^2) for # of macros
-    def add_macro(self, value: str):
-        if value not in self.macros:
-            self.macros.append(value)
+    macros: Set[str] = field(default_factory=set)
 
 
 @dataclass

@@ -744,7 +744,7 @@ class ManifestLoader:
                     package_name, macro_name = macro_name.split(".")
                 dep_macro_id = self.macro_resolver.get_macro_id(package_name, macro_name)
                 if dep_macro_id:
-                    macro.depends_on.add_macro(dep_macro_id)  # will check for dupes
+                    macro.depends_on.macros.add(dep_macro_id)  # will check for dupes
 
     def write_manifest_for_partial_parse(self):
         path = os.path.join(self.root_project.project_target_path, PARTIAL_PARSE_FILE_NAME)
