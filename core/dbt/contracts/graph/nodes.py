@@ -521,11 +521,11 @@ class CompiledNode(ParsedNode):
         return dct
 
     @property
-    def depends_on_nodes(self):
+    def depends_on_nodes(self) -> Set[str]:
         return self.depends_on.nodes
 
     @property
-    def depends_on_macros(self):
+    def depends_on_macros(self) -> Set[str]:
         return self.depends_on.macros
 
 
@@ -585,7 +585,7 @@ class ModelNode(CompiledNode):
             original_file_path="",
             path="",
             unrendered_config=unrendered_config,
-            depends_on=DependsOn(nodes=args.depends_on_nodes),
+            depends_on=DependsOn(nodes=set(args.depends_on_nodes)),
             config=ModelConfig(enabled=args.enabled),
         )
 
@@ -935,11 +935,11 @@ Error raised for '{self.unique_id}', which has these hooks defined: \n{hook_list
         return self.same_seeds(other)
 
     @property
-    def depends_on_nodes(self):
-        return []
+    def depends_on_nodes(self) -> Set[str]:
+        return set()
 
     @property
-    def depends_on_macros(self) -> List[str]:
+    def depends_on_macros(self) -> Set[str]:
         return self.depends_on.macros
 
     @property
@@ -1077,7 +1077,7 @@ class UnitTestDefinition(NodeInfoMixin, GraphNode, UnitTestDefinitionMandatory):
         return self.original_file_path
 
     @property
-    def depends_on_nodes(self):
+    def depends_on_nodes(self) -> Set[str]:
         return self.depends_on.nodes
 
     @property
@@ -1160,7 +1160,7 @@ class Macro(BaseNode):
         return self.macro_sql == other.macro_sql
 
     @property
-    def depends_on_macros(self):
+    def depends_on_macros(self) -> Set[str]:
         return self.depends_on.macros
 
 
@@ -1382,8 +1382,8 @@ class SourceDefinition(NodeInfoMixin, ParsedSourceMandatory):
         return False
 
     @property
-    def depends_on_nodes(self):
-        return []
+    def depends_on_nodes(self) -> Set[str]:
+        return set()
 
     @property
     def depends_on(self):
@@ -1435,7 +1435,7 @@ class Exposure(GraphNode):
     created_at: float = field(default_factory=lambda: time.time())
 
     @property
-    def depends_on_nodes(self):
+    def depends_on_nodes(self) -> Set[str]:
         return self.depends_on.nodes
 
     @property
@@ -1585,7 +1585,7 @@ class Metric(GraphNode):
     group: Optional[str] = None
 
     @property
-    def depends_on_nodes(self):
+    def depends_on_nodes(self) -> Set[str]:
         return self.depends_on.nodes
 
     @property
@@ -1740,11 +1740,11 @@ class SemanticModel(GraphNode):
         return SemanticModelReference(semantic_model_name=self.name)
 
     @property
-    def depends_on_nodes(self):
+    def depends_on_nodes(self) -> Set[str]:
         return self.depends_on.nodes
 
     @property
-    def depends_on_macros(self):
+    def depends_on_macros(self) -> Set[str]:
         return self.depends_on.macros
 
     def checked_agg_time_dimension_for_measure(
@@ -1858,7 +1858,7 @@ class SavedQuery(NodeInfoMixin, SavedQueryMandatory):
         return self.query_params.metrics
 
     @property
-    def depends_on_nodes(self):
+    def depends_on_nodes(self) -> Set[str]:
         return self.depends_on.nodes
 
     def same_metrics(self, old: "SavedQuery") -> bool:
