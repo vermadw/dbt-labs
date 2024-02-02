@@ -226,7 +226,7 @@ class TestRunner(CompileRunner):
         # could eventually be returned directly by materialization
         result = context["load_result"]("main")
         adapter_response = result["response"].to_dict(omit_none=True)
-        table = result["table"]
+        table: agate.Table = result["table"]
         actual = self._get_unit_test_agate_table(table, "actual")
         expected = self._get_unit_test_agate_table(table, "expected")
 
@@ -320,12 +320,22 @@ class TestRunner(CompileRunner):
     def after_execute(self, result):
         self.print_result_line(result)
 
-    def _get_unit_test_agate_table(self, result_table, actual_or_expected: str):
-        unit_test_table = result_table.where(
-            lambda row: row["actual_or_expected"] == actual_or_expected
-        )
+    def _get_unit_test_agate_table(
+        self, result_table: agate.Table, actual_or_expected: str
+    ) -> agate.Table:
+        def where_actual_or_expected(row):
+            if "actual_or_expected" in row:
+                return row["actual_or_expected"] == actual_or_expected
+            elif "ACTUAL_OR_EXPECTED" in row:
+                return row["ACTUAL_OR_EXPECTED"] == actual_or_expected.upper()
+            return False
+
+        unit_test_table = result_table.where(where_actual_or_expected)
         columns = list(unit_test_table.columns.keys())
-        columns.remove("actual_or_expected")
+        if "ACTUAL_OR_EXPECTED" in columns:
+            columns.remove("ACTUAL_OR_EXPECTED")
+        if "actual_or_expected" in columns:
+            columns.remove("actual_or_expected")
         return unit_test_table.select(columns)
 
     def _get_daff_diff(
