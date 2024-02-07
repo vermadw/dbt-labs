@@ -26,6 +26,7 @@ class ListTask(GraphRunnableTask):
             NodeType.Exposure,
             NodeType.Metric,
             NodeType.SemanticModel,
+            NodeType.SavedQuery,
         )
     )
     ALL_RESOURCE_VALUES = DEFAULT_RESOURCE_VALUES | frozenset((NodeType.Analysis,))
@@ -74,10 +75,12 @@ class ListTask(GraphRunnableTask):
                 yield self.manifest.metrics[node]
             elif node in self.manifest.semantic_models:
                 yield self.manifest.semantic_models[node]
+            elif node in self.manifest.saved_queries:
+                yield self.manifest.saved_queries[node]
             else:
                 raise DbtRuntimeError(
                     f'Got an unexpected result from node selection: "{node}"'
-                    f"Expected a source or a node!"
+                    f"Listing this node type is not yet supported!"
                 )
 
     def generate_selectors(self):
@@ -101,6 +104,10 @@ class ListTask(GraphRunnableTask):
                 assert isinstance(node, SemanticModel)
                 semantic_model_selector = ".".join([node.package_name, node.name])
                 yield f"semantic_model:{semantic_model_selector}"
+            elif node.resource_type == NodeType.SavedQuery:
+                assert isinstance(node, SemanticModel)
+                semantic_model_selector = ".".join([node.package_name, node.name])
+                yield f"saved_query:{semantic_model_selector}"
             else:
                 # everything else is from `fqn`
                 yield ".".join(node.fqn)
