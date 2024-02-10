@@ -1686,7 +1686,7 @@ class SemanticModel(GraphNode):
         )
 
     def same_model(self, old: "SemanticModel") -> bool:
-        return self.model == old.same_model
+        return self.model == old.model
 
     def same_node_relation(self, old: "SemanticModel") -> bool:
         return self.node_relation == old.node_relation
