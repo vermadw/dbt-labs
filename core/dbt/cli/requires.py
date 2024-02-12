@@ -1,7 +1,7 @@
 import dbt.tracking
 from dbt.version import installed as installed_version
 from dbt.adapters.factory import adapter_management, register_adapter
-from dbt.flags import set_flags, get_flag_dict
+from dbt.flags import get_flags, set_flags, get_flag_dict
 from dbt.cli.exceptions import (
     ExceptionExit,
     ResultExit,
@@ -41,13 +41,20 @@ def preflight(func):
         assert isinstance(ctx, Context)
         ctx.obj = ctx.obj or {}
 
+        # The flags initialization potentially loads a profile file, and we need
+        # to know in advance whether to record or replay that file access. This
+        # should be unneccessary after profile configs are deprecated.
+        setattr(get_flags(), "RECORD", bool(ctx.parent.params.get("record", False)))
+        setattr(get_flags(), "REPLAY", bool(ctx.parent.params.get("replay", False)))
+        setattr(get_flags(), "EXECUTION_RECORD_PATH", ctx.parent.params.get("execution_record_path", None))
+
+        if get_flags().REPLAY:
+            load_baseline_recording()
+
         # Flags
         flags = Flags(ctx)
         ctx.obj["flags"] = flags
         set_flags(flags)
-
-        if flags.COMPARE_RECORD:
-            load_baseline_recording()
 
         # Logging
         callbacks = ctx.obj.get("callbacks", [])
@@ -133,9 +140,12 @@ def postflight(func):
                     elapsed=time.perf_counter() - start_func,
                 )
             )
-            if ctx.obj["flags"].RECORD_EXECUTION:
+
+            # REVIEW: Why no flags here?
+            if ctx.parent.params.get("record", False):
                 write_recording()
-            if ctx.obj["flags"].COMPARE_RECORD:
+
+            if ctx.parent.params.get("replay", False):
                 write_recording_diffs()
 
         if not success:

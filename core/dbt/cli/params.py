@@ -379,19 +379,19 @@ quiet = click.option(
     help="Suppress all non-error logging to stdout. Does not affect {{ print() }} macro calls.",
 )
 
-record_execution = click.option(
-    "--record-execution",
+record = click.option(
+    "--record",
     is_flag=True,
-    envvar="DBT_RECORD_EXECUTION",
+    envvar="DBT_RECORD",
     help="Record all sql issued during a dbt invocation to a file in the target directory.",
     default=False,
 )
 
-compare_record = click.option(
-    "--compare-record",
+replay = click.option(
+    "--replay",
     is_flag=True,
-    envvar="DBT_COMPARE_RECORD",
-    help="Compare the current execution record to the last execution record.",
+    envvar="DBT_REPLAY",
+    help="Compare the current execution to a recorded execution.",
     default=False,
 )
 

@@ -25,7 +25,7 @@ from dbt.adapters.capability import Capability, CapabilityDict
 from dbt.contracts.graph.nodes import ColumnLevelConstraint, ConstraintType, ModelLevelConstraint
 
 import agate
-from dbt.record import get_recorder, get_comparer
+from dbt.record import get_recorder, get_replayer
 from dbt.flags import get_flags
 import pytz
 
@@ -309,15 +309,15 @@ class BaseAdapter(metaclass=AdapterMeta):
         :return: A tuple of the query status and results (empty if fetch=False).
         :rtype: Tuple[AdapterResponse, agate.Table]
         """
-        if get_flags().COMPARE_RECORD:
-            query_record = get_comparer().expect(sql)
+        if get_flags().REPLAY:
+            query_record = get_replayer().expect_query_record(sql)
             response = query_record.adapter_response
             table = query_record.table
         else:
             response, table = self.connections.execute(
                 sql=sql, auto_begin=auto_begin, fetch=fetch, limit=limit
             )
-            if get_flags().RECORD_EXECUTION:
+            if get_flags().RECORD:
                 get_recorder().add_query_record(sql, response, table)
         return response, table
 

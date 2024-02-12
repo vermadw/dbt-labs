@@ -11,7 +11,7 @@ from typing import List, Dict, Any, Tuple, Optional
 from dbt.flags import get_flags
 from dbt.adapters.factory import get_adapter
 from dbt.clients import jinja
-from dbt.clients.system import make_directory
+from dbt.clients.system import make_directory, make_file
 from dbt.context.providers import generate_runtime_model_context
 from dbt.contracts.graph.manifest import Manifest, UniqueID
 from dbt.contracts.graph.nodes import (
@@ -468,11 +468,10 @@ class Compiler:
             # including the test edges.
             summaries["with_test_edges"] = linker.get_graph_summary(manifest)
 
-        with open(
-            os.path.join(self.config.project_target_path, "graph_summary.json"), "w"
-        ) as out_stream:
             try:
-                out_stream.write(json.dumps(summaries))
+                make_file(
+                    os.path.join(self.config.project_target_path, "graph_summary.json"),
+                    json.dumps(summaries))
             except Exception as e:  # This is non-essential information, so merely note failures.
                 fire_event(
                     Note(

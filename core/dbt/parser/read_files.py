@@ -165,6 +165,7 @@ def read_files_for_parser(project, files, parse_ft, file_type_info, saved_files,
 
 
 def generate_dbt_ignore_spec(project_root):
+    #TODO: record/replay
     ignore_file_path = os.path.join(project_root, ".dbtignore")
 
     ignore_spec = None

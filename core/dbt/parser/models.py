@@ -497,16 +497,10 @@ class ModelParser(SimpleSQLParser[ModelNode]):
         # set refs and sources on the node object
         refs: List[RefArgs] = []
         for ref in statically_parsed["refs"]:
-            # name = ref.get("name")
-            # package = ref.get("package")
-            # version = ref.get("version")
-            # refs.append(RefArgs(name, package, version))
-            if len(ref) == 1:
-                package, name = None, ref[0]
-            else:
-                package, name = ref
-
-            refs.append(RefArgs(package=package, name=name))
+            name = ref.get("name")
+            package = ref.get("package")
+            version = ref.get("version")
+            refs.append(RefArgs(name, package, version))
 
         node.refs += refs
         node.sources += statically_parsed["sources"]
@@ -519,7 +513,7 @@ class ModelParser(SimpleSQLParser[ModelNode]):
         return ModelParser(deepcopy(self.project), self.manifest, deepcopy(self.root_project))
 
 
-# pure function. safe to use elsewhere, but unlikely to be useful outside this file.
+# pure function. safe to use elseFhere, but unlikely to be useful outside this file.
 def _get_config_call_dict(static_parser_result: Dict[str, Any]) -> Dict[str, Any]:
     config_call_dict: Dict[str, Any] = {}
 

@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Type, Union
 
 import dbt.exceptions
+from dbt.flags import get_flags
 import requests
 from dbt.events.functions import fire_event
 from dbt.events.types import (
@@ -54,6 +55,11 @@ def find_matching(
           'relative_path': 'subdirectory/model_two.sql',
           'searched_path': 'models' } ]
     """
+
+    if get_flags().REPLAY and _is_recordable_file(root_path):
+        from dbt.record import get_replayer
+        return get_replayer().expect_find_matching_record(root_path, relative_paths_to_search, file_pattern)
+
     matching = []
     root_path = os.path.normpath(root_path)
     regex = fnmatch.translate(file_pattern)
@@ -89,22 +95,33 @@ def find_matching(
                         }
                     )
 
+    if get_flags().RECORD and _is_recordable_file(root_path):  
+        from dbt.record import get_recorder
+        get_recorder().add_find_matching_record(root_path, relative_paths_to_search, file_pattern, matching)
     return matching
 
 
 def load_file_contents(path: str, strip: bool = True) -> str:
-    print(f"REC: Loading {path}")
     path = convert_path(path)
-    with open(path, "rb") as handle:
-        to_return = handle.read().decode("utf-8")
 
-    print(f"REC: Len {len(to_return)}")
+    if get_flags().REPLAY and _is_recordable_file(path):
+        from dbt.record import get_replayer
+        to_return = get_replayer().expect_load_file_record(path, strip)
+    else:
+        with open(path, "rb") as handle:
+            to_return = handle.read().decode("utf-8")
+
+    if get_flags().RECORD and _is_recordable_file(path):  
+        from dbt.record import get_recorder
+        get_recorder().add_load_file_record(path, strip, to_return)
 
     if strip:
         to_return = to_return.strip()
 
     return to_return
 
+def _is_recordable_file(path: str):
+    return not "dbt/include/global_project" in path and not "/plugins/postgres/dbt/include/" in path
 
 @functools.singledispatch
 def make_directory(path=None) -> None:
@@ -166,8 +183,17 @@ def supports_symlinks() -> bool:
 
 
 def write_file(path: str, contents: str = "") -> bool:
-    print(f"REC: Write({len(contents)}) {path}")
     path = convert_path(path)
+
+    if get_flags().RECORD:  
+        from dbt.record import get_recorder
+        get_recorder().add_write_file_record(path, contents)
+    
+    if get_flags().REPLAY:
+        from dbt.record import get_replayer
+        get_replayer().expect_write_file_record(path, contents)
+        return True  # TODO: With this and other file operations we actually need to record whether there was an exception and "replay" that.
+
     try:
         make_directory(os.path.dirname(path))
         with open(path, "w", encoding="utf-8") as f:

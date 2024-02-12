@@ -168,9 +168,9 @@ def global_flags(func):
 @global_flags
 @p.warn_error
 @p.warn_error_options
-@p.record_execution
+@p.record
 @p.execution_record_path
-@p.compare_record
+@p.replay
 @p.log_format
 @p.show_resource_report
 def cli(ctx, **kwargs):
