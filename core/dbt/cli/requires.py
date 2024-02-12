@@ -46,7 +46,11 @@ def preflight(func):
         # should be unneccessary after profile configs are deprecated.
         setattr(get_flags(), "RECORD", bool(ctx.parent.params.get("record", False)))
         setattr(get_flags(), "REPLAY", bool(ctx.parent.params.get("replay", False)))
-        setattr(get_flags(), "EXECUTION_RECORD_PATH", ctx.parent.params.get("execution_record_path", None))
+        setattr(
+            get_flags(),
+            "EXECUTION_RECORD_PATH",
+            ctx.parent.params.get("execution_record_path", None),
+        )
 
         if get_flags().REPLAY:
             load_baseline_recording()

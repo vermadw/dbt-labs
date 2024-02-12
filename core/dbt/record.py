@@ -36,14 +36,14 @@ class QueryRecord:
     @classmethod
     def from_dict(cls, dct: Mapping) -> "QueryRecord":
         return QueryRecord(
-            sql = dct["sql"],
-            adapter_response = AdapterResponse.from_dict(dct["adapter_response"]),
-            table = Table.from_object(json.loads(dct["table"])),
-            node_unique_id=dct["node_unique_id"]
+            sql=dct["sql"],
+            adapter_response=AdapterResponse.from_dict(dct["adapter_response"]),
+            table=Table.from_object(json.loads(dct["table"])),
+            node_unique_id=dct["node_unique_id"],
         )
 
 
-class Record():
+class Record:
     params_cls: type
     result_cls: Optional[type]
 
@@ -53,20 +53,22 @@ class Record():
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "params": dataclasses.asdict(self.params), #type: ignore
-            "result": dataclasses.asdict(self.result) if self.result is not None else None #type: ignore
+            "params": dataclasses.asdict(self.params),  # type: ignore
+            "result": dataclasses.asdict(self.result) if self.result is not None else None,  # type: ignore
         }
-    
+
     @classmethod
     def from_dict(cls, dct: Mapping) -> "Record":
         p = cls.params_cls(**dct["params"])
         r = cls.result_cls(**dct["result"]) if cls.result_cls is not None else None
         return cls(params=p, result=r)
-    
+
+
 #
 # Record of file load operations
 #
-     
+
+
 @dataclasses.dataclass
 class LoadFileParams:
     path: str
@@ -87,10 +89,12 @@ class LoadFileRecord(Record):
 # Record of file write operations
 #
 
+
 @dataclasses.dataclass
 class WriteFileParams:
     path: str
     contents: str
+
 
 class WriteFileRecord(Record):
     params_cls = WriteFileParams
@@ -101,6 +105,7 @@ class WriteFileRecord(Record):
 # Record of calls to the directory search function find_matching()
 #
 
+
 @dataclasses.dataclass
 class FindMatchingParams:
     root_path: str
@@ -108,9 +113,11 @@ class FindMatchingParams:
     file_pattern: str
     # ignore_spec: Optional[PathSpec] = None
 
+
 @dataclasses.dataclass
 class FindMatchingResult:
     matches: List[Dict[str, Any]]
+
 
 class FindMatchingRecord(Record):
     params_cls = FindMatchingParams
@@ -164,7 +171,7 @@ class Recorder:
         self._queries: MutableMapping[str, List[QueryRecord]] = defaultdict(list)
         self._records_by_type: Dict[str, List[Record]] = {}
 
-    def add_query_record(self, sql: str, response: AdapterResponse, table: Table) -> None:        
+    def add_query_record(self, sql: str, response: AdapterResponse, table: Table) -> None:
         node_info = get_node_info()
         node_unique_id = node_info["unique_id"] if node_info else ""
         query_record = QueryRecord(sql, response, table, node_unique_id)
@@ -177,7 +184,7 @@ class Recorder:
             return record
 
         return None
-    
+
     def add_record(self, record: Record) -> None:
         rec_type = self._record_name_by_record_type[type(record)]  # type: ignore
         if rec_type not in self._records_by_type:
@@ -193,13 +200,10 @@ class Recorder:
             return r
         else:
             return None
-        
+
     def add_load_file_record(self, path: str, strip: bool, contents: str) -> None:
         self.add_record(
-            LoadFileRecord(
-                params=LoadFileParams(path, strip),
-                result=LoadFileResult(contents)
-            )
+            LoadFileRecord(params=LoadFileParams(path, strip), result=LoadFileResult(contents))
         )
 
     def add_write_file_record(self, path: str, contents: str) -> None:
@@ -210,7 +214,13 @@ class Recorder:
             )
         )
 
-    def add_find_matching_record(self, root_path: str, relative_paths_to_search: List[str], file_pattern: str, matches: List[Dict[str, Any]]):
+    def add_find_matching_record(
+        self,
+        root_path: str,
+        relative_paths_to_search: List[str],
+        file_pattern: str,
+        matches: List[Dict[str, Any]],
+    ):
         self.add_record(
             FindMatchingRecord(
                 params=FindMatchingParams(root_path, relative_paths_to_search, file_pattern),
@@ -223,7 +233,7 @@ class Recorder:
             json.dump(self.to_dict(), file)
 
     def to_dict(self) -> Dict:
-        dct: Dict[str, Any]= {}
+        dct: Dict[str, Any] = {}
         dct["queries"] = []
         for query_list in self._queries.values():
             for query in query_list:
@@ -253,9 +263,9 @@ class Recorder:
             for record_dct in loaded_dct[record_type_name]:
                 rec_list.append(record_cls.from_dict(record_dct))  # type: ignore
             recorder._records_by_type[record_type_name] = rec_list
-                
+
         return recorder
-       
+
 
 class Replayer:
     def __init__(self, recording: Recorder) -> None:
@@ -265,7 +275,7 @@ class Replayer:
 
     def expect_query_record(self, sql: str) -> QueryRecord:
         node_info = get_node_info()
-        node_unique_id = node_info["unique_id"] if node_info else ""        
+        node_unique_id = node_info["unique_id"] if node_info else ""
 
         record = self.recording.pop_query_record(node_unique_id, sql)
 
@@ -273,7 +283,7 @@ class Replayer:
             default_adapter_response = AdapterResponse.from_dict(
                 {"_message": "", "code": "SUCCESS", "rows_affected": 0, "query_id": ""}
             )
-            default_table_response = Table.from_object(json.loads("{}"))#
+            default_table_response = Table.from_object(json.loads("{}"))  #
             self._diffs[node_unique_id].append(UnexpectedQueryDiff(sql, node_unique_id))
             return QueryRecord(
                 sql="",
@@ -283,11 +293,11 @@ class Replayer:
             )
 
         return record
-    
+
     def expect_load_file_record(self, path: str, trim: bool) -> str:
 
         record = self.recording.pop_record(LoadFileParams(path, trim))
-        
+
         if record is None:
             raise Exception()
 
@@ -301,8 +311,12 @@ class Replayer:
         else:
             self._misc_diffs.append(FileWriteDiff(path, record.result.contents, contents))
 
-    def expect_find_matching_record(self, root_path: str, relative_paths_to_search: List[str], file_pattern: str) -> List[Dict[str, Any]]:
-        record = self.recording.pop_record(FindMatchingParams(root_path, relative_paths_to_search, file_pattern))
+    def expect_find_matching_record(
+        self, root_path: str, relative_paths_to_search: List[str], file_pattern: str
+    ) -> List[Dict[str, Any]]:
+        record = self.recording.pop_record(
+            FindMatchingParams(root_path, relative_paths_to_search, file_pattern)
+        )
 
         if record is None:
             raise Exception()
@@ -342,7 +356,6 @@ def load_baseline_recording():
     CURRENT_REPLAYER = Replayer(Recorder.load(get_flags().EXECUTION_RECORD_PATH))
 
 
-
 CURRENT_RECORDER: Recorder = Recorder()
 
 
@@ -365,4 +378,4 @@ def write_recording():
 
 
 def write_recording_diffs():
-    pass#
+    pass  #

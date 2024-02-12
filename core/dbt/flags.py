@@ -29,6 +29,7 @@ MP_CONTEXT = get_context()
 # Match USE_COLORS default with default in dbt.cli.params.use_colors for use in --version
 GLOBAL_FLAGS = Namespace(USE_COLORS=True)  # type: ignore
 
+
 def set_flags(flags):
     global GLOBAL_FLAGS
     GLOBAL_FLAGS = flags

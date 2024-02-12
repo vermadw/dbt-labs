@@ -471,7 +471,8 @@ class Compiler:
             try:
                 make_file(
                     os.path.join(self.config.project_target_path, "graph_summary.json"),
-                    json.dumps(summaries))
+                    json.dumps(summaries),
+                )
             except Exception as e:  # This is non-essential information, so merely note failures.
                 fire_event(
                     Note(
