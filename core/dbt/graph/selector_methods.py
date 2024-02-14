@@ -101,7 +101,7 @@ def is_selected_node(fqn: List[str], node_selector: str, is_versioned: bool) -> 
     return True
 
 
-SelectorTarget = Union[SourceDefinition, ManifestNode, Exposure, Metric]
+SelectorTarget = Union[SourceDefinition, ManifestNode, Exposure, Metric, SemanticModel]
 
 
 class SelectorMethod(metaclass=abc.ABCMeta):
@@ -709,6 +709,8 @@ class StateSelectorMethod(SelectorMethod):
                 previous_node = manifest.exposures[node]
             elif node in manifest.metrics:
                 previous_node = manifest.metrics[node]
+            elif node in manifest.semantic_models:
+                previous_node = manifest.semantic_models[node]
 
             keyword_args = {}
             if checker.__name__ in [
