@@ -151,6 +151,8 @@ def global_flags(func):
     @p.single_threaded
     @p.state
     @p.static_parser
+    @p.target
+    @p.target_path
     @p.use_colors
     @p.use_colors_file
     @p.use_experimental_parser
@@ -171,7 +173,7 @@ def global_flags(func):
     context_settings={"help_option_names": ["-h", "--help"]},
     invoke_without_command=True,
     no_args_is_help=True,
-    epilog="Specify one of these sub-commands and you can find more help from there.",
+    epilog="Specify one o`f these sub-commands and you can find more help from there.",
 )
 @click.pass_context
 @global_flags
@@ -197,8 +199,6 @@ def cli(ctx, **kwargs):
 @p.selector
 @p.show
 @p.store_failures
-@p.target
-@p.target_path
 @p.threads
 @p.vars
 @requires.postflight
@@ -228,8 +228,6 @@ def build(ctx, **kwargs):
 @p.profile
 @p.profiles_dir
 @p.project_dir
-@p.target
-@p.target_path
 @p.vars
 @requires.postflight
 @requires.preflight
@@ -265,8 +263,6 @@ def docs(ctx, **kwargs):
 @p.selector
 @p.empty_catalog
 @p.static
-@p.target
-@p.target_path
 @p.threads
 @p.vars
 @requires.postflight
@@ -297,8 +293,6 @@ def docs_generate(ctx, **kwargs):
 @p.profile
 @p.profiles_dir
 @p.project_dir
-@p.target
-@p.target_path
 @p.vars
 @requires.postflight
 @requires.preflight
@@ -333,8 +327,6 @@ def docs_serve(ctx, **kwargs):
 @p.selector
 @p.inline
 @p.compile_inject_ephemeral_ctes
-@p.target
-@p.target_path
 @p.threads
 @p.vars
 @requires.postflight
@@ -372,8 +364,6 @@ def compile(ctx, **kwargs):
 @p.select
 @p.selector
 @p.inline
-@p.target
-@p.target_path
 @p.threads
 @p.vars
 @requires.postflight
@@ -405,7 +395,6 @@ def show(ctx, **kwargs):
 @p.profile
 @p.profiles_dir_exists_false
 @p.project_dir
-@p.target
 @p.vars
 @requires.postflight
 @requires.preflight
@@ -429,7 +418,6 @@ def debug(ctx, **kwargs):
 @p.profile
 @p.profiles_dir_exists_false
 @p.project_dir
-@p.target
 @p.vars
 @p.source
 @p.lock
@@ -473,7 +461,6 @@ def deps(ctx, **kwargs):
 @p.profiles_dir_exists_false
 @p.project_dir
 @p.skip_profile_setup
-@p.target
 @p.vars
 @requires.postflight
 @requires.preflight
@@ -500,8 +487,6 @@ def init(ctx, **kwargs):
 @p.resource_type
 @p.raw_select
 @p.selector
-@p.target
-@p.target_path
 @p.vars
 @requires.postflight
 @requires.preflight
@@ -535,8 +520,6 @@ cli.add_command(ls, "ls")
 @p.profile
 @p.profiles_dir
 @p.project_dir
-@p.target
-@p.target_path
 @p.threads
 @p.vars
 @requires.postflight
@@ -563,8 +546,6 @@ def parse(ctx, **kwargs):
 @p.empty
 @p.select
 @p.selector
-@p.target
-@p.target_path
 @p.threads
 @p.vars
 @requires.postflight
@@ -594,7 +575,6 @@ def run(ctx, **kwargs):
 @p.profiles_dir
 @p.vars
 @p.profile
-@p.target
 @p.threads
 @p.full_refresh
 @requires.postflight
@@ -627,8 +607,6 @@ def retry(ctx, **kwargs):
 @p.resource_type
 @p.select
 @p.selector
-@p.target
-@p.target_path
 @p.threads
 @p.vars
 @requires.preflight
@@ -659,8 +637,6 @@ def clone(ctx, **kwargs):
 @p.profile
 @p.profiles_dir
 @p.project_dir
-@p.target
-@p.target_path
 @p.threads
 @p.vars
 @requires.postflight
@@ -694,8 +670,6 @@ def run_operation(ctx, **kwargs):
 @p.select
 @p.selector
 @p.show
-@p.target
-@p.target_path
 @p.threads
 @p.vars
 @requires.postflight
@@ -726,8 +700,6 @@ def seed(ctx, **kwargs):
 @p.project_dir
 @p.select
 @p.selector
-@p.target
-@p.target_path
 @p.threads
 @p.vars
 @requires.postflight
@@ -768,8 +740,6 @@ def source(ctx, **kwargs):
 @p.project_dir
 @p.select
 @p.selector
-@p.target
-@p.target_path
 @p.threads
 @p.vars
 @requires.postflight
@@ -808,8 +778,6 @@ cli.commands["source"].add_command(snapshot_freshness, "snapshot-freshness")  # 
 @p.select
 @p.selector
 @p.store_failures
-@p.target
-@p.target_path
 @p.threads
 @p.vars
 @requires.postflight
