@@ -173,7 +173,7 @@ def global_flags(func):
     context_settings={"help_option_names": ["-h", "--help"]},
     invoke_without_command=True,
     no_args_is_help=True,
-    epilog="Specify one o`f these sub-commands and you can find more help from there.",
+    epilog="Specify one of these sub-commands and you can find more help from there.",
 )
 @click.pass_context
 @global_flags
