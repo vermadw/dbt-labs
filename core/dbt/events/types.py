@@ -1520,10 +1520,17 @@ class ShowNode(InfoLevel):
     def message(self) -> str:
         if self.output_format == "json":
             if self.is_inline:
-                return json.dumps({"show": json.loads(self.preview)}, indent=2)
+                return json.dumps(
+                    {"columns": list(self.columns), "show": json.loads(self.preview)}, indent=2
+                )
             else:
                 return json.dumps(
-                    {"node": self.node_name, "show": json.loads(self.preview)}, indent=2
+                    {
+                        "node": self.node_name,
+                        "columns": list(self.columns),
+                        "show": json.loads(self.preview),
+                    },
+                    indent=2,
                 )
         else:
             if self.is_inline:

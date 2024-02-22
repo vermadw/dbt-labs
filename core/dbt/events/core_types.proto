@@ -1532,6 +1532,7 @@ message ShowNode {
     bool is_inline = 3;
     string output_format = 4;
     string unique_id = 5;
+    repeated string columns = 6;
 }
 
 message ShowNodeMsg {

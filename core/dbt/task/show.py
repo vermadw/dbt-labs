@@ -101,6 +101,7 @@ class ShowTask(CompileTask):
             fire_event(
                 ShowNode(
                     node_name=node_name,
+                    columns=[col.name for col in table.columns],
                     preview=output.getvalue(),
                     is_inline=is_inline,
                     output_format=self.args.output,
