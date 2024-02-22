@@ -1543,6 +1543,10 @@ class SavedQuery(NodeInfoMixin, GraphNode, SavedQueryResource):
     def resource_class(cls) -> Type[SavedQueryResource]:
         return SavedQueryResource
 
+    @property
+    def example_change(self):
+        return None
+
     def same_metrics(self, old: "SavedQuery") -> bool:
         return self.query_params.metrics == old.query_params.metrics
 
