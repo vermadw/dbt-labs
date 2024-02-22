@@ -14,6 +14,7 @@ class BaseResource(dbtClassMixin):
     path: str
     original_file_path: str
     unique_id: str
+    new_property: Optional[str]
 
 
 @dataclass
