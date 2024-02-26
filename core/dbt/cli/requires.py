@@ -1,13 +1,15 @@
 import os
 
 import dbt.tracking
-from dbt_common.context import set_invocation_context
+
+from dbt_common.context import set_invocation_context, get_invocation_context
+from dbt_common.record import Recorder, GetEnvRecord, GetEnvParams, GetEnvResult, RecorderMode
 from dbt_common.invocation import reset_invocation_id
 
 from dbt.version import installed as installed_version
 from dbt.adapters.factory import adapter_management, register_adapter, get_adapter
 from dbt.context.providers import generate_runtime_macro_context
-from dbt.flags import set_flags, get_flag_dict
+from dbt.flags import set_flags, get_flag_dict, get_flags
 from dbt.cli.exceptions import (
     ExceptionExit,
     ResultExit,
@@ -52,7 +54,31 @@ def preflight(func):
         assert isinstance(ctx, Context)
         ctx.obj = ctx.obj or {}
 
-        set_invocation_context(os.environ)
+        # The flags initialization potentially loads a profile file, and we need
+        # to know in advance of setting the flags whether to record or replay that
+        # file access. This looks directly at the click context to see if record or
+        # replay has been requested.
+        flags = get_flags()
+        setattr(flags, "RECORD", bool(ctx.params.get("record", False)))
+        setattr(flags, "REPLAY", ctx.params.get("replay", None))
+
+        env = os.environ
+
+        if flags.REPLAY is not None:
+            recording_path = flags.REPLAY
+            recording = Recorder.load(recording_path)
+            replayer = Recorder(RecorderMode.REPLAY, recording)
+            get_invocation_context().replayer = replayer
+            env = replayer.expect_record(GetEnvParams()).env
+
+        set_invocation_context(env)
+
+        if get_flags().RECORD:
+            recorder = Recorder(RecorderMode.RECORD)
+            recorder.add_record(
+                GetEnvRecord(params=GetEnvParams(), result=GetEnvResult(dict(env)))
+            )
+            get_invocation_context().recorder = recorder
 
         # Flags
         flags = Flags(ctx)
@@ -145,6 +171,13 @@ def postflight(func):
                     elapsed=time.perf_counter() - start_func,
                 )
             )
+
+            recorder = get_invocation_context().recorder
+            if recorder is not None:
+                if recorder.mode == RecorderMode.RECORD:
+                    recorder.write("recording.json")
+                elif recorder.mode == RecorderMode.REPLAY:
+                    recorder.write_diffs(ctx.parent.params["replay"])
 
         if not success:
             raise ResultExit(result)
