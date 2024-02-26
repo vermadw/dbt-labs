@@ -147,7 +147,6 @@ def global_flags(func):
     @p.printer_width
     @p.quiet
     @p.record
-    @p.replay
     @p.record_timing_info
     @p.send_anonymous_usage_stats
     @p.single_threaded
