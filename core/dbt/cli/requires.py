@@ -3,7 +3,7 @@ import os
 import dbt.tracking
 
 from dbt_common.context import set_invocation_context, get_invocation_context
-from dbt_common.record import Recorder, GetEnvRecord, GetEnvParams, GetEnvResult, RecorderMode
+from dbt_common.record import GetEnvRecord, Recorder, RecorderMode, record_function
 from dbt_common.invocation import reset_invocation_id
 
 from dbt.version import installed as installed_version
@@ -46,6 +46,7 @@ from functools import update_wrapper
 import importlib.util
 import time
 import traceback
+from typing import Dict
 
 
 def preflight(func):
@@ -62,23 +63,16 @@ def preflight(func):
         setattr(flags, "RECORD", bool(ctx.params.get("record", False)))
         setattr(flags, "REPLAY", ctx.params.get("replay", None))
 
-        env = os.environ
+        set_invocation_context({})
 
         if flags.REPLAY is not None:
             recording_path = flags.REPLAY
-            recording = Recorder.load(recording_path)
-            replayer = Recorder(RecorderMode.REPLAY, recording)
-            get_invocation_context().replayer = replayer
-            env = replayer.expect_record(GetEnvParams()).env
-
-        set_invocation_context(env)
-
-        if get_flags().RECORD:
-            recorder = Recorder(RecorderMode.RECORD)
-            recorder.add_record(
-                GetEnvRecord(params=GetEnvParams(), result=GetEnvResult(dict(env)))
-            )
+            recorder = Recorder(RecorderMode.REPLAY, recording_path)
             get_invocation_context().recorder = recorder
+        elif flags.RECORD:
+            get_invocation_context().recorder = Recorder(RecorderMode.RECORD)
+
+        get_invocation_context()._env = _get_env()
 
         # Flags
         flags = Flags(ctx)
@@ -117,6 +111,11 @@ def preflight(func):
         return func(*args, **kwargs)
 
     return update_wrapper(wrapper, func)
+
+
+@record_function(GetEnvRecord)
+def _get_env() -> Dict[str, str]:
+    return dict(os.environ)
 
 
 def postflight(func):
@@ -177,7 +176,7 @@ def postflight(func):
                 if recorder.mode == RecorderMode.RECORD:
                     recorder.write("recording.json")
                 elif recorder.mode == RecorderMode.REPLAY:
-                    recorder.write_diffs(ctx.parent.params["replay"])
+                    recorder.write_diffs("replay_diffs.json")
 
         if not success:
             raise ResultExit(result)
