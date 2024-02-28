@@ -3,13 +3,14 @@ import os
 import dbt.tracking
 
 from dbt_common.context import set_invocation_context, get_invocation_context
-from dbt_common.record import GetEnvRecord, Recorder, RecorderMode, record_function
+from dbt_common.record import Recorder, RecorderMode, get_record_mode_from_env
+from dbt_common.clients.system import get_env
 from dbt_common.invocation import reset_invocation_id
 
 from dbt.version import installed as installed_version
 from dbt.adapters.factory import adapter_management, register_adapter, get_adapter
 from dbt.context.providers import generate_runtime_macro_context
-from dbt.flags import set_flags, get_flag_dict, get_flags
+from dbt.flags import set_flags, get_flag_dict
 from dbt.cli.exceptions import (
     ExceptionExit,
     ResultExit,
@@ -46,7 +47,7 @@ from functools import update_wrapper
 import importlib.util
 import time
 import traceback
-from typing import Dict
+from typing import Optional
 
 
 def preflight(func):
@@ -55,24 +56,18 @@ def preflight(func):
         assert isinstance(ctx, Context)
         ctx.obj = ctx.obj or {}
 
-        # The flags initialization potentially loads a profile file, and we need
-        # to know in advance of setting the flags whether to record or replay that
-        # file access. This looks directly at the click context to see if record or
-        # replay has been requested.
-        flags = get_flags()
-        setattr(flags, "RECORD", bool(ctx.params.get("record", False)))
-        setattr(flags, "REPLAY", ctx.params.get("replay", None))
+        rec_mode = get_record_mode_from_env()
+
+        recorder: Optional[Recorder] = None
+        if rec_mode == RecorderMode.REPLAY:
+            recording_path = os.environ["DBT_REPLAY"]
+            recorder = Recorder(RecorderMode.REPLAY, recording_path)
+        elif rec_mode == RecorderMode.RECORD:
+            recorder = Recorder(RecorderMode.RECORD)
 
         set_invocation_context({})
-
-        if flags.REPLAY is not None:
-            recording_path = flags.REPLAY
-            recorder = Recorder(RecorderMode.REPLAY, recording_path)
-            get_invocation_context().recorder = recorder
-        elif flags.RECORD:
-            get_invocation_context().recorder = Recorder(RecorderMode.RECORD)
-
-        get_invocation_context()._env = _get_env()
+        get_invocation_context().recorder = recorder
+        get_invocation_context()._env = get_env()
 
         # Flags
         flags = Flags(ctx)
@@ -111,11 +106,6 @@ def preflight(func):
         return func(*args, **kwargs)
 
     return update_wrapper(wrapper, func)
-
-
-@record_function(GetEnvRecord)
-def _get_env() -> Dict[str, str]:
-    return dict(os.environ)
 
 
 def postflight(func):
