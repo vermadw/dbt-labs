@@ -372,22 +372,6 @@ quiet = click.option(
     help="Suppress all non-error logging to stdout. Does not affect {{ print() }} macro calls.",
 )
 
-record = click.option(
-    "--record",
-    is_flag=True,
-    envvar="DBT_RECORD",
-    help="Record all sql issued during a dbt invocation to a file in the target directory.",
-    default=False,
-)
-
-replay = click.option(
-    "--replay",
-    envvar="DBT_REPLAY",
-    help="Replay the recording at the path specified.",
-    default=None,
-    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
-)
-
 record_timing_info = click.option(
     "--record-timing-info",
     "-r",
