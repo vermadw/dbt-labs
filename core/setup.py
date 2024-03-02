@@ -47,12 +47,6 @@ setup(
     },
     install_requires=[
         # ----
-        # dbt-core uses these packages deeply, throughout the codebase, and there have been breaking changes in past patch releases (even though these are major-version-one).
-        # Pin to the patch or minor version, and bump in each new minor version of dbt-core.
-        "agate>=1.7.0,<1.8",
-        "Jinja2>=3.1.3,<4",
-        "mashumaro[msgpack]>=3.9,<4.0",
-        # ----
         # Legacy: This package has not been updated since 2019, and it is unused in dbt's logging system (since v1.0)
         # The dependency here will be removed along with the removal of 'legacy logging', in a future release of dbt-core
         "logbook>=1.5,<1.6",
@@ -61,11 +55,9 @@ setup(
         # with major versions in each new minor version of dbt-core.
         "click>=8.0.2,<9.0",
         "networkx>=2.3,<4.0",
-        "requests<3.0.0",  # should match dbt-common
         # ----
         # These packages are major-version-0. Keep upper bounds on upcoming minor versions (which could have breaking changes)
         # and check compatibility / bump in each new minor version of dbt-core.
-        "pathspec>=0.9,<0.12",
         "sqlparse>=0.2.3,<0.5",
         # ----
         # These are major-version-0 packages also maintained by dbt-labs.
@@ -79,11 +71,9 @@ setup(
         # ----
         # Expect compatibility with all new versions of these packages, so lower bounds only.
         "packaging>20.9",
-        "protobuf>=4.0.0,<5",
         "pytz>=2015.7",
         "pyyaml>=6.0",
         "daff>=1.3.46",
-        "typing-extensions>=4.4",
         # ----
     ],
     zip_safe=False,
