@@ -1,7 +1,7 @@
 import os
 import threading
 import time
-from typing import Optional, List
+from typing import Optional, List, AbstractSet
 
 from .base import BaseRunner
 from .printer import (
@@ -36,6 +36,13 @@ RESULT_FILE_NAME = "sources.json"
 
 
 class FreshnessRunner(BaseRunner):
+    def __init__(self, config, adapter, node, node_index, num_nodes) -> None:
+        super().__init__(config, adapter, node, node_index, num_nodes)
+        self._metadata_freshness_results = None
+
+    def set_metadata_freshness_results(self, metadata_freshness_results) -> None:
+        self._metadata_freshness_results = metadata_freshness_results
+
     def on_skip(self):
         raise DbtRuntimeError("Freshness: nodes cannot be skipped!")
 
@@ -124,11 +131,13 @@ class FreshnessRunner(BaseRunner):
                             EventLevel.WARN,
                         )
                     )
-
-                adapter_response, freshness = self.adapter.calculate_freshness_from_metadata(
-                    relation,
-                    macro_resolver=manifest,
-                )
+                if compiled_node.unique_id in self._metadata_freshness_results:
+                    freshness = self._metadata_freshness_results[compiled_node.unique_id]
+                else:
+                    adapter_response, freshness = self.adapter.calculate_freshness_from_metadata(
+                        relation,
+                        macro_resolver=manifest,
+                    )
 
                 status = compiled_node.freshness.status(freshness["age"])
             else:
@@ -172,6 +181,10 @@ class FreshnessSelector(ResourceTypeSelector):
 
 
 class FreshnessTask(RunTask):
+    def __init__(self, args, config, manifest) -> None:
+        super().__init__(args, config, manifest)
+        self._metadata_freshness_results = None
+
     def result_path(self):
         if self.args.output:
             return os.path.realpath(self.args.output)
@@ -190,6 +203,35 @@ class FreshnessTask(RunTask):
             previous_state=self.previous_state,
             resource_types=[NodeType.Source],
         )
+
+    def before_run(self, adapter, selected_uids: AbstractSet[str]) -> None:
+        super().before_run(adapter, selected_uids)
+        # TODO: new TableLastModifiedMetadataBatch ?
+        if adapter.supports(Capability.TableLastModifiedMetadata):
+            metadata_source_unique_ids = []
+            metadata_source_relations = []
+            for selected_source_uid in list(selected_uids):
+                source = self.manifest.expect(selected_source_uid)
+                if source.loaded_at_field is None:
+                    source_relation = adapter.Relation.create_from(self.config, source)
+                    metadata_source_unique_ids.append(selected_source_uid)
+                    metadata_source_relations.append(source_relation)
+
+            _, metadata_fresnhess_results = adapter.calculate_freshness_from_metadata_batch(
+                metadata_source_relations
+            )
+
+            metadata_fresnhess_results_dict = {
+                metadata_source_unique_ids[i]: metadata_fresnhess_results[i]
+                for i in range(len(metadata_fresnhess_results))
+            }
+            self._metadata_freshness_results = metadata_fresnhess_results_dict
+
+    def get_runner(self, node) -> BaseRunner:
+        freshness_runner = super().get_runner(node)
+        assert isinstance(freshness_runner, FreshnessRunner)
+        freshness_runner.set_metadata_freshness_results(self._metadata_freshness_results)
+        return freshness_runner
 
     def get_runner_type(self, _):
         return FreshnessRunner
