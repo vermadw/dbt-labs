@@ -1,7 +1,7 @@
 import os
 import threading
 import time
-from typing import Optional, List, AbstractSet
+from typing import Optional, List, AbstractSet, Dict
 
 from .base import BaseRunner
 from .printer import (
@@ -28,6 +28,7 @@ from dbt.node_types import NodeType, RunHookType
 
 from dbt.adapters.capability import Capability
 from dbt.adapters.contracts.connection import AdapterResponse
+from dbt.adapters.base.relation import InformationSchema, BaseRelation
 from dbt.contracts.graph.nodes import SourceDefinition, HookNode
 from dbt_common.events.base_types import EventLevel
 from dbt.graph import ResourceTypeSelector
@@ -38,10 +39,10 @@ RESULT_FILE_NAME = "sources.json"
 class FreshnessRunner(BaseRunner):
     def __init__(self, config, adapter, node, node_index, num_nodes) -> None:
         super().__init__(config, adapter, node, node_index, num_nodes)
-        self._metadata_freshness_results = None
+        self._metadata_freshness_cache: Dict[str, FreshnessResult] = {}
 
-    def set_metadata_freshness_results(self, metadata_freshness_results) -> None:
-        self._metadata_freshness_results = metadata_freshness_results
+    def set_metadata_freshness_cache(self, metadata_freshness_cache: Dict[str, FreshnessResult]) -> None:
+        self._metadata_freshness_cache = metadata_freshness_cache
 
     def on_skip(self):
         raise DbtRuntimeError("Freshness: nodes cannot be skipped!")
@@ -131,8 +132,8 @@ class FreshnessRunner(BaseRunner):
                             EventLevel.WARN,
                         )
                     )
-                if compiled_node.unique_id in self._metadata_freshness_results:
-                    freshness = self._metadata_freshness_results[compiled_node.unique_id]
+                if compiled_node.unique_id in self._metadata_freshness_cache:
+                    freshness = self._metadata_freshness_cache[compiled_node.unique_id]
                 else:
                     adapter_response, freshness = self.adapter.calculate_freshness_from_metadata(
                         relation,
@@ -183,7 +184,7 @@ class FreshnessSelector(ResourceTypeSelector):
 class FreshnessTask(RunTask):
     def __init__(self, args, config, manifest) -> None:
         super().__init__(args, config, manifest)
-        self._metadata_freshness_results = None
+        self._metadata_freshness_cache: Dict[str, FreshnessResult] = {}
 
     def result_path(self):
         if self.args.output:
@@ -206,31 +207,13 @@ class FreshnessTask(RunTask):
 
     def before_run(self, adapter, selected_uids: AbstractSet[str]) -> None:
         super().before_run(adapter, selected_uids)
-        # TODO: new TableLastModifiedMetadataBatch ?
-        if adapter.supports(Capability.TableLastModifiedMetadata):
-            metadata_source_unique_ids = []
-            metadata_source_relations = []
-            for selected_source_uid in list(selected_uids):
-                source = self.manifest.expect(selected_source_uid)
-                if source.loaded_at_field is None:
-                    source_relation = adapter.Relation.create_from(self.config, source)
-                    metadata_source_unique_ids.append(selected_source_uid)
-                    metadata_source_relations.append(source_relation)
-
-            _, metadata_fresnhess_results = adapter.calculate_freshness_from_metadata_batch(
-                metadata_source_relations
-            )
-
-            metadata_fresnhess_results_dict = {
-                metadata_source_unique_ids[i]: metadata_fresnhess_results[i]
-                for i in range(len(metadata_fresnhess_results))
-            }
-            self._metadata_freshness_results = metadata_fresnhess_results_dict
+        if adapter.supports(Capability.TableLastModifiedMetadataBatch):
+            self._populate_metadata_freshness_cache(adapter, selected_uids)
 
     def get_runner(self, node) -> BaseRunner:
         freshness_runner = super().get_runner(node)
         assert isinstance(freshness_runner, FreshnessRunner)
-        freshness_runner.set_metadata_freshness_results(self._metadata_freshness_results)
+        freshness_runner.set_metadata_freshness_cache(self._metadata_freshness_cache)
         return freshness_runner
 
     def get_runner_type(self, _):
@@ -257,3 +240,36 @@ class FreshnessTask(RunTask):
             return super().get_hooks_by_type(hook_type)
         else:
             return []
+
+    def _populate_metadata_freshness_cache(self, adapter, selected_uids: AbstractSet[str]) -> None:
+        # Group metadata sources by information schema -- one query per information schema will be necessary
+        information_schema_to_metadata_sources: Dict[InformationSchema, List[BaseRelation]] = {}
+        # Track unique ids of sources for use as cache key
+        information_schema_to_source_unique_ids: Dict[InformationSchema, List[str]] = {}
+        for selected_source_uid in list(selected_uids):
+            source = self.manifest.expect(selected_source_uid)
+            if source.loaded_at_field is None:
+                metadata_source_relation = adapter.Relation.create_from(self.config, source)
+                information_schema = metadata_source_relation.information_schema_only()
+
+                if information_schema not in information_schema_to_metadata_sources:
+                    information_schema_to_metadata_sources[information_schema] = [metadata_source_relation]
+                    information_schema_to_source_unique_ids[information_schema] = [source.unique_id]
+                else:
+                    information_schema_to_metadata_sources[information_schema].append(metadata_source_relation)
+                    information_schema_to_source_unique_ids[information_schema].append(source.unique_id)
+
+        # Get freshness metadata results per information schema
+        for information_schema, sources_for_information_schema in information_schema_to_metadata_sources.items():
+            fire_event(
+                    Note(msg=f"Generating metadata freshness for sources in {information_schema}"),
+                    EventLevel.INFO,
+                )
+            _, metadata_fresnhess_results = adapter.calculate_freshness_from_metadata_batch(
+                sources_for_information_schema, information_schema
+            )
+            # Update cache based on result for information schema
+            for idx in range(len(information_schema_to_source_unique_ids[information_schema])):
+                source_unique_id = information_schema_to_source_unique_ids[information_schema][idx]
+                source_metadata_freshness_result = metadata_fresnhess_results[idx]
+                self._metadata_freshness_cache[source_unique_id] = source_metadata_freshness_result
