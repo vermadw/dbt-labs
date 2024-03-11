@@ -41,7 +41,9 @@ class FreshnessRunner(BaseRunner):
         super().__init__(config, adapter, node, node_index, num_nodes)
         self._metadata_freshness_cache: Dict[str, FreshnessResult] = {}
 
-    def set_metadata_freshness_cache(self, metadata_freshness_cache: Dict[str, FreshnessResult]) -> None:
+    def set_metadata_freshness_cache(
+        self, metadata_freshness_cache: Dict[str, FreshnessResult]
+    ) -> None:
         self._metadata_freshness_cache = metadata_freshness_cache
 
     def on_skip(self):
@@ -242,29 +244,43 @@ class FreshnessTask(RunTask):
             return []
 
     def _populate_metadata_freshness_cache(self, adapter, selected_uids: AbstractSet[str]) -> None:
+        if self.manifest is None or self.graph is None:
+            raise DbtInternalError("manifest must be set to get populate metadata freshness cache")
+
         # Group metadata sources by information schema -- one query per information schema will be necessary
         information_schema_to_metadata_sources: Dict[InformationSchema, List[BaseRelation]] = {}
         # Track unique ids of sources for use as cache key
         information_schema_to_source_unique_ids: Dict[InformationSchema, List[str]] = {}
         for selected_source_uid in list(selected_uids):
-            source = self.manifest.expect(selected_source_uid)
-            if source.loaded_at_field is None:
+            source = self.manifest.sources.get(selected_source_uid)
+            if source and source.loaded_at_field is None:
                 metadata_source_relation = adapter.Relation.create_from(self.config, source)
                 information_schema = metadata_source_relation.information_schema_only()
 
                 if information_schema not in information_schema_to_metadata_sources:
-                    information_schema_to_metadata_sources[information_schema] = [metadata_source_relation]
-                    information_schema_to_source_unique_ids[information_schema] = [source.unique_id]
+                    information_schema_to_metadata_sources[information_schema] = [
+                        metadata_source_relation
+                    ]
+                    information_schema_to_source_unique_ids[information_schema] = [
+                        source.unique_id
+                    ]
                 else:
-                    information_schema_to_metadata_sources[information_schema].append(metadata_source_relation)
-                    information_schema_to_source_unique_ids[information_schema].append(source.unique_id)
+                    information_schema_to_metadata_sources[information_schema].append(
+                        metadata_source_relation
+                    )
+                    information_schema_to_source_unique_ids[information_schema].append(
+                        source.unique_id
+                    )
 
         # Get freshness metadata results per information schema
-        for information_schema, sources_for_information_schema in information_schema_to_metadata_sources.items():
+        for (
+            information_schema,
+            sources_for_information_schema,
+        ) in information_schema_to_metadata_sources.items():
             fire_event(
-                    Note(msg=f"Generating metadata freshness for sources in {information_schema}"),
-                    EventLevel.INFO,
-                )
+                Note(msg=f"Generating metadata freshness for sources in {information_schema}"),
+                EventLevel.INFO,
+            )
             _, metadata_fresnhess_results = adapter.calculate_freshness_from_metadata_batch(
                 sources_for_information_schema, information_schema
             )
