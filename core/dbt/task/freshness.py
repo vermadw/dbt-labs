@@ -1,7 +1,7 @@
 import os
 import threading
 import time
-from typing import Optional, List, AbstractSet, Dict
+from typing import Optional, List, AbstractSet, Dict, Tuple
 
 from .base import BaseRunner
 from .printer import (
@@ -39,10 +39,10 @@ RESULT_FILE_NAME = "sources.json"
 class FreshnessRunner(BaseRunner):
     def __init__(self, config, adapter, node, node_index, num_nodes) -> None:
         super().__init__(config, adapter, node, node_index, num_nodes)
-        self._metadata_freshness_cache: Dict[str, FreshnessResult] = {}
+        self._metadata_freshness_cache: Dict[Tuple[str, str], FreshnessResult] = {}
 
     def set_metadata_freshness_cache(
-        self, metadata_freshness_cache: Dict[str, FreshnessResult]
+        self, metadata_freshness_cache: Dict[Tuple[str, str], FreshnessResult]
     ) -> None:
         self._metadata_freshness_cache = metadata_freshness_cache
 
@@ -134,8 +134,13 @@ class FreshnessRunner(BaseRunner):
                             EventLevel.WARN,
                         )
                     )
-                if compiled_node.unique_id in self._metadata_freshness_cache:
-                    freshness = self._metadata_freshness_cache[compiled_node.unique_id]
+                if (
+                    compiled_node.schema.lower(),
+                    compiled_node.identifier.lower(),
+                ) in self._metadata_freshness_cache:
+                    freshness = self._metadata_freshness_cache[
+                        (compiled_node.schema.lower(), compiled_node.identifier.lower())
+                    ]
                 else:
                     adapter_response, freshness = self.adapter.calculate_freshness_from_metadata(
                         relation,
@@ -186,7 +191,7 @@ class FreshnessSelector(ResourceTypeSelector):
 class FreshnessTask(RunTask):
     def __init__(self, args, config, manifest) -> None:
         super().__init__(args, config, manifest)
-        self._metadata_freshness_cache: Dict[str, FreshnessResult] = {}
+        self._metadata_freshness_cache: Dict[Tuple[str, str], FreshnessResult] = {}
 
     def result_path(self):
         if self.args.output:
@@ -249,8 +254,6 @@ class FreshnessTask(RunTask):
 
         # Group metadata sources by information schema -- one query per information schema will be necessary
         information_schema_to_metadata_sources: Dict[InformationSchema, List[BaseRelation]] = {}
-        # Track unique ids of sources for use as cache key
-        information_schema_to_source_unique_ids: Dict[InformationSchema, List[str]] = {}
         for selected_source_uid in list(selected_uids):
             source = self.manifest.sources.get(selected_source_uid)
             if source and source.loaded_at_field is None:
@@ -261,15 +264,9 @@ class FreshnessTask(RunTask):
                     information_schema_to_metadata_sources[information_schema] = [
                         metadata_source_relation
                     ]
-                    information_schema_to_source_unique_ids[information_schema] = [
-                        source.unique_id
-                    ]
                 else:
                     information_schema_to_metadata_sources[information_schema].append(
                         metadata_source_relation
-                    )
-                    information_schema_to_source_unique_ids[information_schema].append(
-                        source.unique_id
                     )
 
         # Get freshness metadata results per information schema
@@ -281,11 +278,11 @@ class FreshnessTask(RunTask):
                 Note(msg=f"Generating metadata freshness for sources in {information_schema}"),
                 EventLevel.INFO,
             )
-            _, metadata_fresnhess_results = adapter.calculate_freshness_from_metadata_batch(
+            _, metadata_freshness_results = adapter.calculate_freshness_from_metadata_batch(
                 sources_for_information_schema, information_schema
             )
             # Update cache based on result for information schema
-            for idx in range(len(information_schema_to_source_unique_ids[information_schema])):
-                source_unique_id = information_schema_to_source_unique_ids[information_schema][idx]
-                source_metadata_freshness_result = metadata_fresnhess_results[idx]
-                self._metadata_freshness_cache[source_unique_id] = source_metadata_freshness_result
+            for (schema, identifier), freshness_result in metadata_freshness_results.items():
+                self._metadata_freshness_cache[
+                    (schema.lower(), identifier.lower())
+                ] = freshness_result
