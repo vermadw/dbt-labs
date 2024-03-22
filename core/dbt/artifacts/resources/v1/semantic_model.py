@@ -1,6 +1,9 @@
 import time
 
 from dataclasses import dataclass, field
+
+from dbt_semantic_interfaces.implementations.semantic_model import NodeRelation
+
 from dbt.artifacts.resources.base import GraphResource
 from dbt.artifacts.resources.v1.components import DependsOn, RefArgs
 from dbt_common.contracts.config.base import BaseConfig, CompareBehavior, MergeBehavior
@@ -35,14 +38,6 @@ https://github.com/dbt-labs/dbt-semantic-interfaces/blob/main/dbt_semantic_inter
 @dataclass
 class Defaults(dbtClassMixin):
     agg_time_dimension: Optional[str] = None
-
-
-@dataclass
-class NodeRelation(dbtClassMixin):
-    alias: str
-    schema_name: str  # TODO: Could this be called simply "schema" so we could reuse StateRelation?
-    database: Optional[str] = None
-    relation_name: Optional[str] = None
 
 
 # ====================================

@@ -2,6 +2,9 @@ from __future__ import annotations
 import time
 
 from dataclasses import dataclass, field
+
+from dbt_semantic_interfaces.implementations.semantic_model import NodeRelation
+
 from dbt.artifacts.resources.base import GraphResource
 from dbt.artifacts.resources.v1.components import DependsOn, RefArgs
 from dbt.artifacts.resources.v1.semantic_layer_components import (
@@ -73,6 +76,7 @@ class SavedQueryConfig(BaseConfig):
 class SavedQueryMandatory(GraphResource):
     query_params: QueryParams
     exports: List[Export]
+    node_relation: Optional[NodeRelation]
 
 
 @dataclass
