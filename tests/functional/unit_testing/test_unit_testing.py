@@ -1,4 +1,5 @@
 import pytest
+import os
 from unittest import mock
 from dbt.tests.util import (
     run_dbt,
@@ -18,13 +19,16 @@ from fixtures import (  # noqa: F401
     datetime_test,
     my_incremental_model_sql,
     event_sql,
-    test_my_model_incremental_yml,
+    test_my_model_incremental_yml_basic,
     test_my_model_yml_invalid,
     test_my_model_yml_invalid_ref,
     valid_emails_sql,
     top_level_domains_sql,
     external_package__accounts_seed_csv,
     external_package,
+    test_my_model_incremental_yml_no_override,
+    test_my_model_incremental_yml_wrong_override,
+    test_my_model_incremental_yml_no_this_input,
 )
 
 
@@ -65,6 +69,13 @@ class TestUnitTests:
             expect_pass=True,
         )
         assert len(results) == 1
+
+        # Exclude unit tests with environment variable
+        os.environ["DBT_EXCLUDE_RESOURCE_TYPES"] = "unit_test"
+        results = run_dbt(["build", "--select", "my_model"], expect_pass=True)
+        assert len(results) == 1
+
+        del os.environ["DBT_EXCLUDE_RESOURCE_TYPES"]
 
         # Test select by test name
         results = run_dbt(["test", "--select", "test_name:test_my_model_string_concat"])
@@ -109,13 +120,13 @@ class TestUnitTests:
             run_dbt(["run", "--no-partial-parse", "--select", "my_model"])
 
 
-class TestUnitTestIncrementalModel:
+class TestUnitTestIncrementalModelBasic:
     @pytest.fixture(scope="class")
     def models(self):
         return {
             "my_incremental_model.sql": my_incremental_model_sql,
             "events.sql": event_sql,
-            "test_my_incremental_model.yml": test_my_model_incremental_yml,
+            "schema.yml": test_my_model_incremental_yml_basic,
         }
 
     def test_basic(self, project):
@@ -125,6 +136,57 @@ class TestUnitTestIncrementalModel:
         # Select by model name
         results = run_dbt(["test", "--select", "my_incremental_model"], expect_pass=True)
         assert len(results) == 2
+
+
+class TestUnitTestIncrementalModelNoOverride:
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_incremental_model.sql": my_incremental_model_sql,
+            "events.sql": event_sql,
+            "schema.yml": test_my_model_incremental_yml_no_override,
+        }
+
+    def test_no_override(self, project):
+        with pytest.raises(
+            ParsingError,
+            match="Boolean override for 'is_incremental' must be provided for unit test 'incremental_false' in model 'my_incremental_model'",
+        ):
+            run_dbt(["parse"])
+
+
+class TestUnitTestIncrementalModelWrongOverride:
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_incremental_model.sql": my_incremental_model_sql,
+            "events.sql": event_sql,
+            "schema.yml": test_my_model_incremental_yml_wrong_override,
+        }
+
+    def test_str_override(self, project):
+        with pytest.raises(
+            ParsingError,
+            match="Boolean override for 'is_incremental' must be provided for unit test 'incremental_false' in model 'my_incremental_model'",
+        ):
+            run_dbt(["parse"])
+
+
+class TestUnitTestIncrementalModelNoThisInput:
+    @pytest.fixture(scope="class")
+    def models(self):
+        return {
+            "my_incremental_model.sql": my_incremental_model_sql,
+            "events.sql": event_sql,
+            "schema.yml": test_my_model_incremental_yml_no_this_input,
+        }
+
+    def test_no_this_input(self, project):
+        with pytest.raises(
+            ParsingError,
+            match="Unit test 'incremental_true' for incremental model 'my_incremental_model' must have a 'this' input",
+        ):
+            run_dbt(["parse"])
 
 
 my_new_model = """
