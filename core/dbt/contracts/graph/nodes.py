@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 from dataclasses import dataclass, field
 import hashlib
+from pathlib import Path
 
 from mashumaro.types import SerializableType
 from typing import (
@@ -955,14 +956,9 @@ class UnitTestDefinition(NodeInfoMixin, GraphNode, UnitTestDefinitionResource):
         return UnitTestDefinitionResource
 
     @property
-    def build_path(self):
-        # TODO: is this actually necessary?
-        return self.original_file_path
-
-    @property
     def compiled_path(self):
-        # TODO: is this actually necessary?
-        return self.original_file_path
+        path = Path(self.original_file_path).parent / (self.name + ".sql")
+        return str(self.original_file_path / path)
 
     @property
     def depends_on_nodes(self):

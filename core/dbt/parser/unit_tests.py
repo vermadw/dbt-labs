@@ -123,7 +123,7 @@ class UnitTestManifestLoader:
 
             common_fields = {
                 "resource_type": NodeType.Model,
-                "original_file_path": original_input_node.original_file_path,
+                "original_file_path": unit_test_node.original_file_path,
                 "config": ModelConfig(materialized="ephemeral"),
                 "database": original_input_node.database,
                 "alias": original_input_node.identifier,
@@ -144,7 +144,8 @@ class UnitTestManifestLoader:
                     package_name=original_input_node.package_name,
                     unique_id=f"model.{original_input_node.package_name}.{input_name}",
                     name=input_name,
-                    path=original_input_node.path or f"{input_name}.sql",
+                    # models/my_model.yml/models/my_unit_test.sql
+                    path=os.path.join(unit_test_node.original_file_path, unit_test_node.path),
                 )
                 if (
                     original_input_node.resource_type == NodeType.Model
