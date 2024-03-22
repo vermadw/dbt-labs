@@ -107,7 +107,7 @@ from dbt.contracts.graph.nodes import (
     ResultNode,
     ModelNode,
 )
-from dbt.artifacts.resources import NodeRelation, NodeVersion, FileHash
+from dbt.artifacts.resources import NodeVersion, FileHash
 from dbt.artifacts.schemas.base import Writable
 from dbt.exceptions import (
     TargetNotFoundError,
@@ -1135,7 +1135,7 @@ class ManifestLoader:
         _process_metrics_for_node(self.manifest, current_project, saved_query)
         if saved_query.depends_on_nodes[0]:
             refd_node = self.manifest.nodes[saved_query.depends_on_nodes[0]]
-            saved_query.node_relation = NodeRelation(
+            saved_query.node_relation = dbt.artifacts.resources.v1.saved_query.NodeRelation(
                 relation_name=refd_node.relation_name,
                 alias=refd_node.alias,
                 schema_name=refd_node.schema,
@@ -1147,7 +1147,7 @@ class ManifestLoader:
         # might have alias/schema/database fields that are updated by yaml config.
         if semantic_model.depends_on_nodes[0]:
             refd_node = self.manifest.nodes[semantic_model.depends_on_nodes[0]]
-            semantic_model.node_relation = NodeRelation(
+            semantic_model.node_relation = dbt.artifacts.resources.v1.saved_query.NodeRelation(
                 relation_name=refd_node.relation_name,
                 alias=refd_node.alias,
                 schema_name=refd_node.schema,
