@@ -14,6 +14,8 @@ from dbt_common.dataclass_schema import dbtClassMixin
 from dbt_semantic_interfaces.type_enums.export_destination_type import ExportDestinationType
 from typing import Any, Dict, List, Optional
 
+from dbt.artifacts.resources.v1.semantic_model import NodeRelation
+
 
 @dataclass
 class ExportConfig(dbtClassMixin):
@@ -68,14 +70,6 @@ class SavedQueryConfig(BaseConfig):
     export_as: Optional[ExportDestinationType] = None
     schema: Optional[str] = None
     cache: SavedQueryCache = field(default_factory=SavedQueryCache)
-
-
-@dataclass
-class NodeRelation(dbtClassMixin):
-    alias: str
-    schema_name: str  # TODO: Could this be called simply "schema" so we could reuse StateRelation?
-    database: Optional[str] = None
-    relation_name: Optional[str] = None
 
 
 @dataclass
