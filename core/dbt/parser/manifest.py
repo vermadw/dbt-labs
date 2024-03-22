@@ -1135,7 +1135,7 @@ class ManifestLoader:
         _process_metrics_for_node(self.manifest, current_project, saved_query)
         if saved_query.depends_on_nodes[0]:
             refd_node = self.manifest.nodes[saved_query.depends_on_nodes[0]]
-            saved_query.node_relation = NodeRelation(
+            saved_query.node_relation = dbt.artifacts.resources.v1.saved_query.NodeRelation(
                 relation_name=refd_node.relation_name,
                 alias=refd_node.alias,
                 schema_name=refd_node.schema,
